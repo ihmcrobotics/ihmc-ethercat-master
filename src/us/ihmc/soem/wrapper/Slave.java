@@ -26,7 +26,7 @@ public class Slave
       this.aliasAddress = aliasAddress;
       this.configAddress = configAddress;
 
-      sdoBuffer.order(ByteOrder.BIG_ENDIAN);
+      sdoBuffer.order(ByteOrder.BIG_ENDIAN); // EtherCAT is big-endian protocol
    }
 
    void configure(ecx_contextt context, ec_slavet slave, int slaveIndex)
@@ -35,6 +35,10 @@ public class Slave
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
    
+      if(ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
+      {
+         throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
+      }
       
       for(int i = 0; i < syncManagers.length; i++)
       {
@@ -140,5 +144,21 @@ public class Slave
          }
       }
    }
+   
+   public SyncManager syncManager(int index)
+   {
+      return syncManagers[index];
+   }
+   
+   public SyncManager sm(int index)
+   {
+      return syncManager(index);
+   }
 
+   public boolean isOperational()
+   {
+      return true;
+   }
+
+   
 }

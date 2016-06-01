@@ -66,7 +66,7 @@ public class SyncManager
       case RXPDO:
          throw new RuntimeException("Cannot register both Tx and Rx PDO entries on a single syncmanager");
       case UNKNOWN:
-         direction = MailbusDirection.RXPDO;
+         direction = MailbusDirection.TXPDO;
       case TXPDO:
          PDOs.add(pdo);
          break;

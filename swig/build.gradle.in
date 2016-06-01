@@ -18,8 +18,13 @@ project.ext.bintrayLicenseName = "LGPL-2.1"
 sourceSets {
 	main {
 		java {
-			srcDirs += 'swig/'
+			srcDir 'swig/'
 		}
+		resources{
+			srcDir 'swig'
+			include '**/libsoemJava.so'
+			exclude '**/CMakeFiles'
+		}	
 	}
 }
 

@@ -9,9 +9,16 @@ import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
+import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
 
 public class Master
 {
+   static
+   {
+      NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
+   }
+   
+   
    private final ArrayList<Slave> slaves = new ArrayList<>();
    private final String iface;
    
@@ -136,6 +143,15 @@ public class Master
    public void receive()
    {
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+   }
+
+   public void registerSlave(Slave slave)
+   {
+      slaves.add(slave);
+   }
+
+   public void addSlaveShutDownHook(SlaveShutdownHook dsp402ShutDownHook)
+   {
    }
    
    
