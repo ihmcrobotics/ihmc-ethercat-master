@@ -32,7 +32,7 @@ public class SyncManager
          
          
          // Set the size of the SM configuration array to zero, allows writing to the elements
-         slave.writeSDO(pdoConfigurationIndex, 0x0, 0);
+         slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
          
          // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)

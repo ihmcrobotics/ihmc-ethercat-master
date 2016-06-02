@@ -100,7 +100,7 @@ public class Master
             throw new IOException("Unconfigured slave on alias " + ec_slave.getAliasadr());
          }
          
-         
+         // Disable Complete Access reading of SDO configuration.
          short config = ec_slave.getCoEdetails();
          config &= ~soemConstants.ECT_COEDET_SDOCA;
          ec_slave.setCoEdetails(config);
@@ -112,25 +112,21 @@ public class Master
       
       
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
-      System.out.println("IO Buffer size is " + ioBufferSize);
-      if(ioBufferSize == 0)
+      if(ioBufferSize != processDataSize)
       {
-         throw new IOException("Cannot allocate memory for etherCAT I/O");
+         throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
       }
       
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
          throw new IOException("Cannot transfer to SAFE_OP state");
       }      
-      System.out.println("Slaves in SAFE_OP");
       
       for(int i = 0; i < slavecount; i++)
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
       }
-      
-      
       
       soem.ecx_send_processdata(context);
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
@@ -164,16 +160,6 @@ public class Master
          
          throw new IOException("Cannot bring all slaves in OP state");
       }
-      
-      for(Slave slave : slaveMap)
-      {
-         System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
-         System.out.println(slave.getInputBytes());
-         System.out.println(slave.getOutputBytes());
-      }
-      
-      System.out.println("SLAVES IN OP");
-      System.out.println(ioMap);
    }
    
    public void send()
@@ -184,13 +170,6 @@ public class Master
    public void receive()
    {
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-      
-//      ioMap.clear();
-//      while(ioMap.hasRemaining())
-//      {
-//         System.out.print(ioMap.get());
-//      }
-//      System.out.println();
    }
 
    public void registerSlave(Slave slave)
