@@ -20,13 +20,14 @@ public class Slave
    private ecx_contextt context;
    private ec_slavet ec_slave;
    private int slaveIndex;
+   
 
    public Slave(int aliasAddress, int configAddress)
    {
       this.aliasAddress = aliasAddress;
       this.configAddress = configAddress;
 
-      sdoBuffer.order(ByteOrder.BIG_ENDIAN); // EtherCAT is big-endian protocol
+      sdoBuffer.order(ByteOrder.LITTLE_ENDIAN); // EtherCAT is a big-endian protocol, but this has to be LITTLE_ENDIAN
    }
 
    void configure(ecx_contextt context, ec_slavet slave, int slaveIndex)
@@ -35,17 +36,30 @@ public class Slave
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
    
-      if(ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
-      {
-         throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
-      }
+
       
       for(int i = 0; i < syncManagers.length; i++)
       {
          syncManagers[i].configure(this);
       }
+
+      if(ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
+      {
+         throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
+      }
       
    }
+   
+   public long getInputBytes() 
+   {
+      return ec_slave.getIbytes();
+   }
+   
+   public long getOutputBytes()
+   {
+      return ec_slave.getObytes();
+   }
+   
    
    
    public void registerSyncManager(SyncManager syncManager)
@@ -58,40 +72,40 @@ public class Slave
       syncManagers[syncManager.getIndex()] = syncManager;
    }
 
-   public void writeSDO(int index, int subIndex, double value)
+   public int writeSDO(int index, int subIndex, double value)
    {
       sdoBuffer.putDouble(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
-   public void writeSDO(int index, int subIndex, long value)
+   public int writeSDO(int index, int subIndex, long value)
    {
       sdoBuffer.putLong(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
    
-   public void writeSDO(int index, int subIndex, float value)
+   public int writeSDO(int index, int subIndex, float value)
    {
       sdoBuffer.putFloat(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
-   public void writeSDO(int index, int subIndex, int value)
+   public int writeSDO(int index, int subIndex, int value)
    {
       sdoBuffer.putInt(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
-   public void writeSDO(int index, int subIndex, short value)
+   public int writeSDO(int index, int subIndex, short value)
    {
       sdoBuffer.putShort(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 2, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 2, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
-   public void writeSDO(int index, int subIndex, byte value)
+   public int writeSDO(int index, int subIndex, byte value)
    {
       sdoBuffer.put(0, value);
-      soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 1, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 1, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
    
    public int processDataSize()
@@ -127,6 +141,9 @@ public class Slave
    public void linkBuffers(ByteBuffer ioMap)
    {
       int inputOffset =  soem.ecx_inputoffset(ec_slave, ioMap);
+      
+      System.out.println("INPUT OFFSET IS " + inputOffset);
+      
       for(int i = 0; i < syncManagers.length; i++)
       {
          if(syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
@@ -136,6 +153,7 @@ public class Slave
       }
 
       int outputOffset =  soem.ecx_outputoffset(ec_slave, ioMap);
+      System.out.println("OUTPUT OFFSET IS " + outputOffset);
       for(int i = 0; i < syncManagers.length; i++)
       {
          if(syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
@@ -143,6 +161,16 @@ public class Slave
             outputOffset += syncManagers[i].linkBuffers(ioMap, outputOffset);
          }
       }
+   }
+   
+   public int getALStatusCode()
+   {
+      return ec_slave.getALstatuscode();
+   }
+   
+   public String getALStatusMessage()
+   {
+      return soem.ec_ALstatuscode2string(getALStatusCode());
    }
    
    public SyncManager syncManager(int index)
@@ -158,6 +186,12 @@ public class Slave
    public boolean isOperational()
    {
       return true;
+   }
+
+   public int getState()
+   {
+      
+      return ec_slave.getState();
    }
 
    

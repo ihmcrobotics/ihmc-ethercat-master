@@ -16,7 +16,7 @@ public class SyncManager
    private final boolean cconfigurePDOs;
    private final int index;
    
-   private MailbusDirection direction;
+   private MailbusDirection direction = MailbusDirection.UNKNOWN;
    
    public SyncManager(int index, boolean configurePDOs)
    {
@@ -30,12 +30,18 @@ public class SyncManager
       {
          int pdoConfigurationIndex = 0x1C10 + index;
          
-         slave.writeSDO(pdoConfigurationIndex, 0x0, (short)PDOs.size());
          
+         // Set the size of the SM configuration array to zero, allows writing to the elements
+         slave.writeSDO(pdoConfigurationIndex, 0x0, 0);
+         
+         // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)
          {
-            slave.writeSDO(pdoConfigurationIndex, i, (short) PDOs.get(i).getAddress());
+            slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
          }
+         
+         // Set the correct size of the SM array
+         slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
       }
    }
 

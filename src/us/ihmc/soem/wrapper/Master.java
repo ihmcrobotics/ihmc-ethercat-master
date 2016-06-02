@@ -2,6 +2,7 @@ package us.ihmc.soem.wrapper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import us.ihmc.soem.generated.ec_slavet;
@@ -51,7 +52,7 @@ public class Master
          Slave slave = slaves.get(i);
          
          if(slave.getAliasAddress() == ec_slave.getAliasadr() &&
-               slave.getConfigAddress() == ec_slave.getConfigadr())
+               slave.getConfigAddress() == ec_slave.getConfigindex())
          {
             return slave;
          }
@@ -78,19 +79,19 @@ public class Master
       
       if(slaves.size() != slavecount)
       {
-         throw new IOException("Not all slaves are online, got " + slaves.size() + " slaves, expected " + slavecount);
+         throw new IOException("Not all slaves are online, got " + slavecount + " slaves, expected " + slaves.size());
       }
       
       slaveMap = new Slave[slavecount];
       int processDataSize = 0;
-      for(int i = 1; i < slavecount; i++)
+      for(int i = 0; i < slavecount; i++)
       {
-         ec_slavet ec_slave = soem.ecx_slave(context, i);
+         ec_slavet ec_slave = soem.ecx_slave(context, i + 1);
          Slave slave = getSlave(ec_slave);
          
          if(slave != null)
          {
-            slave.configure(context, ec_slave, i);
+            slave.configure(context, ec_slave, i + 1);
             slaveMap[i] = slave;
             processDataSize += slave.processDataSize();
          }
@@ -99,9 +100,20 @@ public class Master
             throw new IOException("Unconfigured slave on alias " + ec_slave.getAliasadr());
          }
          
+         
+         short config = ec_slave.getCoEdetails();
+         config &= ~soemConstants.ECT_COEDET_SDOCA;
+         ec_slave.setCoEdetails(config);
+         
+         
       }
       ioMap = ByteBuffer.allocateDirect(processDataSize);
-      if(soem.ecx_config_map_group(context, ioMap, (short)0) == 0)
+      ioMap.order(ByteOrder.LITTLE_ENDIAN);
+      
+      
+      int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
+      System.out.println("IO Buffer size is " + ioBufferSize);
+      if(ioBufferSize == 0)
       {
          throw new IOException("Cannot allocate memory for etherCAT I/O");
       }
@@ -110,29 +122,58 @@ public class Master
       {
          throw new IOException("Cannot transfer to SAFE_OP state");
       }      
+      System.out.println("Slaves in SAFE_OP");
       
-      for(int i = 1; i < slavecount; i++)
+      for(int i = 0; i < slavecount; i++)
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
       }
       
-      soem.ecx_readstate(context);
       
       
       soem.ecx_send_processdata(context);
-      soem.ec_receive_processdata(soemConstants.EC_TIMEOUTRET);
+      soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
 
+      
       ec_slavet allSlaves = soem.ecx_slave(context, 0);
       allSlaves.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
       soem.ecx_writestate(context, 0);
+      
+      int chk = 40;
+      /* wait for all slaves to reach OP state */
+      do
+      {
+         soem.ecx_send_processdata(context);
+         soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+         soem.ecx_statecheck(context, 0, ec_state.EC_STATE_OPERATIONAL.swigValue(), 50000);
+      }
+      while ((chk-- > 0) && (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue()));
+      
 
       /* wait for all slaves to reach OP state */
-      soem.ecx_statecheck(context, 0, ec_state.EC_STATE_OPERATIONAL.swigValue(),  soemConstants.EC_TIMEOUTSTATE);
       if (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue())
       {
+         
+         soem.ecx_readstate(context);
+
+         for(Slave slave : slaveMap)
+         {
+            System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
+         }
+         
          throw new IOException("Cannot bring all slaves in OP state");
       }
+      
+      for(Slave slave : slaveMap)
+      {
+         System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
+         System.out.println(slave.getInputBytes());
+         System.out.println(slave.getOutputBytes());
+      }
+      
+      System.out.println("SLAVES IN OP");
+      System.out.println(ioMap);
    }
    
    public void send()
@@ -143,6 +184,13 @@ public class Master
    public void receive()
    {
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      
+//      ioMap.clear();
+//      while(ioMap.hasRemaining())
+//      {
+//         System.out.print(ioMap.get());
+//      }
+//      System.out.println();
    }
 
    public void registerSlave(Slave slave)

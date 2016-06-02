@@ -137,7 +137,7 @@ public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
 
    private boolean hasBeenEnabled = false;
 
-   public ElmoTwitterTTSpecialCarrier(Master master, int alias, boolean enableDC, long cyclicPeriodNS) throws IOException
+   public ElmoTwitterTTSpecialCarrier(Master master, int alias, boolean enableDC, long cyclicPeriodNS)
    {
       this(master, alias, 0, enableDC, cyclicPeriodNS);
    }
@@ -151,7 +151,7 @@ public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
     * @param cyclicPeriodNS
     * @throws IOException
     */
-   public ElmoTwitterTTSpecialCarrier(Master master, int alias, int ringPosition, boolean enableDC, long cyclicPeriodNS) throws IOException
+   public ElmoTwitterTTSpecialCarrier(Master master, int alias, int ringPosition, boolean enableDC, long cyclicPeriodNS)
    {
       super(master, alias, ringPosition);
 
@@ -172,6 +172,7 @@ public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
       sm(3).registerPDO(tpdo_1a19);
       sm(3).registerPDO(tpdo_1a1e);
       sm(3).registerPDO(tpdo_1a22);
+      
 
       //      configureWatchdog((int) (cyclicPeriodNS / 40), 100);
       //      
