@@ -21,6 +21,7 @@ public class Master
    
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
+   private final ArrayList<SlaveShutdownHook> shutdownHooks = new ArrayList<>();
    private final String iface;
    
    private ecx_contextt context = null;
@@ -28,17 +29,20 @@ public class Master
    
    private ByteBuffer ioMap;
    
+   private boolean enableDC = false;
+   private long dcCycleTime = 0;
+   private long dcControlIntegral = 0;
+   
+   /**
+    * Create new EtherCAT master.
+    * 
+    * @param iface The network interface to listen on
+    */
    public Master(String iface)
    {
       this.iface = iface;
    }
-   
-   
-   void addSlave(Slave slave)
-   {
       
-   }
-   
    @Deprecated
    public void activate() throws IOException
    {
@@ -60,6 +64,19 @@ public class Master
       return null;
    }
    
+   public void configureDC(long cycleTime)
+   {
+      enableDC = true;
+      dcCycleTime = cycleTime;
+   }
+   
+   /**
+    * Initialize the master, configure all slaves registered with registerSlave() 
+    * 
+    * On return, all slaves will be in OPERATIONAL mode.
+    * 
+    * @throws IOException
+    */
    public void init() throws IOException
    {
       context = soem.ecx_create_context();
@@ -108,7 +125,7 @@ public class Master
          
       }
       ioMap = ByteBuffer.allocateDirect(processDataSize);
-      ioMap.order(ByteOrder.LITTLE_ENDIAN);
+      ioMap.order(ByteOrder.nativeOrder());
       
       
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
@@ -126,6 +143,13 @@ public class Master
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
+      }
+      
+      
+      if(enableDC)
+      {
+         boolean dcCapable = soem.ecx_configdc(context) == (short)1;
+         enableDC = dcCapable;
       }
       
       soem.ecx_send_processdata(context);
@@ -162,6 +186,11 @@ public class Master
       }
    }
    
+   public void shutdown()
+   {
+      
+   }
+   
    public void send()
    {
       soem.ecx_send_processdata(context);
@@ -177,9 +206,41 @@ public class Master
       slaves.add(slave);
    }
 
-   public void addSlaveShutDownHook(SlaveShutdownHook dsp402ShutDownHook)
+   public void addSlaveShutDownHook(SlaveShutdownHook shutdownHook)
    {
    }
+   
+   
+   /* PI calculation to get linux time synced to DC time */
+   
+   /**
+    * Simple PI controller to be used to synchronize the control loop with the 
+    * Distributed Clocks feature of EtherCAT.   
+    * 
+    * @param clockTime 
+    * @param syncOffset Offset from the start of the DC sync pulse.
+    * 
+    * @return Offset in NS to add to the current tick duration to synchronize the clocks
+    */
+   public long calculateDCOffsetTime(long clockTime, long syncOffset)
+   {
+      if(enableDC)
+      {
+         long reftime = soem.ecx_dcTime(context);
+         
+         /* set linux sync point 50us later than DC sync, just as example */
+         long delta = (reftime - syncOffset) % dcCycleTime;
+         if(delta> (dcCycleTime /2)) { delta= delta - dcCycleTime; }
+         if(delta>0){ dcControlIntegral++; }
+         if(delta<0){ dcControlIntegral--; }
+         return -(delta / 100) - (dcControlIntegral /20);
+      }
+      else
+      {
+         return 0;
+      }
+   }
+
    
    
 }

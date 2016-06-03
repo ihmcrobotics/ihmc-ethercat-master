@@ -9,7 +9,7 @@ import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;
 import us.ihmc.soem.wrapper.TxPDO;
 
-public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
+public class ElmoTwitterTCB extends DSP402Slave
 {
    static final int vendorID = 0x0000009a;
    static final int productCode = 0x00030924;
@@ -137,7 +137,7 @@ public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
 
    private boolean hasBeenEnabled = false;
 
-   public ElmoTwitterTTSpecialCarrier(Master master, int alias, boolean enableDC, long cyclicPeriodNS)
+   public ElmoTwitterTCB(Master master, int alias, boolean enableDC, long cyclicPeriodNS)
    {
       this(master, alias, 0, enableDC, cyclicPeriodNS);
    }
@@ -151,7 +151,7 @@ public class ElmoTwitterTTSpecialCarrier extends DSP402Slave
     * @param cyclicPeriodNS
     * @throws IOException
     */
-   public ElmoTwitterTTSpecialCarrier(Master master, int alias, int ringPosition, boolean enableDC, long cyclicPeriodNS)
+   public ElmoTwitterTCB(Master master, int alias, int ringPosition, boolean enableDC, long cyclicPeriodNS)
    {
       super(master, alias, ringPosition);
 

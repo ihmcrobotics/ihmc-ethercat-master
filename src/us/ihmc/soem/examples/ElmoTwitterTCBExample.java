@@ -5,27 +5,39 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import us.ihmc.soem.slaves.ElmoTwitterTTSpecialCarrier;
+import us.ihmc.soem.slaves.ElmoTwitterTCB;
 import us.ihmc.soem.wrapper.Master;
 
-public class ElmoTwitterTTSpecialCarrierExample implements Runnable
+public class ElmoTwitterTCBExample implements Runnable
 {
    private final Master master = new Master("enx9cebe835ae57");
-   private final ElmoTwitterTTSpecialCarrier carrier = new ElmoTwitterTTSpecialCarrier(master, 0, false, 1000000);
+   private final ElmoTwitterTCB carrier = new ElmoTwitterTCB(master, 0, false, 1000000);
    
    
-   public ElmoTwitterTTSpecialCarrierExample() throws IOException
+   public ElmoTwitterTCBExample() throws IOException
    {
       master.registerSlave(carrier);
+      master.configureDC(10000000);
       master.init();
+      
+      
+      carrier.configureDCSync0(true, 10000000, 0);
+      
+      // Test SDO reading
+      byte receiveSDOLength = carrier.readSDOByte(0x1c12, 0x0);
+      System.out.println("Number of elements in receive PDO: " + receiveSDOLength);
+      for(int i = 0; i < receiveSDOLength; i++)
+      {
+         System.out.println("RxPDO assignment " + i + ": " + Integer.toHexString(carrier.readSDOUnsignedShort(0x1c12, i + 1)));
+      }
+      
    }
    
    public void run()
    {
       master.receive();
       
-//      System.out.println("-----");
-      System.out.println(carrier.getPositionActualValue());
+//      System.out.println(carrier.getPositionActualValue());
 //      System.out.println(carrier.getDigitalInputs());
 //      System.out.println(carrier.getVelocityActualValue());
 //      System.out.println(carrier.getStatus());
@@ -39,7 +51,7 @@ public class ElmoTwitterTTSpecialCarrierExample implements Runnable
    
    public static void main(String[] args) throws IOException
    {
-      ElmoTwitterTTSpecialCarrierExample elmoTwitterTTSpecialCarrierExample = new ElmoTwitterTTSpecialCarrierExample();
+      ElmoTwitterTCBExample elmoTwitterTTSpecialCarrierExample = new ElmoTwitterTCBExample();
       
       ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
       executor.scheduleAtFixedRate(elmoTwitterTTSpecialCarrierExample, 0, 10, TimeUnit.MILLISECONDS);

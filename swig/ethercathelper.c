@@ -3,6 +3,7 @@
 #include "ethercattype.h"
 #include "ethercatbase.h"
 #include "ethercatmain.h"
+#include "ethercatcoe.h"
 #include "ethercathelper.h"
 
 #include <stdlib.h>
@@ -26,7 +27,7 @@ ecx_contextt* ecx_create_context()
     ecx_context->ecaterror = (boolean*) malloc(sizeof(boolean));      // .ecaterror     =
     ecx_context->DCtO =    0;               // .DCtO          =
     ecx_context->DCl =    0;               // .DCl           =
-    ecx_context->DCtime = (int64*) malloc(sizeof(int64));   &ec_DCtime,      // .DCtime        =
+    ecx_context->DCtime = (int64*) malloc(sizeof(int64));  //  &ec_DCtime,      // .DCtime        =
     ecx_context->SMcommtype = (ec_SMcommtypet*) malloc(sizeof(ec_SMcommtypet)); //    &ec_SMcommtype,  // .SMcommtype    =
     ecx_context->PDOassign = (ec_PDOassignt*) malloc(sizeof(ec_PDOassignt));
     ecx_context->PDOdesc = (ec_PDOdesct*) malloc(sizeof(ec_PDOdesct));
@@ -57,6 +58,16 @@ void ecx_destroy_context(ecx_contextt* ecx_context)
     free(ecx_context->eepFMMU);
 }
 
+boolean ecx_ecaterror(ecx_contextt* ecx_context)
+{
+	return *(ecx_context->ecaterror);
+}
+
+int64 ecx_dcTime(ecx_contextt* context)
+{
+	return *(context->DCtime);
+}
+
 int ecx_slavecount(ecx_contextt* context)
 {
     return *(context->slavecount);
@@ -81,4 +92,11 @@ int32_t ecx_inputoffset(ec_slavet* slave, void* buffer)
 int32_t ecx_outputoffset(ec_slavet* slave, void* buffer)
 {
     return ((uint64_t) slave->outputs) - ((uint64_t) buffer);
+}
+
+int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, uint8 subindex,
+                      boolean CA, int size, void *p, int timeout)
+{
+	return ecx_SDOread(context, slave, index, subindex, CA, &size, p, timeout);
+	
 }

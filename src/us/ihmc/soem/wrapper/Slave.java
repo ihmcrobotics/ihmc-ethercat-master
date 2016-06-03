@@ -13,7 +13,7 @@ public class Slave
 {
    private final int aliasAddress;
    private final int configAddress;
-   private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(8);
+   private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(12);
 
    private final SyncManager[] syncManagers = new SyncManager[4];
    
@@ -27,7 +27,7 @@ public class Slave
       this.aliasAddress = aliasAddress;
       this.configAddress = configAddress;
 
-      sdoBuffer.order(ByteOrder.LITTLE_ENDIAN); // EtherCAT is a big-endian protocol, but this has to be LITTLE_ENDIAN
+      sdoBuffer.order(ByteOrder.nativeOrder()); // EtherCAT is a big-endian protocol, but this has to be LITTLE_ENDIAN
    }
 
    void configure(ecx_contextt context, ec_slavet slave, int slaveIndex)
@@ -74,38 +74,123 @@ public class Slave
 
    public int writeSDO(int index, int subIndex, double value)
    {
+      sdoBuffer.clear();
       sdoBuffer.putDouble(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
    public int writeSDO(int index, int subIndex, long value)
    {
+      sdoBuffer.clear();
       sdoBuffer.putLong(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
    
    public int writeSDO(int index, int subIndex, float value)
    {
+      sdoBuffer.clear();
       sdoBuffer.putFloat(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
    public int writeSDO(int index, int subIndex, int value)
    {
+      sdoBuffer.clear();
       sdoBuffer.putInt(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
    public int writeSDO(int index, int subIndex, short value)
    {
+      sdoBuffer.clear();
       sdoBuffer.putShort(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 2, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
    }
 
    public int writeSDO(int index, int subIndex, byte value)
    {
+      sdoBuffer.clear();
       sdoBuffer.put(0, value);
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 1, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+   }
+   
+   /**
+    * Read a SDO value to a buffer. 
+    * 
+    * The first four bytes in the buffer are the SDO length as integer. Position and limit are set accordingly.
+    * 
+    * @param index
+    * @param subIndex
+    * @param sdoBuffer
+    * 
+    * @return working counter
+    */
+   public int readSDOToBuffer(int index, int subIndex, int size, ByteBuffer sdoBuffer)
+   {
+      int wc = soem.ecx_SDOread_java_helper(context, slaveIndex, index, (short) subIndex, (short) 0, size, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      sdoBuffer.position(0);
+      sdoBuffer.limit(size);
+      return wc;
+   }
+   
+   
+   public byte readSDOByte(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 1, sdoBuffer);
+      return sdoBuffer.get();
+   }
+   public int readSDOUnsignedByte(int index, int subIndex)
+   {
+      return readSDOByte(index, subIndex) & 0xFF;
+   }
+
+   public short readSDOShort(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 2, sdoBuffer);
+      return sdoBuffer.getShort();
+   }
+   
+   public int readSDOUnsignedShort(int index, int subIndex)
+   {
+      return readSDOShort(index, subIndex) & 0xFFFF;
+   }
+   
+   public int readSDOInt(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 4, sdoBuffer);
+      return sdoBuffer.getInt();
+   }
+   
+   public long readSDOUnsignedInt(int index, int subIndex)
+   {
+      return readSDOInt(index, subIndex) & 0xFFFFFFFFl;
+   }
+   
+   public long readSDOLong(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 8, sdoBuffer);
+      return sdoBuffer.getLong();
+   }
+   
+   public float readSDOFloat(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 4, sdoBuffer);
+      return sdoBuffer.getFloat();
+   }
+   
+   public double readSDODouble(int index, int subIndex)
+   {
+      readSDOToBuffer(index, subIndex, 8, sdoBuffer);
+      return sdoBuffer.getDouble();
+   }
+   
+   
+   
+   
+   
+   public void configureDCSync0(boolean enable, long sync0time, int sync0shift)
+   {
+      soem.ecx_dcsync0(context, slaveIndex, enable?(short)1:(short)0, sync0time, sync0shift);
    }
    
    public int processDataSize()
@@ -141,9 +226,7 @@ public class Slave
    public void linkBuffers(ByteBuffer ioMap)
    {
       int inputOffset =  soem.ecx_inputoffset(ec_slave, ioMap);
-      
-      System.out.println("INPUT OFFSET IS " + inputOffset);
-      
+            
       for(int i = 0; i < syncManagers.length; i++)
       {
          if(syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
@@ -153,7 +236,6 @@ public class Slave
       }
 
       int outputOffset =  soem.ecx_outputoffset(ec_slave, ioMap);
-      System.out.println("OUTPUT OFFSET IS " + outputOffset);
       for(int i = 0; i < syncManagers.length; i++)
       {
          if(syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
