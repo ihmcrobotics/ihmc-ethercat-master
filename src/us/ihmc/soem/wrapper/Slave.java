@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import us.ihmc.soem.generated.ec_slavet;
+import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
@@ -40,7 +41,10 @@ public class Slave
       
       for(int i = 0; i < syncManagers.length; i++)
       {
-         syncManagers[i].configure(this);
+         if(syncManagers[i] != null)
+         {
+            syncManagers[i].configure(this);
+         }
       }
 
       if(ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
@@ -72,46 +76,51 @@ public class Slave
       syncManagers[syncManager.getIndex()] = syncManager;
    }
 
+   public int writeSDO(int index, int subindex, ByteBuffer buffer)
+   {
+      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 9, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
+   }
+   
    public int writeSDO(int index, int subIndex, double value)
    {
       sdoBuffer.clear();
       sdoBuffer.putDouble(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
 
    public int writeSDO(int index, int subIndex, long value)
    {
       sdoBuffer.clear();
       sdoBuffer.putLong(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 8, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
    
    public int writeSDO(int index, int subIndex, float value)
    {
       sdoBuffer.clear();
       sdoBuffer.putFloat(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
 
    public int writeSDO(int index, int subIndex, int value)
    {
       sdoBuffer.clear();
       sdoBuffer.putInt(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 4, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
 
    public int writeSDO(int index, int subIndex, short value)
    {
       sdoBuffer.clear();
       sdoBuffer.putShort(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 2, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
 
    public int writeSDO(int index, int subIndex, byte value)
    {
       sdoBuffer.clear();
       sdoBuffer.put(0, value);
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subIndex, (short) 0, 1, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
+      return writeSDO(index, subIndex, sdoBuffer);
    }
    
    /**
@@ -229,7 +238,7 @@ public class Slave
             
       for(int i = 0; i < syncManagers.length; i++)
       {
-         if(syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
+         if(syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
          {
             inputOffset += syncManagers[i].linkBuffers(ioMap, inputOffset);
          }
@@ -238,7 +247,7 @@ public class Slave
       int outputOffset =  soem.ecx_outputoffset(ec_slave, ioMap);
       for(int i = 0; i < syncManagers.length; i++)
       {
-         if(syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
+         if(syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
          {
             outputOffset += syncManagers[i].linkBuffers(ioMap, outputOffset);
          }
@@ -274,6 +283,40 @@ public class Slave
    {
       
       return ec_slave.getState();
+   }
+
+   public void doEtherCATStateControl()
+   {
+      int state = getState();
+      
+      if(state == ec_state.EC_STATE_ACK.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_BOOT.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_ERROR.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_INIT.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_PRE_OP.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_SAFE_OP.swigValue())
+      {
+         
+      }
+      else if (state == ec_state.EC_STATE_OPERATIONAL.swigValue())
+      {
+         
+      }
    }
 
    

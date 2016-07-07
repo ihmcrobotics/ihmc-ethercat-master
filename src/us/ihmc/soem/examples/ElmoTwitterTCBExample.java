@@ -17,7 +17,7 @@ public class ElmoTwitterTCBExample implements Runnable
    public ElmoTwitterTCBExample() throws IOException
    {
       master.registerSlave(carrier);
-      master.configureDC(10000000);
+      master.enableDC();
       master.init();
       
       

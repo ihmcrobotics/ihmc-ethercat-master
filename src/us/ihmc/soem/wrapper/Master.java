@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.concurrent.locks.LockSupport;
 
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
@@ -19,6 +20,7 @@ public class Master
       NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
    }
    
+   private final EtherCATMasterController etherCATController = new EtherCATMasterController();
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
    private final ArrayList<SlaveShutdownHook> shutdownHooks = new ArrayList<>();
@@ -30,8 +32,6 @@ public class Master
    private ByteBuffer ioMap;
    
    private boolean enableDC = false;
-   private long dcCycleTime = 0;
-   private long dcControlIntegral = 0;
    
    /**
     * Create new EtherCAT master.
@@ -64,16 +64,20 @@ public class Master
       return null;
    }
    
-   public void configureDC(long cycleTime)
+   public void registerReadSDO(ReadSDO sdo)
+   {
+      etherCATController.addSDO(sdo);
+   }
+   
+   public void enableDC()
    {
       enableDC = true;
-      dcCycleTime = cycleTime;
    }
    
    /**
     * Initialize the master, configure all slaves registered with registerSlave() 
     * 
-    * On return, all slaves will be in OPERATIONAL mode.
+    * On return, all slaves will be in SAFE_OP mode.
     * 
     * @throws IOException
     */
@@ -156,34 +160,45 @@ public class Master
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
 
       
-      ec_slavet allSlaves = soem.ecx_slave(context, 0);
-      allSlaves.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
-      soem.ecx_writestate(context, 0);
-      
-      int chk = 40;
-      /* wait for all slaves to reach OP state */
-      do
-      {
-         soem.ecx_send_processdata(context);
-         soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-         soem.ecx_statecheck(context, 0, ec_state.EC_STATE_OPERATIONAL.swigValue(), 50000);
-      }
-      while ((chk-- > 0) && (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue()));
-      
+//       ec_slavet allSlaves = soem.ecx_slave(context, 0);
+//       allSlaves.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
+//       soem.ecx_writestate(context, 0);
+//       
+//       int chk = 40;
+//       /* wait for all slaves to reach OP state */
+//       do
+//       {
+//          soem.ecx_send_processdata(context);
+//          soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+//          soem.ecx_statecheck(context, 0, ec_state.EC_STATE_OPERATIONAL.swigValue(), 50000);
+//       }
+//       while ((chk-- > 0) && (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue()));
+//       if (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue())
+//       {
+//          
+//          soem.ecx_readstate(context);
+//   
+//          for(Slave slave : slaveMap)
+//          {
+//             System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
+//          }
+//          
+//          throw new IOException("Cannot bring all slaves in OP state");
+//       }
 
-      /* wait for all slaves to reach OP state */
-      if (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue())
-      {
-         
-         soem.ecx_readstate(context);
-
-         for(Slave slave : slaveMap)
-         {
-            System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
-         }
-         
-         throw new IOException("Cannot bring all slaves in OP state");
-      }
+      
+      etherCATController.start();
+   }
+   
+   /**
+    * This function switches the slave to OP mode. 
+    * 
+    * This function will return immediatly. The state chang
+    * 
+    */
+   public void switchToOperational()
+   {
+      
    }
    
    public void shutdown()
@@ -211,36 +226,61 @@ public class Master
    }
    
    
-   /* PI calculation to get linux time synced to DC time */
-   
-   /**
-    * Simple PI controller to be used to synchronize the control loop with the 
-    * Distributed Clocks feature of EtherCAT.   
-    * 
-    * @param clockTime 
-    * @param syncOffset Offset from the start of the DC sync pulse.
-    * 
-    * @return Offset in NS to add to the current tick duration to synchronize the clocks
-    */
-   public long calculateDCOffsetTime(long clockTime, long syncOffset)
+   public long getDCTime()
    {
-      if(enableDC)
+      return soem.ecx_dcTime(context);
+   }
+   
+   private class EtherCATMasterController extends Thread
+   {
+      private volatile boolean running = false;
+      private final ArrayList<SDO> SDOs = new ArrayList<>();
+      
+      public EtherCATMasterController()
       {
-         long reftime = soem.ecx_dcTime(context);
-         
-         /* set linux sync point 50us later than DC sync, just as example */
-         long delta = (reftime - syncOffset) % dcCycleTime;
-         if(delta> (dcCycleTime /2)) { delta= delta - dcCycleTime; }
-         if(delta>0){ dcControlIntegral++; }
-         if(delta<0){ dcControlIntegral--; }
-         return -(delta / 100) - (dcControlIntegral /20);
+         super("EtherCATController");
       }
-      else
+      
+      private void addSDO(SDO sdo)
       {
-         return 0;
+         if(running)
+         {
+            // Massive threading problems will be introduced when this is allowed.
+            throw new RuntimeException("Cannot register new SDOs after the master has started");
+         }
+         
+         SDOs.add(sdo);
+      }
+      
+      @Override
+      public void run()
+      {
+         System.out.println("Starting EtherCAT control thread");
+         
+         while(running)
+         {
+            
+
+            for(int i = 0; i < slaves.size(); i++)
+            {
+               slaves.get(i).doEtherCATStateControl();
+            }
+            
+            for(int i = 0; i < SDOs.size(); i++)
+            {
+               SDOs.get(i).updateInMasterThread();
+            }
+            
+            LockSupport.parkNanos(100000000); // Wait 100ms
+         }
+         
+      }
+      
+      @Override
+      public void start()
+      {
+         running = true;
+         super.start();
       }
    }
-
-   
-   
 }
