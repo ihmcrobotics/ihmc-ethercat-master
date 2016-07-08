@@ -7,11 +7,9 @@ public abstract class SDO
 {
 
    protected enum State
-      {
-         REQUEST_NEW_DATA,
-         REQUEST_SUCCESS,
-         IDLE
-      }
+   {
+      REQUEST_NEW_DATA, REQUEST_SUCCESS, IDLE
+   }
 
    protected final Slave slave;
    protected final int index;
@@ -19,7 +17,6 @@ public abstract class SDO
    protected final int size;
    protected final ByteBuffer buffer;
    private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-
 
    protected SDO(Slave slave, int index, int subindex, int size)
    {
@@ -30,13 +27,12 @@ public abstract class SDO
       buffer = ByteBuffer.allocateDirect(size);
 
    }
-   
 
    protected boolean checkIfRequestSuccess()
    {
       return state.compareAndSet(State.REQUEST_SUCCESS, State.IDLE);
    }
-   
+
    protected void requestUpdateOnNextTick()
    {
       state.compareAndSet(State.IDLE, State.REQUEST_NEW_DATA);
@@ -46,27 +42,27 @@ public abstract class SDO
    {
       return state.get() == State.REQUEST_SUCCESS;
    }
-   
+
    protected boolean sdoIsIdle()
    {
       return state.get() == State.IDLE;
    }
-   
+
    protected abstract boolean doTransaction();
-   
+
    void updateInMasterThread()
    {
       State currentState = state.get();
-      
-      switch(currentState)
+
+      switch (currentState)
       {
       case REQUEST_NEW_DATA:
-         if(doTransaction())
+         if (doTransaction())
          {
             state.set(State.REQUEST_SUCCESS);
          }
          break;
-         
+
       case REQUEST_SUCCESS:
       case IDLE:
          break;

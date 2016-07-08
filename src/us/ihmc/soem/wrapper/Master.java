@@ -54,7 +54,8 @@ public class Master
       for(int i = 0; i < slaves.size(); i++)
       {
          Slave slave = slaves.get(i);
-         
+         System.out.println(slave);
+         System.out.println(ec_slave.getAliasadr());
          if(slave.getAliasAddress() == ec_slave.getAliasadr() &&
                slave.getConfigAddress() == ec_slave.getConfigindex())
          {
@@ -100,7 +101,14 @@ public class Master
       
       if(slaves.size() != slavecount)
       {
-         throw new IOException("Not all slaves are online, got " + slavecount + " slaves, expected " + slaves.size());
+         if(slaves.size() < slavecount)
+         {
+            throw new IOException("Not all slaves are configured, got " + slavecount + " slaves, expected " + slaves.size());
+         }
+         else
+         {
+            throw new IOException("Not all slaves are online, got " + slavecount + " slaves, expected " + slaves.size());
+         }
       }
       
       slaveMap = new Slave[slavecount];
@@ -128,6 +136,10 @@ public class Master
          
          
       }
+      
+
+      
+      
       ioMap = ByteBuffer.allocateDirect(processDataSize);
       ioMap.order(ByteOrder.nativeOrder());
       
@@ -136,12 +148,25 @@ public class Master
       if(ioBufferSize != processDataSize)
       {
          throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
-      }
+      }      
       
+
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
          throw new IOException("Cannot transfer to SAFE_OP state");
       }      
+      
+      if(enableDC)
+      {
+         boolean dcCapable = soem.ecx_configdc(context) == (short)1;
+         enableDC = dcCapable;
+         ec_slavet allSlaves = soem.ecx_slave(context, 0);
+         int masterClock = allSlaves.getDCnext();
+         
+         slaves.get(masterClock - 1).setDCMasterClock(true);
+         
+         System.out.println("DC ENABLED " + enableDC + " master clock is " + masterClock);
+      }
       
       for(int i = 0; i < slavecount; i++)
       {
@@ -150,16 +175,10 @@ public class Master
       }
       
       
-      if(enableDC)
-      {
-         boolean dcCapable = soem.ecx_configdc(context) == (short)1;
-         enableDC = dcCapable;
-      }
-      
       soem.ecx_send_processdata(context);
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-
-      
+//
+//      
 //       ec_slavet allSlaves = soem.ecx_slave(context, 0);
 //       allSlaves.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
 //       soem.ecx_writestate(context, 0);
@@ -185,9 +204,9 @@ public class Master
 //          
 //          throw new IOException("Cannot bring all slaves in OP state");
 //       }
-
-      
       etherCATController.start();
+      
+      send();
    }
    
    /**
@@ -259,7 +278,7 @@ public class Master
          
          while(running)
          {
-            
+            soem.ecx_readstate(context);
 
             for(int i = 0; i < slaves.size(); i++)
             {
