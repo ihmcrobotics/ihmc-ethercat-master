@@ -8,7 +8,7 @@ public class EL3314 extends Slave
 {
    
    
-   class Input extends TxPDO
+   public class Input extends TxPDO
    {
       
       

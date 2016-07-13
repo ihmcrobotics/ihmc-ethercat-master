@@ -15,6 +15,9 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
 
 public class Master
 {
+   
+   private static final boolean TRACE = true;
+   
    static
    {
       NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
@@ -42,20 +45,12 @@ public class Master
    {
       this.iface = iface;
    }
-      
-   @Deprecated
-   public void activate() throws IOException
-   {
-      init();
-   }
    
    private Slave getSlave(ec_slavet ec_slave)
    {
       for(int i = 0; i < slaves.size(); i++)
       {
          Slave slave = slaves.get(i);
-         System.out.println(slave);
-         System.out.println(ec_slave.getAliasadr());
          if(slave.getAliasAddress() == ec_slave.getAliasadr() &&
                slave.getConfigAddress() == ec_slave.getConfigindex())
          {
@@ -75,6 +70,14 @@ public class Master
       enableDC = true;
    }
    
+   private void trace(String msg)
+   {
+      if(TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] " + msg);
+      }
+   }
+   
    /**
     * Initialize the master, configure all slaves registered with registerSlave() 
     * 
@@ -84,21 +87,40 @@ public class Master
     */
    public void init() throws IOException
    {
+      trace("Creating context");
       context = soem.ecx_create_context();
+      
+      trace("Context created");
       
       if(soem.ecx_init(context, iface) == 0)
       {
          throw new IOException("Cannot open interface " + iface);
       }
       
+      trace("Opened interface");
+      
       
       if(soem.ecx_config_init(context, (short)0) == 0)
       {
          throw new IOException("Cannot initialize slaves");
       }
+      trace("Configured slaves");
+      
+      if(enableDC)
+      {
+         boolean dcCapable = soem.ecx_configdc(context) == (short)1;
+         enableDC = dcCapable;
+         ec_slavet allSlaves = soem.ecx_slave(context, 0);
+         int masterClock = allSlaves.getDCnext();
+         
+         slaves.get(masterClock - 1).setDCMasterClock(true);
+         
+         trace("DC ENABLED " + enableDC + " master clock is " + masterClock);
+      }
       
       int slavecount = soem.ecx_slavecount(context);
       
+      trace("Got slave count");
       if(slaves.size() != slavecount)
       {
          if(slaves.size() < slavecount)
@@ -118,6 +140,8 @@ public class Master
          ec_slavet ec_slave = soem.ecx_slave(context, i + 1);
          Slave slave = getSlave(ec_slave);
          
+         trace(slave.toString());
+         
          if(slave != null)
          {
             slave.configure(context, ec_slave, i + 1);
@@ -134,8 +158,8 @@ public class Master
          config &= ~soemConstants.ECT_COEDET_SDOCA;
          ec_slave.setCoEdetails(config);
          
-         
       }
+      trace("Configured slaves");
       
 
       
@@ -149,61 +173,31 @@ public class Master
       {
          throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
       }      
-      
+
+      trace("Configured map");
 
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
          throw new IOException("Cannot transfer to SAFE_OP state");
       }      
       
-      if(enableDC)
-      {
-         boolean dcCapable = soem.ecx_configdc(context) == (short)1;
-         enableDC = dcCapable;
-         ec_slavet allSlaves = soem.ecx_slave(context, 0);
-         int masterClock = allSlaves.getDCnext();
-         
-         slaves.get(masterClock - 1).setDCMasterClock(true);
-         
-         System.out.println("DC ENABLED " + enableDC + " master clock is " + masterClock);
-      }
+      trace("In SAFEOP");
+      
+      
       
       for(int i = 0; i < slavecount; i++)
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
+         slave.configureDC(enableDC);
       }
+      trace("Linked buffers");
       
       
       soem.ecx_send_processdata(context);
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-//
-//      
-//       ec_slavet allSlaves = soem.ecx_slave(context, 0);
-//       allSlaves.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
-//       soem.ecx_writestate(context, 0);
-//       
-//       int chk = 40;
-//       /* wait for all slaves to reach OP state */
-//       do
-//       {
-//          soem.ecx_send_processdata(context);
-//          soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-//          soem.ecx_statecheck(context, 0, ec_state.EC_STATE_OPERATIONAL.swigValue(), 50000);
-//       }
-//       while ((chk-- > 0) && (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue()));
-//       if (allSlaves.getState() != ec_state.EC_STATE_OPERATIONAL.swigValue())
-//       {
-//          
-//          soem.ecx_readstate(context);
-//   
-//          for(Slave slave : slaveMap)
-//          {
-//             System.out.println(slave.toString() + " [" + slave.getState() + "], AL Status: " + slave.getALStatusMessage());
-//          }
-//          
-//          throw new IOException("Cannot bring all slaves in OP state");
-//       }
+      
+      trace("Initial send/receive");
       etherCATController.start();
       
       send();

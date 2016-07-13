@@ -5,34 +5,69 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import us.ihmc.realtime.MonotonicTime;
+import us.ihmc.realtime.PeriodicParameters;
+import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.soem.slaves.EK1100;
 import us.ihmc.soem.slaves.EL3314;
+import us.ihmc.soem.slaves.EL4134;
+import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
 
-public class DCExample implements Runnable
+public class DCExample extends DistributedClockRealtimeThread
 {
 
-   private final Master master = new Master("enx94103eb91527");
+   private static final int period = 1000000;
+   private final Master master;
    private final EK1100 ek1100 = new EK1100(0, 0);
    private final EL3314 el3314 = new EL3314(601, 0);
+   private final EL4134 el4134 = new EL4134(202, 0);
+   
+   private final SerialPortRTSPulseGenerator pulseGenerator = new SerialPortRTSPulseGenerator("/dev/ttyS7");
+   
+   private boolean signal = false;
    
    public DCExample() throws IOException
    {
+      super("eth2", new PriorityParameters(PriorityParameters.getMaximumPriority()), new PeriodicParameters(new MonotonicTime(0,period)), 100000);
+      master = getMaster();
       master.registerSlave(ek1100);
       master.registerSlave(el3314);
+      master.registerSlave(el4134);
+      ek1100.configureDCSync0(true, period, 0);
+      el3314.configureDCSync0(true, period, 0);
+      el4134.configureDCSync01(true, period, 100000, 0);
       master.enableDC();
       master.init();
-      ek1100.configureDCSync0(true, 1000000, 0);
-      el3314.configureDCSync0(true, 1000000, 0);
-      
       
    }
 
    @Override
    public void run()
    {
-     master.receive();
-     master.send();
+     int counter = 0;
+     long dcTimeA = 0;
+     while(true)
+     {
+        waitForNextPeriodAndDoTransfer();
+        
+        signal = !signal;
+        pulseGenerator.setRTS(signal);
+        el4134.setOut1(signal?Short.MAX_VALUE:Short.MIN_VALUE);
+
+        
+        
+//        if(counter++ % 100 == 0)
+//        {
+//           pulseGenerator.setRTS(true);
+//           el4134.setOut1(Short.MAX_VALUE);           
+//        }
+//        else
+//        {
+//           pulseGenerator.setRTS(false);
+//           el4134.setOut1(Short.MIN_VALUE);                      
+//        }
+     }
 
    }
    
@@ -41,9 +76,8 @@ public class DCExample implements Runnable
    public static void main(String[] args) throws IOException
    {
       DCExample ek1100example = new DCExample();
-      
-      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-      executor.scheduleAtFixedRate(ek1100example, 0, 10, TimeUnit.MILLISECONDS);
+      ek1100example.start();
+      ek1100example.join();
    }
 
 }

@@ -17,7 +17,7 @@ public class Slave
 
    public enum State
    {
-      BOOT, INIT, PRE_OP, SAFE_OP, SAFE_OPERR, OP, OFFLINE
+      BOOT, INIT, PRE_OP, PRE_OPERR, SAFE_OP, SAFE_OPERR, OP, OFFLINE
    }
 
    private final int aliasAddress;
@@ -33,6 +33,17 @@ public class Slave
    
    private boolean dcMasterClock = false;
    private int dcOffsetSamples = 0;
+   private boolean dcEnabled;
+
+   private volatile State state = State.OFFLINE;
+   
+   
+   private boolean sync0enable = false;
+   private long sync0time = 0;
+   private int sync0shift = 0;
+   
+   private boolean sync1enable = false;
+   private long sync1time = 0;
 
    public Slave(int aliasAddress, int configAddress)
    {
@@ -49,6 +60,28 @@ public class Slave
       this.context = context;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
+      
+      // Seems to be neccessary to disable DC sync before going to safe OP 
+//      soem.ecx_dcsync0(context, slaveIndex, (short) 0, 0, 0);
+      
+      
+      
+      if(sync0enable)
+      {
+         if(sync1enable)
+         {
+            soem.ecx_dcsync01(context, slaveIndex, (short)1, sync0time, sync1time, sync0shift);
+         }
+         else
+         {
+            soem.ecx_dcsync0(context, slaveIndex, (short) 1 , sync0time, sync0shift);
+         }
+      }
+      else
+      {
+         soem.ecx_dcsync0(context, slaveIndex, (short) 0 , 0, 0);
+      }
+
 
       for (int i = 0; i < syncManagers.length; i++)
       {
@@ -64,7 +97,7 @@ public class Slave
       }
 
    }
-   
+
    void setDCMasterClock(boolean isDCMasterClock)
    {
       this.dcMasterClock = isDCMasterClock;
@@ -209,8 +242,31 @@ public class Slave
 
    public void configureDCSync0(boolean enable, long sync0time, int sync0shift)
    {
-      soem.ecx_dcsync0(context, slaveIndex, enable ? (short) 1 : (short) 0, sync0time, sync0shift);
-      System.out.println("DC ACTIVE" + ec_slave.getDCactive());
+      if(context != null)
+      {
+         throw new RuntimeException("Slave already active, cannot configure DC Sync");
+      }
+      
+      this.sync0enable = enable;
+      this.sync0time = sync0time;
+      this.sync0shift = sync0shift;
+      
+   }
+   
+   public void configureDCSync01(boolean enable, long sync0time, long sync1time, int sync0shift)
+   {
+      if(context != null)
+      {
+         throw new RuntimeException("Slave already active, cannot configure DC Sync");
+      }
+      
+      this.sync0enable = enable;
+      this.sync0time = sync0time;
+      this.sync0shift = sync0shift;
+      
+      this.sync1enable = enable;
+      this.sync1time = sync1time;
+      
    }
 
    public int processDataSize()
@@ -243,7 +299,7 @@ public class Slave
       return "Slave [aliasAddress=" + aliasAddress + ", configAddress=" + configAddress + "]";
    }
 
-   public void linkBuffers(ByteBuffer ioMap)
+   void linkBuffers(ByteBuffer ioMap)
    {
       int inputOffset = soem.ecx_inputoffset(ec_slave, ioMap);
 
@@ -287,10 +343,15 @@ public class Slave
 
    public boolean isOperational()
    {
-      return true;
+      return getState() == State.OP;
    }
 
    public State getState()
+   {
+      return state;
+   }
+
+   private State requestState()
    {
       int state = ec_slave.getState();
       if (state == ec_state.EC_STATE_BOOT.swigValue())
@@ -304,6 +365,10 @@ public class Slave
       else if (state == ec_state.EC_STATE_PRE_OP.swigValue())
       {
          return State.PRE_OP;
+      }
+      else if (state == ec_state.EC_STATE_PRE_OP.swigValue() + ec_state.EC_STATE_ERROR.swigValue())
+      {
+         return State.PRE_OPERR;
       }
       else if (state == ec_state.EC_STATE_SAFE_OP.swigValue())
       {
@@ -337,7 +402,7 @@ public class Slave
    /**
     * Blocking
     */
-   public int getDCSyncOffset()
+   private int getDCSyncOffset()
    {
 
       int wkc = soem.ecx_FPRD(context.getPort(), ec_slave.getConfigadr(), soemConstants.ECT_REG_DCSYSDIFF, 4, dcDiff, soemConstants.EC_TIMEOUTRET);
@@ -353,7 +418,9 @@ public class Slave
    public void doEtherCATStateControl()
    {
 
-      switch (getState())
+      this.state = requestState();
+
+      switch (this.state)
       {
       case BOOT:
          break;
@@ -362,44 +429,60 @@ public class Slave
       case PRE_OP:
          dcOffsetSamples = 0;
          break;
+      case PRE_OPERR:
+         System.out.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
+         break;
       case SAFE_OP:
-         int dcOffset = getDCSyncOffset();
-         if (dcOffset < MAX_DC_OFFSET && dcOffset > -MAX_DC_OFFSET)
+         if (dcEnabled)
          {
-            // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
-            if(dcOffset != 0 || dcMasterClock)  
+            int dcOffset = getDCSyncOffset();
+            if (dcOffset < MAX_DC_OFFSET && dcOffset > -MAX_DC_OFFSET)
             {
-               
-               System.out.println("DC OFFSET " + dcOffset);
-               if(dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
+               // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
+               if (dcOffset != 0 || dcMasterClock)
                {
-                  ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
-                  soem.ecx_writestate(context, slaveIndex);
-                  System.out.println("SWITCHING TO OP");
-               }
-               
-            }
-            else
-            {
-               dcOffsetSamples = 0;
-            }
+                  if (dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
+                  {
+                     ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
+                     soem.ecx_writestate(context, slaveIndex);
+                     System.out.println("SWITCHING TO OP");
+                  }
 
+               }
+               else
+               {
+                  dcOffsetSamples = 0;
+               }
+            }
+         }
+         else
+         {
+            System.out.println("Slave " + slaveIndex + " has DC disabled, switching to OP");
+            ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
+            soem.ecx_writestate(context, slaveIndex);
          }
          break;
       case SAFE_OPERR:
+         System.out.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
          dcOffsetSamples = 0;
          break;
       case OP:
          dcOffsetSamples = 0;
-         if(!dcMasterClock)
-         {
-            System.out.println("DC OFFSET " + getDCSyncOffset());
-         }
          break;
-      case OFFLINE:
+      case OFFLINE:         
          break;
       }
 
+   }
+
+   void configureDC(boolean enableDC)
+   {
+      this.dcEnabled = enableDC;
+//      if(enableDC)
+//      {
+//         soem.ecx_dcsync0(context, slaveIndex, sync0enable ? (short) 1 : (short) 0, sync0time, sync0shift);
+//         System.out.println("DC ACTIVE" + ec_slave.getDCactive());
+//      }
    }
 
 }
