@@ -5,6 +5,12 @@ import us.ihmc.realtime.PeriodicParameters;
 import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.realtime.RealtimeThread;
 
+/**
+ * Thread that is synchronized to the DC Master clock
+ * 
+ * @author Jesper Smith
+ *
+ */
 public class DistributedClockRealtimeThread extends RealtimeThread
 {
    private final Master master;
@@ -22,6 +28,14 @@ public class DistributedClockRealtimeThread extends RealtimeThread
       this(new Master(iface), priorityParameters, periodicParameters, syncOffset);
    }
 
+   /**
+    * Create new Thread synchornized to the DC Master Clock
+    * 
+    * @param master EtherCAT Master
+    * @param priorityParameters Desired priority
+    * @param periodicParameters Desired period, start time is ignored
+    * @param syncOffset Waiting time between the DC Master Clock and calling master.send(). Recommended to be between 50000ns and 100000ns depending on system, CPU load and loop times. 
+    */
    public DistributedClockRealtimeThread(Master master, PriorityParameters priorityParameters, PeriodicParameters periodicParameters, long syncOffset)
    {
       super(priorityParameters, periodicParameters);
@@ -34,19 +48,35 @@ public class DistributedClockRealtimeThread extends RealtimeThread
       this.cycleTimeInNs = periodicParameters.getPeriod().asNanoseconds();
       this.syncOffset = syncOffset;
       this.master = master;
-      master.enableDC();
+      master.enableDC(periodicParameters.getPeriod().asNanoseconds());
    }
 
+   /**
+    * @return the EtherCAT master
+    */
    public Master getMaster()
    {
       return master;
    }
+   
 
-   public void waitForNextPeriodAndDoTransfer()
+   /**
+    * Call every tick to wait for the next trigger time followed by the EtherCAT transaction.
+    * 
+    * @return true if deadline was met and the EtherCAT transaction made
+    */
+   public boolean waitForNextPeriodAndDoTransfer()
    {
-      waitForNextPeriod();
-      master.send();
-      master.receive();
+      if(waitForNextPeriod() > 0)
+      {
+         master.send();
+         master.receive();
+         return true;
+      }
+      else
+      {
+         return false;
+      }
    }
    
    /* PI calculation to get linux time synced to DC time */
@@ -81,7 +111,10 @@ public class DistributedClockRealtimeThread extends RealtimeThread
    }
 
    
-   int i = 0;
+   /**
+    * Wait for next trigger period. It is recommended to use waitForNextPeriodAndDoTransfer()
+    * 
+    */
    @Override
    public final long waitForNextPeriod()
    {
@@ -97,7 +130,6 @@ public class DistributedClockRealtimeThread extends RealtimeThread
       triggerTime.add(this.update);
       
       return super.waitUntil(triggerTime);
-//      return super.waitForNextPeriod();
    }
 
 }

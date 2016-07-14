@@ -17,11 +17,10 @@ public class ElmoTwitterTCBExample implements Runnable
    public ElmoTwitterTCBExample() throws IOException
    {
       master.registerSlave(carrier);
-      master.enableDC();
+      master.enableDC(10000000);
       master.init();
       
       
-      carrier.configureDCSync0(true, 10000000, 0);
       
       // Test SDO reading
       byte receiveSDOLength = carrier.readSDOByte(0x1c12, 0x0);

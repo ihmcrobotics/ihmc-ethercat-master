@@ -3,7 +3,6 @@ package us.ihmc.soem.slaves;
 import javolution.io.Struct.Unsigned16;
 import us.ihmc.soem.wrapper.Master;
 import us.ihmc.soem.wrapper.Slave;
-import us.ihmc.soem.wrapper.SlaveShutdownHook;
 
 public abstract class DSP402Slave extends Slave
 {
@@ -51,8 +50,6 @@ public abstract class DSP402Slave extends Slave
    {
       super(alias, position);
       this.master = master;
-      
-      master.addSlaveShutDownHook(new DSP402ShutDownHook());
    }
 
 
@@ -246,24 +243,17 @@ public abstract class DSP402Slave extends Slave
    protected abstract Unsigned16 getControlWordPDOEntry();
 
    
-   class DSP402ShutDownHook implements SlaveShutdownHook
+   @Override
+   protected void shutdown()
    {
-
-      @Override
-      public void shutdown()
-      {
-
-         disableDrive();
-         doStateControl();
-            
-      }
-
-      @Override
-      public boolean hasShutdown()
-      {
-         return !isDriveOperational();
-      }
-      
-      
+      disableDrive();
+      doStateControl();
    }
+   
+   @Override 
+   protected boolean hasShutdown()
+   {
+      return !isDriveOperational();
+   }
+   
 }

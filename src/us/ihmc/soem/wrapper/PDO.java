@@ -4,6 +4,14 @@ import java.nio.ByteOrder;
 
 import javolution.io.Struct;
 
+/**
+ * PDO class based on Javalution's struct. 
+ * 
+ * This represents a packed struct, PDO entries have to be defined as they appear in the slaves PDO configuration with the correct size.
+ * 
+ * @author Jesper Smith
+ *
+ */
 abstract class PDO extends Struct
 {
    private final short address;

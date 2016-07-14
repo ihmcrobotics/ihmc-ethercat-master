@@ -3,6 +3,12 @@ package us.ihmc.soem.wrapper;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+/**
+ * Description of the SyncManager. Holds PDO information 
+ * 
+ * @author Jesper Smith
+ *
+ */
 public class SyncManager
 {
    public enum MailbusDirection 
@@ -18,39 +24,62 @@ public class SyncManager
    
    private MailbusDirection direction = MailbusDirection.UNKNOWN;
    
+   /**
+    * Create new Sync Manager at index 0-3. 
+    * 
+    * @param index Index of the sync manager, 0 - 3.
+    * @param configurePDOs If true, the PDO's will be configured on the slave to match the desired configuration.
+    */
    public SyncManager(int index, boolean configurePDOs)
    {
       this.index = index;
       this.cconfigurePDOs = configurePDOs;
    }
    
+   /**
+    * Internal function that sends SDO requests to configure PDOs.
+    * 
+    * @param slave
+    */
    void configure(Slave slave)
    {
       if(cconfigurePDOs)
       {
          int pdoConfigurationIndex = 0x1C10 + index;
-         
+         Master.trace("Setting PDO entries to zero");
          
          // Set the size of the SM configuration array to zero, allows writing to the elements
          slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
          
+         Master.trace("Writing PDO entries");
          // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)
          {
             slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
          }
          
+         Master.trace("Writing Number of PDO entries");
          // Set the correct size of the SM array
          slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
       }
    }
 
+   /**
+    * 
+    * @return Index of this syncmanager, 0 - 3
+    */
    public int getIndex()
    {
       return index;
    }
 
-   
+   /**
+    * Register a new PDO.
+    * 
+    * SyncManagers can only register RxPDO's or TxPDO's. If a TxPDO has previously been registered, this function will fail.
+    * 
+    * @param pdo
+    */
    public void registerPDO(RxPDO pdo)
    {
       switch(direction)
@@ -65,6 +94,14 @@ public class SyncManager
       }
    }
    
+
+   /**
+    * Register a new PDO.
+    * 
+    * SyncManagers can only register RxPDO's or TxPDO's. If a RxPDO has previously been registered, this function will fail.
+    * 
+    * @param pdo
+    */
    public void registerPDO(TxPDO pdo)
    {
       switch(direction)
@@ -79,11 +116,18 @@ public class SyncManager
       }
    }
    
+   /**
+    * 
+    * @return The mailbus direction (TXPDO or RXPDO) based on PDO's registered
+    */
    public MailbusDirection getMailbusDirection()
    {
       return direction;
    }
 
+   /**
+    * @return size of all PDOs in this sync manager
+    */
    public int processDataSize()
    {
       int size = 0;
@@ -94,7 +138,16 @@ public class SyncManager
       return size;
    }
 
-   public int linkBuffers(ByteBuffer ioMap, int inputOffset)
+   
+   /**
+    * Internal function. Maps the PDOs to the underlying data storage.
+    * 
+    * @param ioMap
+    * @param inputOffset
+    * 
+    * @return Offset for the next syncmanager.
+    */
+   int linkBuffers(ByteBuffer ioMap, int inputOffset)
    {
       for(int i = 0; i < PDOs.size(); i++)
       {

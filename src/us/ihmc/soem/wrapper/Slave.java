@@ -10,11 +10,21 @@ import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.soem.wrapper.SyncManager.MailbusDirection;
 
-public class Slave
+/**
+ * EtherCAT slave description. Base class for all EtherCAT slaves
+ * 
+ * @author Jesper Smith
+ *
+ */
+public abstract class Slave
 {
    public static final int MAX_DC_OFFSET = 1000;
    public static final int MAX_DC_OFFSET_SAMLES = 10;
 
+   /**
+    * EtherCAT state machine states.
+    *
+    */
    public enum State
    {
       BOOT, INIT, PRE_OP, PRE_OPERR, SAFE_OP, SAFE_OPERR, OP, OFFLINE
@@ -38,13 +48,13 @@ public class Slave
    private volatile State state = State.OFFLINE;
    
    
-   private boolean sync0enable = false;
-   private long sync0time = 0;
-   private int sync0shift = 0;
    
-   private boolean sync1enable = false;
-   private long sync1time = 0;
-
+   /**
+    * Create a new slave and set the address 
+    * 
+    * @param aliasAddress The address of the slave.
+    * @param configAddress Position relative to aliasAddress
+    */
    public Slave(int aliasAddress, int configAddress)
    {
       this.aliasAddress = aliasAddress;
@@ -55,42 +65,34 @@ public class Slave
       dcDiff.order(ByteOrder.nativeOrder());
    }
 
-   void configure(ecx_contextt context, ec_slavet slave, int slaveIndex)
+   /**
+    * Internal function. Configures the slave before the switch from pre-op to safe-op. Sets up the PDO assignment.
+    * 
+    * @param context
+    * @param slave
+    * @param slaveIndex
+    */
+   
+   void configure(ecx_contextt context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
    {
       this.context = context;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
-      
-      // Seems to be neccessary to disable DC sync before going to safe OP 
-//      soem.ecx_dcsync0(context, slaveIndex, (short) 0, 0, 0);
-      
-      
-      
-      if(sync0enable)
-      {
-         if(sync1enable)
-         {
-            soem.ecx_dcsync01(context, slaveIndex, (short)1, sync0time, sync1time, sync0shift);
-         }
-         else
-         {
-            soem.ecx_dcsync0(context, slaveIndex, (short) 1 , sync0time, sync0shift);
-         }
-      }
-      else
-      {
-         soem.ecx_dcsync0(context, slaveIndex, (short) 0 , 0, 0);
-      }
+
+      Master.trace("Configuring DC settings");
+      configure(enableDC, cycleTimeInNs);
 
 
       for (int i = 0; i < syncManagers.length; i++)
       {
          if (syncManagers[i] != null)
          {
+            Master.trace("Configuring Sync Manager " + i);
             syncManagers[i].configure(this);
          }
       }
 
+      Master.trace("Checking start bit offsets");
       if (ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
       {
          throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
@@ -98,21 +100,43 @@ public class Slave
 
    }
 
+   /**
+    * Internal function.
+    * 
+    * @param isDCMasterClock
+    */
    void setDCMasterClock(boolean isDCMasterClock)
    {
       this.dcMasterClock = isDCMasterClock;
    }
 
-   public long getInputBytes()
+   /**
+    * Internal function. Amount of bytes input data takes according to the physical slave configuration.
+    * 
+    * @return the amount of bytes the input data buffer needs
+    */
+   long getInputBytes()
    {
       return ec_slave.getIbytes();
    }
 
-   public long getOutputBytes()
+   /**
+    * Internal function. Amount of bytes output data takes according to the physical slave configuration.
+    * 
+    * @return the amount of bytes the output data buffer needs
+    */
+   long getOutputBytes()
    {
       return ec_slave.getObytes();
    }
 
+   /**
+    * Registers a SyncManager. 
+    * 
+    * Every slave has 4 sync managers, but only the used ones have to be registered.  
+    * 
+    * @param syncManager
+    */
    public void registerSyncManager(SyncManager syncManager)
    {
       if (syncManagers[syncManager.getIndex()] != null)
@@ -123,46 +147,117 @@ public class Slave
       syncManagers[syncManager.getIndex()] = syncManager;
    }
 
+   /**
+    * Write the data in buffer from position 0 to buffer.position() to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param buffer data
+    * @return working counter
+    */
    public int writeSDO(int index, int subindex, ByteBuffer buffer)
    {
       return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 9, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
    }
 
+   
+   /**
+    * Writes a double to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, double value)
    {
       sdoBuffer.clear();
       sdoBuffer.putDouble(0, value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
-
+   
+   /**
+    * Writes a long to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, long value)
    {
       sdoBuffer.clear();
       sdoBuffer.putLong(0, value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
-
+   
+   /**
+    * Writes a float to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, float value)
    {
       sdoBuffer.clear();
       sdoBuffer.putFloat(0, value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
-
+   
+   /**
+    * Writes a int to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, int value)
    {
       sdoBuffer.clear();
       sdoBuffer.putInt(0, value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
-
+   
+   /**
+    * Writes a short to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, short value)
    {
       sdoBuffer.clear();
       sdoBuffer.putShort(0, value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
-
+   
+   /**
+    * Writes a byte to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param value data
+    * @return working counter
+    */
    public int writeSDO(int index, int subIndex, byte value)
    {
       sdoBuffer.clear();
@@ -175,101 +270,188 @@ public class Slave
     * 
     * Position and limit are set accordingly.
     * 
-    * @param index
-    * @param subIndex
-    * @param sdoBuffer
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * @param size Size of the SDO data in bytes
+    * @param sdoBuffer buffer to store data, has to be at least size bytes
     * 
     * @return working counter
     */
    public int readSDOToBuffer(int index, int subIndex, int size, ByteBuffer sdoBuffer)
    {
+      if(sdoBuffer.capacity() < size)
+      {
+         throw new RuntimeException("Cannot read data of size " + size + "bytes into buffer. Increase buffer size");
+      }
       int wc = soem.ecx_SDOread_java_helper(context, slaveIndex, index, (short) subIndex, (short) 0, size, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
       sdoBuffer.position(0);
       sdoBuffer.limit(size);
       return wc;
    }
-
+   
+   /**
+    * Read SDO with data of type byte (int8)
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public byte readSDOByte(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 1, sdoBuffer);
       return sdoBuffer.get();
    }
-
+   
+   /**
+    * Read SDO with data of type unsigned byte (uint8)
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public int readSDOUnsignedByte(int index, int subIndex)
    {
       return readSDOByte(index, subIndex) & 0xFF;
    }
 
+   
+   /**
+    * Read SDO with data of type short (int16).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public short readSDOShort(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 2, sdoBuffer);
       return sdoBuffer.getShort();
    }
 
+   /**
+    * Read SDO with data of type unsigned short (uint16).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public int readSDOUnsignedShort(int index, int subIndex)
    {
       return readSDOShort(index, subIndex) & 0xFFFF;
    }
 
+   
+   /**
+    * Read SDO with data of type int (int32).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public int readSDOInt(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 4, sdoBuffer);
       return sdoBuffer.getInt();
    }
 
+   /**
+    * Read SDO with data of type unsigned int (uint32).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public long readSDOUnsignedInt(int index, int subIndex)
    {
       return readSDOInt(index, subIndex) & 0xFFFFFFFFl;
    }
 
+   /**
+    * Read SDO with data of type long (int64).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public long readSDOLong(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 8, sdoBuffer);
       return sdoBuffer.getLong();
    }
 
+   /**
+    * Read SDO with data of type float (32 bit).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public float readSDOFloat(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 4, sdoBuffer);
       return sdoBuffer.getFloat();
    }
 
+   /**
+    * Read SDO with data of type double (64 bit).
+    * 
+    * @param index Index of the SDO
+    * @param subIndex Subindex of the SDO
+    * 
+    * @return SDO value
+    */
    public double readSDODouble(int index, int subIndex)
    {
       readSDOToBuffer(index, subIndex, 8, sdoBuffer);
       return sdoBuffer.getDouble();
    }
 
-   public void configureDCSync0(boolean enable, long sync0time, int sync0shift)
+   /**
+    * Configure the Sync 0 pulse of this slave 
+    * 
+    * Use only sync 0 if the AssignActive word in the XML description is #0400
+    * 
+    * @param enable enable or disable DC
+    * @param sync0time time between pulses
+    * @param sync0shift shift with respect to the control thread
+    */
+   protected void configureDCSync0(boolean enable, long sync0time, int sync0shift)
    {
-      if(context != null)
-      {
-         throw new RuntimeException("Slave already active, cannot configure DC Sync");
-      }
-      
-      this.sync0enable = enable;
-      this.sync0time = sync0time;
-      this.sync0shift = sync0shift;
-      
+      soem.ecx_dcsync0(context, slaveIndex, enable?(short) 1 :(short)0, sync0time, sync0shift);
+      this.dcEnabled = enable;
    }
    
-   public void configureDCSync01(boolean enable, long sync0time, long sync1time, int sync0shift)
+
+   /**
+    * Configure the Sync 0  and Sycn 1 pulse of this slave 
+    * 
+    * Use sync 0 and sync 1 if the AssignActive word in the XML description is #0700
+    * 
+    * @param enable enable or disable DC
+    * @param sync0time time between pulses
+    * @param sync1time offset of the sync 1 pulse with respect to the sync0 pulse
+    * @param sync0shift shift with respect to the control thread
+    */
+   protected void configureDCSync01(boolean enable, long sync0time, long sync1time, int sync0shift)
    {
-      if(context != null)
-      {
-         throw new RuntimeException("Slave already active, cannot configure DC Sync");
-      }
-      
-      this.sync0enable = enable;
-      this.sync0time = sync0time;
-      this.sync0shift = sync0shift;
-      
-      this.sync1enable = enable;
-      this.sync1time = sync1time;
-      
+      soem.ecx_dcsync01(context, slaveIndex, enable?(short) 1 :(short)0, sync0time, sync1time, sync0shift);
+      this.dcEnabled = enable;
    }
 
-   public int processDataSize()
+   /**
+    * Internal function. Gets the size of the underlying databuffer this slave needs, calculated from the configured PDO's. Should be getInputBytes() + getOutputBytes()
+    * 
+    * @return process data size
+    */
+   int processDataSize()
    {
       int size = 0;
       for (int i = 0; i < syncManagers.length; i++)
@@ -283,11 +465,19 @@ public class Slave
       return size;
    }
 
+   /**
+    * 
+    * @return Alias address
+    */
    public int getAliasAddress()
    {
       return aliasAddress;
    }
 
+   /**
+    * 
+    * @return Ring position
+    */
    public int getConfigAddress()
    {
       return configAddress;
@@ -299,6 +489,11 @@ public class Slave
       return "Slave [aliasAddress=" + aliasAddress + ", configAddress=" + configAddress + "]";
    }
 
+   /**
+    * Internal function, configures the syncmanagers and PDO data to backing memory storage.
+    * 
+    * @param ioMap
+    */
    void linkBuffers(ByteBuffer ioMap)
    {
       int inputOffset = soem.ecx_inputoffset(ec_slave, ioMap);
@@ -321,31 +516,70 @@ public class Slave
       }
    }
 
+   /**
+    * Get the AL status code. The AL status code is useful to debug problems switching to OP state
+    * 
+    * @return AL Status code
+    */
    public int getALStatusCode()
    {
       return ec_slave.getALstatuscode();
    }
 
+   /**
+    * Get human readable version of the AL Status code.
+    * 
+    * @return AL Status message
+    */
    public String getALStatusMessage()
    {
       return soem.ec_ALstatuscode2string(getALStatusCode());
    }
 
-   public SyncManager syncManager(int index)
+   /**
+    * Convenience function to address a syncmanager
+    * @param index
+    * 
+    * @return Sync Manager at index
+    */
+   protected SyncManager syncManager(int index)
    {
       return syncManagers[index];
    }
 
-   public SyncManager sm(int index)
+   /**
+    * Convenience function to address a syncmanager
+    * @param index
+    * 
+    * @return Sync Manager at index
+    */
+   protected SyncManager sm(int index)
    {
       return syncManager(index);
    }
 
+   /**
+    * 
+    * Returns if the state is operational.
+    * 
+    * The internal state gets updated on the house holding thread. The state can be delayed by several cycles.
+    * 
+    * @return true if the state is Operational.
+    */
    public boolean isOperational()
    {
       return getState() == State.OP;
    }
 
+
+   /**
+    * 
+    * Returns the slave state.
+    * 
+    * The internal state gets updated on the house holding thread. The state can be delayed by several cycles.
+    * 
+    * @return Slave state
+    */
    public State getState()
    {
       return state;
@@ -400,7 +634,7 @@ public class Slave
    }
 
    /**
-    * Blocking
+    * Blocking. Sends out a datagram to read the ECT_REG_DCSYSDIFF to read the maximum difference between the internal slave clock and the master clock
     */
    private int getDCSyncOffset()
    {
@@ -415,7 +649,14 @@ public class Slave
       return diff;
    }
 
-   public void doEtherCATStateControl()
+   
+   /**
+    * Internal function. Householding functionality. Gets called cyclically by the householding thread.
+    * 
+    * This function does the state control of the slave.
+    * 
+    */
+   void doEtherCATStateControl()
    {
 
       this.state = requestState();
@@ -474,15 +715,35 @@ public class Slave
       }
 
    }
+   
+   /**
+    * Shutdown hook for the slave. Use to clear up state machines
+    * 
+    * Will be called cyclically on shutdown till hasShutDown is true.
+    */
+   protected abstract void shutdown();
+   
+   /**
+    * Signal that the slave has succesfully been shutdown. 
+    * 
+    * Always returning true is valid and will result in skipping the shutdown() procedure for this slave.
+    * 
+    * @return true if the slave has shutdown
+    * 
+    */
+   protected abstract boolean hasShutdown();
 
-   void configureDC(boolean enableDC)
-   {
-      this.dcEnabled = enableDC;
-//      if(enableDC)
-//      {
-//         soem.ecx_dcsync0(context, slaveIndex, sync0enable ? (short) 1 : (short) 0, sync0time, sync0shift);
-//         System.out.println("DC ACTIVE" + ec_slave.getDCactive());
-//      }
-   }
+   
+   /**
+    * Callback method when configuring the slave. Use to set required SDOS and configure the correct DC settings.
+    * 
+    * If no DC is desired, call configureSync0(false,0,0)
+    * If only sync0 is desired (assignActivate = #0400) call configureDCSync0(true, cycleTimeInNs, shift0)
+    * If both sync0 and sync 1 are desired (assignActivate = #0700) call configureDCSync01
+    * 
+    * @param cycleTimeInNs
+    */
+   protected abstract void configure(boolean dcEnabled, long cycleTimeInNs);
+
 
 }

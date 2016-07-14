@@ -59,4 +59,31 @@ public class EL4134 extends Slave
    {
       out4.value.set((short) val);
    }
+
+   @Override
+   protected void shutdown()
+   {
+      // TODO Auto-generated method stub
+      
+   }
+   
+
+   @Override
+   protected boolean hasShutdown()
+   {
+      return true;
+   }
+
+   @Override
+   protected void configure(boolean dcEnabled, long cycleTimeInNs)
+   {
+      if(dcEnabled)
+      {
+         configureDCSync01(true, cycleTimeInNs, 100000, 0);
+      }
+      else
+      {
+         configureDCSync0(false, 0, 0);
+      }
+   }
 }

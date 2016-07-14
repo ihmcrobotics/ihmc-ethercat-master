@@ -13,6 +13,22 @@ import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
 
+/**
+ * 
+ * EtherCAT master class. 
+ * 
+ * This class is the main entry point for EtherCAT operations. It requires raw socket access, so it is recommended
+ * to be run as root or administrator. 
+ * 
+ * This class will create a seperate EtherCAT controller thread that does various non-realtime householding tasks for 
+ * the EtherCAT protocol, like state switching and SDO communication.
+ * 
+ * 
+ * If you want (recommended) to use Distributed Clocks, use in conjunction with DistrubutedCLockRealtimeThread.
+ * 
+ * @author Jesper Smith
+ *
+ */
 public class Master
 {
    
@@ -23,10 +39,10 @@ public class Master
       NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
    }
    
+   
    private final EtherCATMasterController etherCATController = new EtherCATMasterController();
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
-   private final ArrayList<SlaveShutdownHook> shutdownHooks = new ArrayList<>();
    private final String iface;
    
    private ecx_contextt context = null;
@@ -35,9 +51,13 @@ public class Master
    private ByteBuffer ioMap;
    
    private boolean enableDC = false;
+   private long cycleTimeInNs = -1;
+   
    
    /**
     * Create new EtherCAT master.
+    * 
+    * This creates the master object, but does not initialize. Call init() before starting cyclic operation.
     * 
     * @param iface The network interface to listen on
     */
@@ -60,17 +80,30 @@ public class Master
       return null;
    }
    
-   public void registerReadSDO(ReadSDO sdo)
+   /**
+    * Register a SDO object before cyclic operation. The SDO object can request data without blocking from the control thread.
+    * 
+    * @param sdo
+    */
+   public void registerSDO(SDO sdo)
    {
       etherCATController.addSDO(sdo);
    }
    
-   public void enableDC()
+   /**
+    * Enable distributed clocks. Slaves will be configured for cyclic operation. 
+    * 
+    * Use DistributedClockRealtimeThread to synchronize the control thread to the Master Clock (slave 1) 
+    * 
+    * @param cycleTimeInNs Time in ns between each call to send()
+    */
+   public void enableDC(long cycleTimeInNs)
    {
       enableDC = true;
+      this.cycleTimeInNs = cycleTimeInNs;
    }
    
-   private void trace(String msg)
+   public static void trace(String msg)
    {
       if(TRACE)
       {
@@ -81,7 +114,13 @@ public class Master
    /**
     * Initialize the master, configure all slaves registered with registerSlave() 
     * 
-    * On return, all slaves will be in SAFE_OP mode.
+    * On return, all slaves will be in SAFE_OP mode. Also, the EtherCAT house holding thread
+    * will be started. 
+    * 
+    * If DC is enabled, the ethercat nodes will be switched to OP as soon as synchronization
+    * is attained between the slave clocks and the master
+    * 
+    * If DC is disabled, the slaves will be switched to OP as soon as they come online.
     * 
     * @throws IOException
     */
@@ -140,11 +179,11 @@ public class Master
          ec_slavet ec_slave = soem.ecx_slave(context, i + 1);
          Slave slave = getSlave(ec_slave);
          
-         trace(slave.toString());
          
          if(slave != null)
          {
-            slave.configure(context, ec_slave, i + 1);
+            trace(slave.toString());
+            slave.configure(context, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
             processDataSize += slave.processDataSize();
          }
@@ -189,7 +228,6 @@ public class Master
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
-         slave.configureDC(enableDC);
       }
       trace("Linked buffers");
       
@@ -204,41 +242,55 @@ public class Master
    }
    
    /**
-    * This function switches the slave to OP mode. 
-    * 
-    * This function will return immediatly. The state chang
+    * Stop the EtherCAT master
     * 
     */
-   public void switchToOperational()
-   {
-      
-   }
-   
    public void shutdown()
    {
       
    }
    
+   /**
+    * Send process data. Blocking. 
+    * 
+    * Call cyclically before receive().
+    */
    public void send()
    {
       soem.ecx_send_processdata(context);
    }
    
+   /**
+    * Read the process data. 
+    * 
+    * Call after send()
+    */
    public void receive()
    {
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
    }
 
+   
+   /**
+    * Register a slave. 
+    * 
+    * The slave will be setup for cyclical operation when the master initializes. Call before init().
+    * @param slave
+    */
    public void registerSlave(Slave slave)
    {
       slaves.add(slave);
    }
-
-   public void addSlaveShutDownHook(SlaveShutdownHook shutdownHook)
-   {
-   }
    
    
+   /**
+    * Gets the time of the DC Master clcok from the last datagram.
+    * 
+    * This value corresponds to when send() is called. More precisely, it is the moment the datagram
+    * passed the DC master clock. Useful for synchronization between the control loop and the DC master clock.
+    * 
+    * @return distributed clock time in ns
+    */
    public long getDCTime()
    {
       return soem.ecx_dcTime(context);

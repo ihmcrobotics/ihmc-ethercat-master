@@ -384,4 +384,18 @@ public class ElmoTwitterTCB extends DSP402Slave
    {
       return analogInput2Value;
    }
+
+
+   @Override
+   protected void configure(boolean dcEnabled, long cycleTimeInNs)
+   {
+      if(dcEnabled)
+      {
+         configureDCSync0(true, cycleTimeInNs, 0);
+      }
+      else
+      {
+         configureDCSync0(false, 0, 0);
+      }
+   }
 }
