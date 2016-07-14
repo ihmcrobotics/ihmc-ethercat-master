@@ -4,6 +4,12 @@ import javolution.io.Struct.Unsigned16;
 import us.ihmc.soem.wrapper.Master;
 import us.ihmc.soem.wrapper.Slave;
 
+/**
+ * Implementation of the DSP402 state machine. Used in electric motor amplifiers. Tested on Copley and Elmo drives. 
+ * 
+ * @author Jesper Smith
+ *
+ */
 public abstract class DSP402Slave extends Slave
 {
 

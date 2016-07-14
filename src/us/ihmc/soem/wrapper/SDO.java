@@ -3,6 +3,14 @@ package us.ihmc.soem.wrapper;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Base objects for using SDO objects in cyclic operations.
+ * 
+ * The SDO will be delegated to the house holding objects and can be polled for data.
+ * 
+ * @author Jesper Smith
+ *
+ */
 public abstract class SDO
 {
 

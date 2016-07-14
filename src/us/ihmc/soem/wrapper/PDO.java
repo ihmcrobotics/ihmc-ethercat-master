@@ -141,19 +141,28 @@ abstract class PDO extends Struct
       this.address = (short) address;
    }
 
+   /**
+    * Internal use, do not override
+    */
    @Override
    public final ByteOrder byteOrder()
    {
       return ByteOrder.nativeOrder();
    }
 
+   /**
+    * Internal use, do not override
+    */
    @Override
    public final boolean isPacked()
    {
       return true;
    }
 
-   public short getAddress()
+   /**
+    * Internal use, do not override
+    */
+   final short getAddress()
    {
       return address;
    }
