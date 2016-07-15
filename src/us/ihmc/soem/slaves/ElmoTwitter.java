@@ -1,7 +1,5 @@
 package us.ihmc.soem.slaves;
 
-import com.sun.prism.PixelFormat.DataType;
-
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.TxPDO;
 
