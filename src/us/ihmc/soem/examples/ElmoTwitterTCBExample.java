@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
+import us.ihmc.soem.slaves.ElmoTwitter;
 import us.ihmc.soem.slaves.ElmoTwitterTCB;
 import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
@@ -11,7 +12,7 @@ import us.ihmc.soem.wrapper.Master;
 public class ElmoTwitterTCBExample extends DistributedClockRealtimeThread
 {
    private final Master master;
-   private final ElmoTwitterTCB carrier = new ElmoTwitterTCB(0, 0);
+   private final ElmoTwitter carrier = new ElmoTwitterTCB(0, 0);
 
    public ElmoTwitterTCBExample() throws IOException
    {

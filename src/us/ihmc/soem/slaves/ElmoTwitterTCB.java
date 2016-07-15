@@ -8,119 +8,23 @@ import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;
 import us.ihmc.soem.wrapper.TxPDO;
 
-public class ElmoTwitterTCB extends DSP402Slave
+public class ElmoTwitterTCB extends ElmoTwitter
 {
-   static final int vendorID = 0x0000009a;
-   static final int productCode = 0x00030924;
    static final int assignActivate = 0x0300;
 
    // Variable to determine SDO timing, randomized to distribute SDO requests over control cycle
    private int readTick = new Random().nextInt(1000);
    private final int readSDOEveryNTicks;
 
-   //Status Register Event Locations
-   private final long UNDER_VOLTAGE = 3;
-   private final long OVER_VOLTAGE = 5;
-   private final long STO_DISABLED = 7;
-   private final long CURRENT_SHORT = 11;
-   private final long OVER_TEMPERATURE = 13;
-   private final long MOTOR_ENABLED = 16;
-   private final long MOTOR_FAULT = 64;
-   private final long CURRENT_LIMITED = 8192;
 
-
-   private class RPDO_1606 extends RxPDO
-   {
-      protected RPDO_1606()
-      {
-         super(0x1606);
-      }
-
-      Signed32 targetPosition = new Signed32();
-      Unsigned32 digitalOutputs = new Unsigned32();
-      Signed32 targetVelocity = new Signed32();
-      Signed32 velocityOffset = new Signed32();
-      Signed16 torqueOffset = new Signed16();
-      Unsigned16 controlWord = new Unsigned16();
-   }
 
    private final RPDO_1606 rpdo_1606 = new RPDO_1606();
-
-   private class RPDO_160B extends RxPDO
-   {
-      protected RPDO_160B()
-      {
-         super(0x160B);
-      }
-
-      Signed8 modeOfOperation = new Signed8();
-      Unsigned8 dummy = new Unsigned8();
-   }
-
    private final RPDO_160B rpdo_160B = new RPDO_160B();
 
-   private class TPDO_1a03 extends TxPDO
-   {
-      protected TPDO_1a03()
-      {
-         super(0x1a03);
-      }
-
-      Signed32 positionActualValue = new Signed32();
-      Unsigned32 digitalInputs = new Unsigned32();
-      Signed32 velocityActualValue = new Signed32();
-      Unsigned16 statusWord = new Unsigned16();
-
-   }
-
    private final TPDO_1a03 tpdo_1a03 = new TPDO_1a03();
-
-   private class TPDO_1a13 extends TxPDO
-   {
-      protected TPDO_1a13()
-      {
-         super(0x1a13);
-      }
-
-      Signed16 torqueActaulValue = new Signed16();
-   }
-
    private final TPDO_1a13 tpdo_1a13 = new TPDO_1a13();
-
-   private class TPDO_1a19 extends TxPDO
-   {
-      protected TPDO_1a19()
-      {
-         super(0x1a19);
-      }
-
-      Signed32 positionFollowingError = new Signed32();
-   }
-
    private final TPDO_1a19 tpdo_1a19 = new TPDO_1a19();
-
-   private class TPDO_1a1e extends TxPDO
-   {
-      protected TPDO_1a1e()
-      {
-         super(0x1a1e);
-      }
-
-      Signed32 auxiliaryPositionActualValue = new Signed32();
-   }
-
    private final TPDO_1a1e tpdo_1a1e = new TPDO_1a1e();
-
-   private class TPDO_1a22 extends TxPDO
-   {
-      protected TPDO_1a22()
-      {
-         super(0x1a22);
-      }
-
-      Unsigned32 elmoStatusRegister = new Unsigned32();
-   }
-
    private final TPDO_1a22 tpdo_1a22 = new TPDO_1a22();
 
    //SDO data
@@ -233,7 +137,7 @@ public class ElmoTwitterTCB extends DSP402Slave
 
    public int getActualTorque()
    {
-      return tpdo_1a13.torqueActaulValue.get();
+      return tpdo_1a13.torqueActualValue.get();
    }
 
    public int getActualAuxiliaryPosition()
@@ -293,61 +197,10 @@ public class ElmoTwitterTCB extends DSP402Slave
       return errorCodeValue;
    }
 
-   private boolean getStatusValue(long maskValue)
-   {
-      //Bitwise AND to check bit-string for status events 
-      return (getElmoStatusRegister() & maskValue) == maskValue;
-   }
 
    public int getPositionFollowingError()
    {
       return tpdo_1a19.positionFollowingError.get();
-   }
-
-   public boolean isFaulted()
-   {
-      return isUnderVoltage() || isOverVoltage() || isSTODisabled() || isCurrentShorted() || isOverTemperature() || isMotorFaulted();
-   }
-
-   //Status Register Events
-   public boolean isUnderVoltage()
-   {
-      return getStatusValue(UNDER_VOLTAGE);
-   }
-
-   public boolean isOverVoltage()
-   {
-      return getStatusValue(OVER_VOLTAGE);
-   }
-
-   public boolean isSTODisabled()
-   {
-      return getStatusValue(STO_DISABLED);
-   }
-
-   public boolean isCurrentShorted()
-   {
-      return getStatusValue(CURRENT_SHORT);
-   }
-
-   public boolean isOverTemperature()
-   {
-      return getStatusValue(OVER_TEMPERATURE);
-   }
-
-   public boolean isMotorEnabled()
-   {
-      return getStatusValue(MOTOR_ENABLED);
-   }
-
-   public boolean isMotorFaulted()
-   {
-      return getStatusValue(MOTOR_FAULT);
-   }
-
-   public boolean isCurrentLimited()
-   {
-      return getStatusValue(CURRENT_LIMITED);
    }
 
    public void setVelocityOffset(int integerValue)
