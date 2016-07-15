@@ -11,44 +11,36 @@ import us.ihmc.realtime.RealtimeThread;
  * @author Jesper Smith
  *
  */
-public class DistributedClockRealtimeThread extends RealtimeThread
+public abstract class DistributedClockRealtimeThread extends RealtimeThread implements EtherCATController
 {
    private final Master master;
    private long dcControlIntegral = 0;
    private long syncOffset = 0;
 
    private boolean initialized = false;
-   private final MonotonicTime triggerTime = new MonotonicTime();
-   private final MonotonicTime update = new MonotonicTime();
+   private final MonotonicTime initialTriggerTime = new MonotonicTime();
 
    private final long cycleTimeInNs;
-
-   public DistributedClockRealtimeThread(String iface, PriorityParameters priorityParameters, PeriodicParameters periodicParameters, long syncOffset)
-   {
-      this(new Master(iface), priorityParameters, periodicParameters, syncOffset);
-   }
-
+   private volatile boolean running = true;
+   
+   
    /**
     * Create new Thread synchornized to the DC Master Clock
     * 
     * @param master EtherCAT Master
     * @param priorityParameters Desired priority
-    * @param periodicParameters Desired period, start time is ignored
+    * @param period Desired period
     * @param syncOffset Waiting time between the DC Master Clock and calling master.send(). Recommended to be between 50000ns and 100000ns depending on system, CPU load and loop times. 
     */
-   public DistributedClockRealtimeThread(Master master, PriorityParameters priorityParameters, PeriodicParameters periodicParameters, long syncOffset)
+   public DistributedClockRealtimeThread(String iface, PriorityParameters priorityParameters, MonotonicTime period, long syncOffset)
    {
-      super(priorityParameters, periodicParameters);
+      super(priorityParameters, new PeriodicParameters(period));
 
-      if (periodicParameters == null)
-      {
-         throw new RuntimeException("This class requires a period");
-      }
 
-      this.cycleTimeInNs = periodicParameters.getPeriod().asNanoseconds();
+      this.cycleTimeInNs = period.asNanoseconds();
       this.syncOffset = syncOffset;
-      this.master = master;
-      master.enableDC(periodicParameters.getPeriod().asNanoseconds());
+      this.master = new Master(iface, this);
+      master.enableDC(period.asNanoseconds());
    }
 
    /**
@@ -120,16 +112,31 @@ public class DistributedClockRealtimeThread extends RealtimeThread
    {
       if (!initialized)
       {
-         triggerTime.set(0, (getCurrentMonotonicClockTime() / cycleTimeInNs) * cycleTimeInNs + cycleTimeInNs);
+         initialTriggerTime.set(0, (getCurrentMonotonicClockTime() / cycleTimeInNs) * cycleTimeInNs + cycleTimeInNs); // Round trigger time to cycletime
+         setNextPeriod(initialTriggerTime);
          initialized = true;
       }
 
       long offset = calculateDCOffsetTime(syncOffset);
-      long update = cycleTimeInNs + offset;
-      this.update.set(0, update);
-      triggerTime.add(this.update);
       
-      return super.waitUntil(triggerTime);
+      return super.waitForNextPeriod(offset);
+   }
+
+   /**
+    * 
+    * Check to see if the EtherCAT controller should continue execution. Use this as your test for your while loop.
+    * 
+    * @return true if this thread should continue execution
+    */
+   public boolean isRunning()
+   {
+      return running;
+   }
+   
+   @Override
+   public void stopController()
+   {
+      running = false;
    }
 
 }

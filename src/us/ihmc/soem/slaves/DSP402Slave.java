@@ -1,7 +1,6 @@
 package us.ihmc.soem.slaves;
 
 import javolution.io.Struct.Unsigned16;
-import us.ihmc.soem.wrapper.Master;
 import us.ihmc.soem.wrapper.Slave;
 
 /**
@@ -46,16 +45,14 @@ public abstract class DSP402Slave extends Slave
       NOTREADYTOSWITCHON, SWITCHONDISABLED, READYTOSWITCHON, SWITCHEDON, OPERATIONENABLE, QUICKSTOPACTIVE, FAULT
    }
 
-   protected final Master master;
    private boolean enableDrive = false;
    private ControlWord command = null;
 
    
    
-   public DSP402Slave(Master master, int alias, int position)
+   public DSP402Slave(int alias, int position)
    {
       super(alias, position);
-      this.master = master;
    }
 
 
@@ -237,12 +234,6 @@ public abstract class DSP402Slave extends Slave
    {
       int statusWord = getStatusWordPDOEntry().get();
       return isOperational() && statusWord != 0 && getStatus() != StatusWord.NOTREADYTOSWITCHON;
-   }
-   
-   
-   public Master getMaster()
-   {
-      return master;
    }
 
    protected abstract Unsigned16 getStatusWordPDOEntry();

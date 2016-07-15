@@ -671,7 +671,7 @@ public abstract class Slave
          dcOffsetSamples = 0;
          break;
       case PRE_OPERR:
-         System.out.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
+         System.err.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
          break;
       case SAFE_OP:
          if (dcEnabled)
@@ -686,7 +686,6 @@ public abstract class Slave
                   {
                      ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
                      soem.ecx_writestate(context, slaveIndex);
-                     System.out.println("SWITCHING TO OP");
                   }
 
                }
@@ -698,13 +697,12 @@ public abstract class Slave
          }
          else
          {
-            System.out.println("Slave " + slaveIndex + " has DC disabled, switching to OP");
             ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
             soem.ecx_writestate(context, slaveIndex);
          }
          break;
       case SAFE_OPERR:
-         System.out.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
+         System.err.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
          dcOffsetSamples = 0;
          break;
       case OP:
@@ -744,6 +742,15 @@ public abstract class Slave
     * @param cycleTimeInNs
     */
    protected abstract void configure(boolean dcEnabled, long cycleTimeInNs);
+
+   
+   /**
+    * Internal method to cleanup state
+    */
+   void cleanup()
+   {
+      configureDCSync0(false, 0, 0);   // Disable DC Sync
+   }
 
 
 }

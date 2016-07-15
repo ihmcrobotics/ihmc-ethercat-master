@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 
 /**
- * SDO read delegator class
+ * SDO read delegator class for asynchronous SDO transfer
  * 
  * The SDO will be delegated to the house holding objects and can be polled for data.
  * 

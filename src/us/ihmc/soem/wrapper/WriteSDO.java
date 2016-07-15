@@ -1,7 +1,7 @@
 package us.ihmc.soem.wrapper;
 
 /**
- * SDO write delegator class
+ * SDO write delegator class for asynchronous SDO transfer
  * 
  * The SDO will be delegated to the house holding objects and can be polled for data.
  * 

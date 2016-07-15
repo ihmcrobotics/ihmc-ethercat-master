@@ -51,7 +51,6 @@ public class EL3314 extends Slave
       sm(3).registerPDO(in3);
       sm(3).registerPDO(in4);
       
-      System.out.println("PDO SIZE " + in1.size());
    }
    
    public int getIn1()

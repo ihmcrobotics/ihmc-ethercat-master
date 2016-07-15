@@ -7,36 +7,108 @@
 #include "ethercathelper.h"
 
 #include <stdlib.h>
+#include <stdio.h>
+
+
+
+ec_slavet             ihmc_ecslave[EC_MAXSLAVE];
+int                   ihmc_ecslavecount;
+ec_groupt             ihmc_ecgroup[EC_MAXGROUP];
+
+static uint8          ihmc_ecesibuf[EC_MAXEEPBUF];
+static uint32         ihmc_ecesimap[EC_MAXEEPBITMAP];
+static ec_eringt      ihmc_ecelist;
+static ec_idxstackT   ihmc_ecidxstack;
+
+static ec_SMcommtypet ihmc_ecSMcommtype;
+static ec_PDOassignt  ihmc_ecPDOassign;
+static ec_PDOdesct    ihmc_ecPDOdesc;
+
+static ec_eepromSMt   ihmc_ecSM;
+static ec_eepromFMMUt ihmc_ecFMMU;
+boolean                 ihmc_EcatError = FALSE;
+
+int64                 ihmc_ecDCtime;
+
+ecx_portt               ihmc_ecx_port;
+ecx_redportt            ihmc_ecx_redport;
+
+ecx_contextt  ihmc_ecx_context = {
+    &ihmc_ecx_port,       // .port          =
+    &ihmc_ecslave[0],    // .slavelist     =
+    &ihmc_ecslavecount,  // .slavecount    =
+    EC_MAXSLAVE,     // .maxslave      =
+    &ihmc_ecgroup[0],    // .grouplist     =
+	EC_MAXGROUP,     // .maxgroup      =
+    &ihmc_ecesibuf[0],   // .esibuf        =
+    &ihmc_ecesimap[0],   // .esimap        =
+    0,               // .esislave      =
+    &ihmc_ecelist,       // .elist         =
+    &ihmc_ecidxstack,    // .idxstack      =
+    &ihmc_EcatError,      // .ecaterror     =
+    0,               // .DCtO          =
+    0,               // .DCl           =
+    &ihmc_ecDCtime,      // .DCtime        =
+    &ihmc_ecSMcommtype,  // .SMcommtype    =
+    &ihmc_ecPDOassign,   // .PDOassign     =
+    &ihmc_ecPDOdesc,     // .PDOdesc       =
+    &ihmc_ecSM,          // .eepSM         =
+    &ihmc_ecFMMU,        // .eepFMMU       =
+    NULL             // .FOEhook()
+};
+
 
 ecx_contextt* ecx_create_context()
 {  
-    ecx_contextt* ecx_context = (ecx_contextt*) malloc(sizeof(ecx_contextt));
+/*
+    ecx_contextt* ihmc_ecx_context = (ecx_contextt*) malloc(sizeof(ecx_contextt));
     
+	ec_slavet             *ihmc_ecslave = malloc(sizeof(*ihmc_ecslave) * EC_MAXSLAVE);
+	int                   *ihmc_ecslavecount = malloc(sizeof(*ihmc_ecslavecount));
+	ec_groupt             *ihmc_ecgroup = malloc(sizeof(*ihmc_ecgroup) * EC_MAXGROUP);
+	                      
+	uint8                 *ihmc_ecesibuf = malloc(sizeof(*ihmc_ecesibuf) * EC_MAXEEPBUF);
+	uint32                *ihmc_ecesimap = malloc(sizeof(*ihmc_ecesimap) * EC_MAXEEPBITMAP);
+	ec_eringt             *ihmc_ecelist = malloc(sizeof(*ihmc_ecelist));
+	ec_idxstackT          *ihmc_ecidxstack = malloc(sizeof(*ihmc_ecidxstack));
+	                      
+	ec_SMcommtypet        *ihmc_ecSMcommtype = malloc(sizeof(*ihmc_ecSMcommtype));
+	ec_PDOassignt         *ihmc_ecPDOassign = malloc(sizeof(*ihmc_ecPDOassign));
+	ec_PDOdesct           *ihmc_ecPDOdesc = malloc(sizeof(*ihmc_ecPDOdesc));
+	                      
+	ec_eepromSMt          *ihmc_ecSM = malloc(sizeof(*ihmc_ecSM));
+	ec_eepromFMMUt        *ihmc_ecFMMU = malloc(sizeof(*ihmc_ecFMMU));
+	boolean               *ihmc_EcatError = malloc(sizeof(*ihmc_EcatError));
+	                      
+	int64                 *ihmc_ecDCtime = malloc(sizeof(*ihmc_ecDCtime));
+	                      
+	ecx_portt             *ihmc_ecx_port = malloc(sizeof(*ihmc_ecx_port));
+	ecx_redportt          *ihmc_ecx_redport = malloc(sizeof(*ihmc_ecx_redport));
+	 
     
-    ecx_context->port    = (ecx_portt*) malloc(sizeof(ecx_portt));
-    ecx_context->slavelist = (ec_slavet*) malloc(sizeof(ec_slavet) * EC_MAXSLAVE);
-    ecx_context->slavecount =     (int*) malloc(sizeof(int));  // .slavecount    =
-    ecx_context->maxslave = EC_MAXSLAVE;     // .maxslave      =
-    ecx_context->grouplist =    (ec_groupt*) malloc(sizeof(ec_groupt) * EC_MAXGROUP);    // .grouplist     =
-    ecx_context->maxgroup = EC_MAXGROUP,     // .maxgroup      =
-    ecx_context->esibuf = (uint8*) malloc(sizeof(uint8) * EC_MAXEEPBUF);   // .esibuf        =
-    ecx_context->esimap = (uint32*) malloc(sizeof(uint32) * EC_MAXEEPBITMAP);   // .esimap        =
-    ecx_context->esislave =    0;               // .esislave      =
-    ecx_context->elist = (ec_eringt*) malloc(sizeof(ec_eringt)); //    &ec_elist,       // .elist         =
-    ecx_context->idxstack = (ec_idxstackT*) malloc(sizeof(ec_idxstackT)); //   &ec_idxstack,    // .idxstack      =
-    ecx_context->ecaterror = (boolean*) malloc(sizeof(boolean));      // .ecaterror     =
-    ecx_context->DCtO =    0;               // .DCtO          =
-    ecx_context->DCl =    0;               // .DCl           =
-    ecx_context->DCtime = (int64*) malloc(sizeof(int64));  //  &ec_DCtime,      // .DCtime        =
-    ecx_context->SMcommtype = (ec_SMcommtypet*) malloc(sizeof(ec_SMcommtypet)); //    &ec_SMcommtype,  // .SMcommtype    =
-    ecx_context->PDOassign = (ec_PDOassignt*) malloc(sizeof(ec_PDOassignt));
-    ecx_context->PDOdesc = (ec_PDOdesct*) malloc(sizeof(ec_PDOdesct));
-    ecx_context->eepSM = (ec_eepromSMt*) malloc(sizeof(ec_eepromSMt));
-    ecx_context->eepFMMU = (ec_eepromFMMUt*) malloc(sizeof(ec_eepromFMMUt));
-    ecx_context->FOEhook = NULL;
-    
-    
-    return ecx_context;
+   ihmc_ecx_context->port    = ihmc_ecx_port;
+   ihmc_ecx_context->slavelist = ihmc_ecslave;
+   ihmc_ecx_context->slavecount = ihmc_ecslavecount;
+   ihmc_ecx_context->maxslave = EC_MAXSLAVE;
+   ihmc_ecx_context->grouplist =  ihmc_ecgroup;
+   ihmc_ecx_context->maxgroup = EC_MAXGROUP;
+   ihmc_ecx_context->esibuf = ihmc_ecesibuf;
+   ihmc_ecx_context->esimap = ihmc_ecesimap;
+   ihmc_ecx_context->esislave =    0;               
+   ihmc_ecx_context->elist = ihmc_ecelist;
+   ihmc_ecx_context->idxstack = ihmc_ecidxstack;
+   ihmc_ecx_context->ecaterror = ihmc_EcatError;
+   ihmc_ecx_context->DCtO =    0;          
+   ihmc_ecx_context->DCl =    0;     
+   ihmc_ecx_context->DCtime = ihmc_ecDCtime;
+   ihmc_ecx_context->SMcommtype = ihmc_ecSMcommtype;
+   ihmc_ecx_context->PDOassign = ihmc_ecPDOassign;
+   ihmc_ecx_context->PDOdesc = ihmc_ecPDOdesc;
+   ihmc_ecx_context->eepSM = ihmc_ecSM;
+   ihmc_ecx_context->eepFMMU = ihmc_ecFMMU;
+   ihmc_ecx_context->FOEhook = NULL;
+    */
+    return &ihmc_ecx_context;
 }
 
 void ecx_destroy_context(ecx_contextt* ecx_context)
@@ -56,6 +128,7 @@ void ecx_destroy_context(ecx_contextt* ecx_context)
     free(ecx_context->PDOdesc);
     free(ecx_context->eepSM);
     free(ecx_context->eepFMMU);
+    free(ecx_context);
 }
 
 boolean ecx_ecaterror(ecx_contextt* ecx_context)

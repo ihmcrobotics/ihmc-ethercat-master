@@ -18,8 +18,6 @@ public class SerialPortRTSPulseGenerator
 
    public SerialPortRTSPulseGenerator(String port)
    {
-      
-      System.out.println(System.getProperty("gnu.io.rxtx.SerialPorts"));
       if ((System.getProperty("os.name").toLowerCase().indexOf("linux") != -1))
       {
          System.setProperty("gnu.io.rxtx.SerialPorts", port);
@@ -31,7 +29,7 @@ public class SerialPortRTSPulseGenerator
          if(commPort instanceof SerialPort)
          {
             serial = (SerialPort) commPort;
-            serial.setFlowControlMode(SerialPort.FLOWCONTROL_NONE); 
+            serial.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
          }
          else
          {
@@ -42,7 +40,6 @@ public class SerialPortRTSPulseGenerator
       {
          throw new RuntimeException(e);
       }
-
    }
    
    

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Random;
 
 import javolution.io.Struct.Unsigned16;
-import us.ihmc.soem.wrapper.Master;
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;
 import us.ihmc.soem.wrapper.TxPDO;
@@ -137,11 +136,6 @@ public class ElmoTwitterTCB extends DSP402Slave
 
    private boolean hasBeenEnabled = false;
 
-   public ElmoTwitterTCB(Master master, int alias, boolean enableDC, long cyclicPeriodNS)
-   {
-      this(master, alias, 0, enableDC, cyclicPeriodNS);
-   }
-
    /**
     * 
     * @param domain
@@ -151,12 +145,12 @@ public class ElmoTwitterTCB extends DSP402Slave
     * @param cyclicPeriodNS
     * @throws IOException
     */
-   public ElmoTwitterTCB(Master master, int alias, int ringPosition, boolean enableDC, long cyclicPeriodNS)
+   public ElmoTwitterTCB(int alias, int ringPosition)
    {
-      super(master, alias, ringPosition);
+      super(alias, ringPosition);
 
       // Read SDO variables every second
-      readSDOEveryNTicks = (int) (1000000000 / cyclicPeriodNS);
+      readSDOEveryNTicks = 100;
 
       //Sync Manager, only SM2 and SM3 are used for PDOs.  SM0 and SM1 are used for the mailbox mechanism (See: EtherCAT_Application_Manual.pdf)
 
@@ -172,15 +166,6 @@ public class ElmoTwitterTCB extends DSP402Slave
       sm(3).registerPDO(tpdo_1a19);
       sm(3).registerPDO(tpdo_1a1e);
       sm(3).registerPDO(tpdo_1a22);
-      
-
-      //      configureWatchdog((int) (cyclicPeriodNS / 40), 100);
-      //      
-      //      if(enableDC)
-      //      {
-      //         //Enable Distributed Clock. Twitter does not send data without DC.
-      //         configDC(assignActivate, cyclicPeriodNS, 0, 0, 0);      
-      //      }
    }
 
    public void setTargetPosition(int position)

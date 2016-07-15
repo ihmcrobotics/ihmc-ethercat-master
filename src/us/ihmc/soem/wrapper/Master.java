@@ -31,16 +31,16 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
  */
 public class Master
 {
-   
-   private static final boolean TRACE = true;
+   private static final boolean TRACE = false;
    
    static
    {
       NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
    }
    
+   private static boolean initialized = false;
    
-   private final EtherCATMasterController etherCATController = new EtherCATMasterController();
+   private final EtherCATMasterHouseHolder etherCATHouseHolder = new EtherCATMasterHouseHolder();
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
    private final String iface;
@@ -53,6 +53,7 @@ public class Master
    private boolean enableDC = false;
    private long cycleTimeInNs = -1;
    
+   private final EtherCATController etherCATController;
    
    /**
     * Create new EtherCAT master.
@@ -61,9 +62,16 @@ public class Master
     * 
     * @param iface The network interface to listen on
     */
-   public Master(String iface)
+   public Master(String iface, EtherCATController etherCATController)
    {
+      if(initialized)
+      {
+         throw new RuntimeException("Currently, only a single master instance is supported.");
+      }
+      
       this.iface = iface;
+      this.etherCATController = etherCATController;
+      initialized = true;
    }
    
    private Slave getSlave(ec_slavet ec_slave)
@@ -87,7 +95,7 @@ public class Master
     */
    public void registerSDO(SDO sdo)
    {
-      etherCATController.addSDO(sdo);
+      etherCATHouseHolder.addSDO(sdo);
    }
    
    /**
@@ -133,7 +141,7 @@ public class Master
       
       if(soem.ecx_init(context, iface) == 0)
       {
-         throw new IOException("Cannot open interface " + iface);
+         throw new IOException("Cannot open interface " + iface + ". Make sure to run as root.");
       }
       
       trace("Opened interface");
@@ -231,14 +239,21 @@ public class Master
       }
       trace("Linked buffers");
       
-      
-      soem.ecx_send_processdata(context);
-      soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-      
-      trace("Initial send/receive");
-      etherCATController.start();
-      
       send();
+      receive();
+
+      
+      etherCATHouseHolder.start();
+      
+      Runtime.getRuntime().addShutdownHook(new Thread()
+      {
+         public void run()
+         {
+            shutdown();
+         }
+      });
+      
+      
    }
    
    /**
@@ -247,7 +262,53 @@ public class Master
     */
    public void shutdown()
    {
+      trace("Waiting for EtherCAT Controller to stop");
+      etherCATController.stopController();
+      try
+      {
+         etherCATController.join();
+      }
+      catch (InterruptedException e)
+      {
+      }
       
+      trace("Shutting down controller thread");
+      etherCATHouseHolder.stopExecution();
+      
+      
+      boolean allSlavesShutdown = false;
+      
+      while(!allSlavesShutdown)
+      {
+         allSlavesShutdown = true;
+         for(int i = 0; i < slaves.size(); i++)
+         {
+            if(!slaves.get(i).hasShutdown())
+            {
+               allSlavesShutdown = false;
+               slaves.get(i).shutdown();
+            }
+         }
+         
+         LockSupport.parkNanos(cycleTimeInNs);
+      }
+      
+      
+      trace("Switching slaves to PRE-OP state");
+      ec_slavet allSlaves = soem.ecx_slave(context, 0);
+      allSlaves.setState(ec_state.EC_STATE_PRE_OP.swigValue());
+      soem.ecx_writestate(context, 0);
+      
+      trace("Cleanup slaves");
+      
+      for(int i = 0; i < slaves.size(); i ++)
+      {
+         slaves.get(i).cleanup();
+      }
+      
+      trace("Switching slaves to INIT state");
+      allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
+      soem.ecx_writestate(context, 0);
    }
    
    /**
@@ -296,12 +357,12 @@ public class Master
       return soem.ecx_dcTime(context);
    }
    
-   private class EtherCATMasterController extends Thread
+   private class EtherCATMasterHouseHolder extends Thread
    {
       private volatile boolean running = false;
       private final ArrayList<SDO> SDOs = new ArrayList<>();
       
-      public EtherCATMasterController()
+      public EtherCATMasterHouseHolder()
       {
          super("EtherCATController");
       }
@@ -319,9 +380,7 @@ public class Master
       
       @Override
       public void run()
-      {
-         System.out.println("Starting EtherCAT control thread");
-         
+      {         
          while(running)
          {
             soem.ecx_readstate(context);
@@ -336,7 +395,14 @@ public class Master
                SDOs.get(i).updateInMasterThread();
             }
             
-            LockSupport.parkNanos(100000000); // Wait 100ms
+            try
+            {
+               Thread.sleep(10);
+            }
+            catch (InterruptedException e)
+            {
+               // Ignore
+            }
          }
          
       }
@@ -346,6 +412,19 @@ public class Master
       {
          running = true;
          super.start();
+      }
+      
+      public void stopExecution()
+      {
+         running = false;
+         interrupt();
+         try
+         {
+            join();
+         }
+         catch (InterruptedException e)
+         {
+         }
       }
    }
 }
