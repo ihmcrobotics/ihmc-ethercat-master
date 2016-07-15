@@ -69,7 +69,10 @@ Note that in order to build a shared library, you have to enable position indepe
 - cd build
 - cmake ..
 - make
-- gradle publishToMavenLocal
+- gradle publishToMavenLocal -Ptarget=JAVA
+- gradle publishToMavenLocal -Ptarget=PLATFORM
+
+Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
 
 ### Compiling Java library
 - cd ihmc-soem-wrapper

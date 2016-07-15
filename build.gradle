@@ -22,9 +22,10 @@ version = '0.1'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"
-project.ext.licenseURL = "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt"
+project.ext.licenseURL = "http://www.apache.org/licenses/LICENSE-2.0.txt"
 project.ext.licenseName = "Apache License, Version 2.0"
 project.ext.bintrayLicenseName = "Apache-2.0"
+
 
 
 sourceSets {

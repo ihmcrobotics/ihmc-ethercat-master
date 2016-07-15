@@ -11,20 +11,39 @@ version = '1.3.1'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/soem"
-project.ext.licenseURL = "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt"
-project.ext.licenseName = "LGPLv2.1"
-project.ext.bintrayLicenseName = "LGPL-2.1"
+project.ext.licenseURL = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+project.ext.licenseName = "Apache License, Version 2.0"
+project.ext.bintrayLicenseName = "Apache-2.0"
+
+if(property('target') == 'JAVA')
+{
+	buildDir = 'build-java'
+}
+else
+{
+	buildDir = 'build-platform'
+}
+
 
 sourceSets {
-	main {
-		java {
-			srcDir 'swig/'
+
+	if(property('target') == 'JAVA')
+	{
+		main {
+			java {
+				srcDir 'swig/'
+			}
 		}
-		resources{
-			srcDir 'swig'
-			include '**/libsoemJava.so'
-			exclude '**/CMakeFiles'
-		}	
+	}
+	else
+	{
+		main {
+			resources{
+				srcDir 'swig'
+				include '**/libsoemJava.so'
+				exclude '**/CMakeFiles'
+			}	
+		}
 	}
 }
 
