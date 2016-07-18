@@ -7,6 +7,9 @@ import us.ihmc.soem.wrapper.SyncManager;
 public class EL4134 extends Slave
 {
 
+   static final int vendorID = 0x00000002;
+   static final int productCode = 0x10263052;
+   
    class Output extends RxPDO
    {
 
@@ -26,7 +29,7 @@ public class EL4134 extends Slave
 
    public EL4134(int aliasAddress, int configAddress)
    {
-      super(aliasAddress, configAddress);
+      super(vendorID, productCode, aliasAddress, configAddress);
 
       for (int i = 0; i < 4; i++)
       {

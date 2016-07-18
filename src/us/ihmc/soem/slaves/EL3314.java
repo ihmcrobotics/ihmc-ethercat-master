@@ -6,7 +6,8 @@ import us.ihmc.soem.wrapper.TxPDO;
 
 public class EL3314 extends Slave
 {
-   
+   static final int vendorID = 0x00000002;
+   static final int productCode = 0x0cf23052;
    
    public class Input extends TxPDO
    {
@@ -39,7 +40,7 @@ public class EL3314 extends Slave
    
    public EL3314(int aliasAddress, int configAddress)
    {
-      super(aliasAddress, configAddress);
+      super(vendorID, productCode, aliasAddress, configAddress);
       
       for(int i = 0; i < 4; i++)
       {

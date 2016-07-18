@@ -28,9 +28,9 @@ public class DCExample extends DistributedClockRealtimeThread
    private final Master master;
 
    // Create slaves
-   private final EK1100 ek1100 = new EK1100(0, 0); // Coupler
+   private final EK1100 ek1100 = new EK1100(101, 0); // Coupler
    private final EL3314 el3314 = new EL3314(601, 0); // Random slave that is plugged in our test bench
-   private final EL4134 el4134 = new EL4134(202, 0); // Analog output
+   private final EL4134 el4134 = new EL4134(201, 0); // Analog output
 
 
    private final SerialPortRTSPulseGenerator pulseGenerator = new SerialPortRTSPulseGenerator("/dev/ttyS7");

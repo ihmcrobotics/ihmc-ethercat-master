@@ -74,13 +74,13 @@ public class Master
       initialized = true;
    }
    
-   private Slave getSlave(ec_slavet ec_slave)
+   private Slave getSlave(int alias, int position)
    {
       for(int i = 0; i < slaves.size(); i++)
       {
          Slave slave = slaves.get(i);
-         if(slave.getAliasAddress() == ec_slave.getAliasadr() &&
-               slave.getConfigAddress() == ec_slave.getConfigindex())
+         
+         if(slave.getAliasAddress() == alias && slave.getPosition() == position)
          {
             return slave;
          }
@@ -182,14 +182,37 @@ public class Master
       
       slaveMap = new Slave[slavecount];
       int processDataSize = 0;
+      
+      int previousAlias = 0;
+      int previousPosition = -1;
       for(int i = 0; i < slavecount; i++)
       {
          ec_slavet ec_slave = soem.ecx_slave(context, i + 1);
-         Slave slave = getSlave(ec_slave);
+         
+         int alias, position;
+         if(ec_slave.getAliasadr() == 0 || ec_slave.getAliasadr() == previousAlias)
+         {
+            alias = previousAlias;
+            position = previousPosition + 1;
+         }
+         else
+         {
+            alias = ec_slave.getAliasadr();
+            position = 0;
+         }
+         
+         
+         Slave slave = getSlave(alias, position);
          
          
          if(slave != null)
          {
+            if(slave.getVendor() != ec_slave.getEep_man() || slave.getProductCode() != ec_slave.getEep_id())
+            {
+               throw new IOException("Invalid slave configuration for slave " + slave.getAliasAddress() + ":" + slave.getPosition() + ". Invalid vendor and/or product code");
+            }
+            
+            
             trace(slave.toString());
             slave.configure(context, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
@@ -197,13 +220,16 @@ public class Master
          }
          else
          {
-            throw new IOException("Unconfigured slave on alias " + ec_slave.getAliasadr());
+            throw new IOException("Unconfigured slave on alias " + alias + ":" + position + ". Make sure to power cycle after changing alias addresses.");
          }
          
          // Disable Complete Access reading of SDO configuration.
          short config = ec_slave.getCoEdetails();
          config &= ~soemConstants.ECT_COEDET_SDOCA;
          ec_slave.setCoEdetails(config);
+         
+         previousAlias = alias;
+         previousPosition = position;
          
       }
       trace("Configured slaves");

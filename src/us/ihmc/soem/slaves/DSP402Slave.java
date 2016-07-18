@@ -50,9 +50,9 @@ public abstract class DSP402Slave extends Slave
 
    
    
-   public DSP402Slave(int alias, int position)
+   public DSP402Slave(int vendor, int productCode, int alias, int position)
    {
-      super(alias, position);
+      super(vendor, productCode, alias, position);
    }
 
 

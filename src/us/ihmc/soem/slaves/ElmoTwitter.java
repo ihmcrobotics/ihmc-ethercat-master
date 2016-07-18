@@ -152,7 +152,7 @@ public abstract class ElmoTwitter extends DSP402Slave
    
    public ElmoTwitter(int alias, int position)
    {
-      super(alias, position);
+      super(vendorID, productCode, alias, position);
    }
 
    public abstract long getElmoStatusRegister();

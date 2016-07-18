@@ -31,7 +31,9 @@ public abstract class Slave
    }
 
    private final int aliasAddress;
-   private final int configAddress;
+   private final int position;
+   private final int vendor;
+   private final int productCode;
    private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(12);
 
    private final SyncManager[] syncManagers = new SyncManager[4];
@@ -52,17 +54,38 @@ public abstract class Slave
    /**
     * Create a new slave and set the address 
     * 
+    * Slaves are addressed based on their aliasAddress and their position relative to the previous set aliasAddress.
+    * 
+    * The alias can be changed with the "eepromtool" utility that comes with the SOEM master. Power cycle the slave after running.
+    * 
+    * - When the alias is set and unique on the ring, the aliasAddress is the same as the address and the position is 0
+    * - When the alias is set and the same as the previous alias on the ring, the aliasAddress is the same as the address and the position is incremented by one.
+    * - When the alias is not set or set to zero, the aliasAddress is inherted from the previous slave on the ring and the position is incremented by one.
+    * - When the alias is set and the same as a non-adjacent slave on the ring, the slave configuration is considered invalid and the master will not start.
+    * 
     * @param aliasAddress The address of the slave.
-    * @param configAddress Position relative to aliasAddress
+    * @param position Position relative to aliasAddress
     */
-   public Slave(int aliasAddress, int configAddress)
+   public Slave(int vendor, int productCode, int aliasAddress, int position)
    {
+      this.vendor = vendor;
+      this.productCode = productCode;
       this.aliasAddress = aliasAddress;
-      this.configAddress = configAddress;
+      this.position = position;
 
       sdoBuffer.order(ByteOrder.nativeOrder()); // EtherCAT is a big-endian protocol, but this has to be LITTLE_ENDIAN
 
       dcDiff.order(ByteOrder.nativeOrder());
+   }
+
+   final int getVendor()
+   {
+      return vendor;
+   }
+
+   final int getProductCode()
+   {
+      return productCode;
    }
 
    /**
@@ -478,15 +501,15 @@ public abstract class Slave
     * 
     * @return Ring position
     */
-   public int getConfigAddress()
+   public int getPosition()
    {
-      return configAddress;
+      return position;
    }
 
    @Override
    public String toString()
    {
-      return "Slave [aliasAddress=" + aliasAddress + ", configAddress=" + configAddress + "]";
+      return "Slave [aliasAddress=" + aliasAddress + ", configAddress=" + position + "]";
    }
 
    /**
@@ -631,6 +654,29 @@ public abstract class Slave
 
       return diff;
 
+   }
+   
+   
+   /**
+    * Write register value to the slave.
+    * 
+    * Blocking low level function. Use with caution.
+    * 
+    * @param register Register to write to
+    * @param value Value to write
+    * @return true if successfull
+    */
+   public boolean writeRegister(int register, ByteBuffer value)
+   {
+      int wkc = soem.ecx_FPWR(context.getPort(), ec_slave.getConfigadr(), register, value.remaining(), value, soemConstants.EC_TIMEOUTRET);
+      if(wkc == soemConstants.EC_NOFRAME)
+      {
+         return false;
+      }
+      else
+      {
+         return true;
+      }
    }
 
    /**
