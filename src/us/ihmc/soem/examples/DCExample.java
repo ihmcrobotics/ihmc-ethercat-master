@@ -4,9 +4,9 @@ import java.io.IOException;
 
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
-import us.ihmc.soem.slaves.EK1100;
-import us.ihmc.soem.slaves.EL3314;
-import us.ihmc.soem.slaves.EL4134;
+import us.ihmc.soem.slaves.beckhoff.EK1100;
+import us.ihmc.soem.slaves.beckhoff.EL3314;
+import us.ihmc.soem.slaves.beckhoff.EL4134;
 import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
 

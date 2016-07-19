@@ -1,4 +1,4 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.elmo;
 
 import java.io.IOException;
 

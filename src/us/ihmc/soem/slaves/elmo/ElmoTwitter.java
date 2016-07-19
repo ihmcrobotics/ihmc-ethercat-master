@@ -1,5 +1,6 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.elmo;
 
+import us.ihmc.soem.slaves.DSP402Slave;
 import us.ihmc.soem.wrapper.ReadSDO;
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.TxPDO;

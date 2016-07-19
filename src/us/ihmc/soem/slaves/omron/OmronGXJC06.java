@@ -1,4 +1,4 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.omron;
 
 import us.ihmc.soem.wrapper.Slave;
 

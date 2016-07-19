@@ -1,9 +1,10 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.elmo;
 
 import java.io.IOException;
 import java.util.Random;
 
 import javolution.io.Struct.Unsigned16;
+import us.ihmc.soem.slaves.DSP402Slave.StatusWord;
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;
 import us.ihmc.soem.wrapper.TxPDO;

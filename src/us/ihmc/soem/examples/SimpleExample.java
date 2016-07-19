@@ -5,9 +5,9 @@ import java.util.concurrent.locks.LockSupport;
 
 import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.realtime.RealtimeThread;
-import us.ihmc.soem.slaves.EK1100;
-import us.ihmc.soem.slaves.EL3314;
-import us.ihmc.soem.slaves.EL4134;
+import us.ihmc.soem.slaves.beckhoff.EK1100;
+import us.ihmc.soem.slaves.beckhoff.EL3314;
+import us.ihmc.soem.slaves.beckhoff.EL4134;
 import us.ihmc.soem.wrapper.EtherCATController;
 import us.ihmc.soem.wrapper.Master;
 

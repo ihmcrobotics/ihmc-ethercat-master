@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
-import us.ihmc.soem.slaves.ElmoTwitter;
-import us.ihmc.soem.slaves.ElmoTwitterTCB;
+import us.ihmc.soem.slaves.elmo.ElmoTwitter;
+import us.ihmc.soem.slaves.elmo.ElmoTwitterTCB;
 import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
 

@@ -1,14 +1,14 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.beckhoff;
 
 import us.ihmc.soem.wrapper.Slave;
 
-public class OmronGXJC03 extends Slave
+public class EK1100 extends Slave
 {
    
-   static final int vendorID = 0x0;
-   static final int productCode = 0x0;
+   static final int vendorID = 0x00000002;
+   static final int productCode = 0x044c2c52;
 
-   public OmronGXJC03(int aliasAddress, int configAddress)
+   public EK1100(int aliasAddress, int configAddress)
    {
       super(vendorID, productCode, aliasAddress, configAddress);
    }
@@ -25,13 +25,13 @@ public class OmronGXJC03 extends Slave
       {
          configureDCSync0(false, 0, 0);
       }
-      
    }
    
    @Override
    protected void shutdown()
    {
-    
+      // TODO Auto-generated method stub
+      
    }
 
    @Override

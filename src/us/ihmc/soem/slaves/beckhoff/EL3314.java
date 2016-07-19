@@ -1,4 +1,4 @@
-package us.ihmc.soem.slaves;
+package us.ihmc.soem.slaves.beckhoff;
 
 import us.ihmc.soem.wrapper.Slave;
 import us.ihmc.soem.wrapper.SyncManager;
