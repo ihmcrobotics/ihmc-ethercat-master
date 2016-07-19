@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef __linux__
 #include <linux/types.h>
 #include <linux/ethtool.h>
 #include <sys/socket.h>
@@ -20,7 +21,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <net/if.h>
-
+#endif
 
 ec_slavet             ihmc_ecslave[EC_MAXSLAVE];
 int                   ihmc_ecslavecount;
