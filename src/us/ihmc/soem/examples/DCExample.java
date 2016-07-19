@@ -22,7 +22,7 @@ import us.ihmc.soem.wrapper.Master;
  */
 public class DCExample extends DistributedClockRealtimeThread
 {
-   public static final boolean SWITCH_SIGNAL_EVERY_TICK = true;
+   public static final boolean SWITCH_SIGNAL_EVERY_TICK = false;
 
    private static final int period = 1000000;
    private final Master master;

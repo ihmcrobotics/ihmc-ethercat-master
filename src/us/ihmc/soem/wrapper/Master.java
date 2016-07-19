@@ -134,6 +134,9 @@ public class Master
     */
    public void init() throws IOException
    {
+      trace("Setting up fast IRQ");
+      setupFastIRQ(iface);
+
       trace("Creating context");
       context = soem.ecx_create_context();
       
@@ -143,6 +146,7 @@ public class Master
       {
          throw new IOException("Cannot open interface " + iface + ". Make sure to run as root.");
       }
+      
       
       trace("Opened interface");
       
@@ -282,6 +286,30 @@ public class Master
       
    }
    
+   private void setupFastIRQ(String iface) throws IOException
+   {
+      int ret = soem.ecx_setup_socket_fast_irq(iface);
+      
+      switch(ret)
+      {
+      case 10:
+         System.err.println("Cannot setup fast IRQ settings on network card. OS is not Linux");
+         break;
+      case 70:
+         throw new IOException("Cannot open control socket to setup network card");
+      case 76:
+         throw new IOException("Cannot read current coalesce options from network card");
+      case 81:
+         throw new IOException("Cannot write desired coalesce options to network card");
+      case 1:
+         //sucess
+         break;
+      default:
+         throw new IOException("Unknown return value " + ret + " while setting coalesce options");
+         
+      }
+   }
+
    /**
     * Stop the EtherCAT master
     * 

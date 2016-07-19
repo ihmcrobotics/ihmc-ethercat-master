@@ -17,7 +17,6 @@ public abstract class DistributedClockRealtimeThread extends RealtimeThread impl
    private long dcControlIntegral = 0;
    private long syncOffset = 0;
 
-   private boolean initialized = false;
    private final MonotonicTime initialTriggerTime = new MonotonicTime();
 
    private final long cycleTimeInNs;
@@ -110,13 +109,6 @@ public abstract class DistributedClockRealtimeThread extends RealtimeThread impl
    @Override
    public final long waitForNextPeriod()
    {
-      if (!initialized)
-      {
-         initialTriggerTime.set(0, (getCurrentMonotonicClockTime() / cycleTimeInNs) * cycleTimeInNs + cycleTimeInNs); // Round trigger time to cycletime
-         setNextPeriod(initialTriggerTime);
-         initialized = true;
-      }
-
       long offset = calculateDCOffsetTime(syncOffset);
       
       return super.waitForNextPeriod(offset);

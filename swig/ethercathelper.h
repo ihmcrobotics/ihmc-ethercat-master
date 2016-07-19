@@ -18,6 +18,8 @@ int64 ecx_dcTime(ecx_contextt* context);
 int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, uint8 subindex,
                       boolean CA, int size, void *p, int timeout);
 
+uint8 ecx_setup_socket_fast_irq(char *iface);
+
 
 #ifdef __cplusplus
 }

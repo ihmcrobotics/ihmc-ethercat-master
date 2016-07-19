@@ -9,6 +9,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <linux/types.h>
+#include <linux/ethtool.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <linux/sockios.h>
+#include <linux/netlink.h>
+#include <sys/ioctl.h>
+#include <string.h>
+#include <net/if.h>
 
 
 ec_slavet             ihmc_ecslave[EC_MAXSLAVE];
@@ -172,4 +183,47 @@ int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, u
 {
 	return ecx_SDOread(context, slave, index, subindex, CA, &size, p, timeout);
 	
+}
+
+
+uint8 ecx_setup_socket_fast_irq(char *iface)
+{
+#ifdef __linux__
+	struct ethtool_coalesce ecoal;
+	int err;
+	
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+	strcpy(ifr.ifr_name, iface);
+	
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0)
+		fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
+	if (fd < 0) {
+		perror("Cannot get control socket");
+		return 70;
+	}
+	
+	ecoal.cmd = ETHTOOL_GCOALESCE;
+	ifr.ifr_data = (char*)&ecoal;
+	err = ioctl(fd, SIOCETHTOOL, &ifr);
+	if (err) {
+		return 76;
+	}
+
+	ecoal.rx_coalesce_usecs = 0;
+	ecoal.rx_max_coalesced_frames = 1;
+	ecoal.tx_coalesce_usecs = 0;
+	ecoal.tx_max_coalesced_frames = 1;
+	
+	ecoal.cmd = ETHTOOL_SCOALESCE;
+	ifr.ifr_data = (char*)&ecoal;
+	err = ioctl(fd, SIOCETHTOOL, &ifr);
+	if (err) {
+		return 81;
+	}
+	return 1;
+#else
+	return 10;
+#endif
 }

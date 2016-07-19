@@ -58,7 +58,7 @@ Note that in order to build a shared library, you have to enable position indepe
 - cd SOEM
 - mkdir build
 - cd build
-- cmake -DHOST_INSTALL="" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POSITION_INDEPENDENT_CODE=true ..
+- cmake -DHOST_INSTALL="" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POSITION_INDEPENDENT_CODE=true -DCMAKE_BUILD_TYPE=Release ..
 - make
 - make install
 
@@ -67,7 +67,7 @@ Note that in order to build a shared library, you have to enable position indepe
 - cd ihmc-soem-wrapper
 - mkdir build
 - cd build
-- cmake ..
+- cmake -DCMAKE_BUILD_TYPE=Release ..
 - make
 - gradle publishToMavenLocal -Ptarget=JAVA
 - gradle publishToMavenLocal -Ptarget=PLATFORM
