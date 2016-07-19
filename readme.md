@@ -1,4 +1,4 @@
-# IHMC SOEM WRAPPER
+# IHMC EtherCAT Master
 
 This package provides a lightweight java wrapper around SOEM (https://github.com/OpenEtherCATsociety/SOEM) and provides an Object Orientated interface to the EtherCAT master.
 
