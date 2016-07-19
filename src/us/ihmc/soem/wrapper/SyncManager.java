@@ -3,6 +3,8 @@ package us.ihmc.soem.wrapper;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import us.ihmc.soem.wrapper.EtherCATStatusCallback.TRACE_EVENT;
+
 /**
  * Description of the SyncManager. Holds PDO information 
  * 
@@ -41,24 +43,24 @@ public class SyncManager
     * 
     * @param slave
     */
-   void configure(Slave slave)
+   void configure(Master master, Slave slave)
    {
       if(cconfigurePDOs)
       {
          int pdoConfigurationIndex = 0x1C10 + index;
-         Master.trace("Setting PDO entries to zero");
+         master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.CLEAR_PDOS);
          
          // Set the size of the SM configuration array to zero, allows writing to the elements
          slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
          
-         Master.trace("Writing PDO entries");
+         master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDOS);
          // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)
          {
             slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
          }
          
-         Master.trace("Writing Number of PDO entries");
+         master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDO_SIZE);
          // Set the correct size of the SM array
          slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
       }

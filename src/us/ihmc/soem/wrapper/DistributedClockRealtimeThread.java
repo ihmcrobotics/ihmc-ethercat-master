@@ -17,14 +17,13 @@ public abstract class DistributedClockRealtimeThread extends RealtimeThread impl
    private long dcControlIntegral = 0;
    private long syncOffset = 0;
 
-   private final MonotonicTime initialTriggerTime = new MonotonicTime();
-
    private final long cycleTimeInNs;
    private volatile boolean running = true;
    
    
+   
    /**
-    * Create new Thread synchornized to the DC Master Clock
+    * Create new Thread synchronized to the DC Master Clock
     * 
     * @param master EtherCAT Master
     * @param priorityParameters Desired priority

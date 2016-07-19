@@ -1,24 +1,12 @@
 package us.ihmc.soem.slaves.elmo;
 
 import java.io.IOException;
-import java.util.Random;
 
 import javolution.io.Struct.Unsigned16;
-import us.ihmc.soem.slaves.DSP402Slave.StatusWord;
-import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;
-import us.ihmc.soem.wrapper.TxPDO;
 
 public class ElmoTwitterTCB extends ElmoTwitter
 {
-   static final int assignActivate = 0x0300;
-
-   // Variable to determine SDO timing, randomized to distribute SDO requests over control cycle
-   private int readTick = new Random().nextInt(1000);
-   private final int readSDOEveryNTicks;
-
-
-
    private final RPDO_1606 rpdo_1606 = new RPDO_1606();
    private final RPDO_160B rpdo_160B = new RPDO_160B();
 
@@ -54,11 +42,7 @@ public class ElmoTwitterTCB extends ElmoTwitter
    {
       super(alias, ringPosition);
 
-      // Read SDO variables every second
-      readSDOEveryNTicks = 100;
-
       //Sync Manager, only SM2 and SM3 are used for PDOs.  SM0 and SM1 are used for the mailbox mechanism (See: EtherCAT_Application_Manual.pdf)
-
       for(int i = 0; i < 4; i++)
       {
          registerSyncManager(new SyncManager(i, true));

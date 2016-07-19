@@ -3,8 +3,6 @@ package us.ihmc.soem.examples;
 import java.io.IOException;
 import java.util.concurrent.locks.LockSupport;
 
-import us.ihmc.realtime.PriorityParameters;
-import us.ihmc.realtime.RealtimeThread;
 import us.ihmc.soem.slaves.beckhoff.EK1100;
 import us.ihmc.soem.slaves.beckhoff.EL3314;
 import us.ihmc.soem.slaves.beckhoff.EL4134;
@@ -17,9 +15,9 @@ public class SimpleExample extends Thread implements EtherCATController
    private final Master master;
 
    // Create slaves
-   private final EK1100 ek1100 = new EK1100(0, 0); // Coupler
+   private final EK1100 ek1100 = new EK1100(101, 0); // Coupler
    private final EL3314 el3314 = new EL3314(601, 0); // Random slave that is plugged in our test bench
-   private final EL4134 el4134 = new EL4134(202, 0); // Analog output
+   private final EL4134 el4134 = new EL4134(201, 0); // Analog output
 
    private volatile boolean running = true;
    private boolean signal = false;

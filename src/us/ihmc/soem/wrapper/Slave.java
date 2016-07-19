@@ -8,6 +8,7 @@ import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
+import us.ihmc.soem.wrapper.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.soem.wrapper.SyncManager.MailbusDirection;
 
 /**
@@ -18,7 +19,7 @@ import us.ihmc.soem.wrapper.SyncManager.MailbusDirection;
  */
 public abstract class Slave
 {
-   public static final int MAX_DC_OFFSET = 1000;
+   public static final int MAX_DC_OFFSET_DEFAULT = 200;
    public static final int MAX_DC_OFFSET_SAMLES = 10;
 
    /**
@@ -38,18 +39,18 @@ public abstract class Slave
 
    private final SyncManager[] syncManagers = new SyncManager[4];
 
+   private Master master;
    private ecx_contextt context;
    private ec_slavet ec_slave;
    private int slaveIndex;
    private final ByteBuffer dcDiff = ByteBuffer.allocateDirect(4);
    
+   private int maximumDCOffset = MAX_DC_OFFSET_DEFAULT;
    private boolean dcMasterClock = false;
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
 
    private volatile State state = State.OFFLINE;
-   
-   
    
    /**
     * Create a new slave and set the address 
@@ -96,13 +97,14 @@ public abstract class Slave
     * @param slaveIndex
     */
    
-   void configure(ecx_contextt context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
+   void configure(Master master, ecx_contextt context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
    {
+      this.master = master;
       this.context = context;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
 
-      Master.trace("Configuring DC settings");
+      master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
       configure(enableDC, cycleTimeInNs);
 
 
@@ -110,12 +112,10 @@ public abstract class Slave
       {
          if (syncManagers[i] != null)
          {
-            Master.trace("Configuring Sync Manager " + i);
-            syncManagers[i].configure(this);
+            syncManagers[i].configure(master, this);
          }
       }
 
-      Master.trace("Checking start bit offsets");
       if (ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
       {
          throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
@@ -509,7 +509,7 @@ public abstract class Slave
    @Override
    public String toString()
    {
-      return "Slave [aliasAddress=" + aliasAddress + ", configAddress=" + position + "]";
+      return "Slave [aliasAddress=" + aliasAddress + ", position=" + position + "]";
    }
 
    /**
@@ -702,10 +702,16 @@ public abstract class Slave
     * This function does the state control of the slave.
     * 
     */
-   void doEtherCATStateControl()
+   void doEtherCATStateControl(boolean masterThreadStableExecution, long runTime)
    {
 
+      State previousState = this.state;
       this.state = requestState();
+      
+      if(previousState != this.state)
+      {
+         master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
+      }
 
       switch (this.state)
       {
@@ -717,28 +723,33 @@ public abstract class Slave
          dcOffsetSamples = 0;
          break;
       case PRE_OPERR:
-         System.err.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
          break;
       case SAFE_OP:
          if (dcEnabled)
          {
-            int dcOffset = getDCSyncOffset();
-            if (dcOffset < MAX_DC_OFFSET && dcOffset > -MAX_DC_OFFSET)
+            if(masterThreadStableExecution)
             {
-               // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
-               if (dcOffset != 0 || dcMasterClock)
+               int dcOffset = getDCSyncOffset();
+               if (dcOffset < maximumDCOffset && dcOffset > -maximumDCOffset)
                {
-                  if (dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
+                  // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
+                  if (dcOffset != 0 || dcMasterClock)
                   {
-                     ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
-                     soem.ecx_writestate(context, slaveIndex);
+                     if (dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
+                     {
+                        ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
+                        soem.ecx_writestate(context, slaveIndex);
+                     }
+   
                   }
-
+                  else
+                  {
+                     dcOffsetSamples = 0;
+                  }
+                  
                }
-               else
-               {
-                  dcOffsetSamples = 0;
-               }
+               
+               master.getEtherCATStatusCallback().reportDCSyncWaitTime(this, runTime, dcOffset);
             }
          }
          else
@@ -748,7 +759,6 @@ public abstract class Slave
          }
          break;
       case SAFE_OPERR:
-         System.err.println(toString() + " " +  soem.ec_ALstatuscode2string(ec_slave.getALstatuscode()));
          dcOffsetSamples = 0;
          break;
       case OP:
@@ -796,6 +806,18 @@ public abstract class Slave
    void cleanup()
    {
       configureDCSync0(false, 0, 0);   // Disable DC Sync
+   }
+   
+   /**
+    * Sets the maximum DC offset that is allowed before the slave is transfered from SAFEOP to OP. Only used when DC clocks are enabled.
+    * 
+    * Default is 500ns. Minimum that is probable to work is about 5ns.
+    * 
+    * @param dcOffsetInNs 
+    */
+   public void setMaximumDCOffsetForOPMode(int dcOffsetInNs)
+   {
+      this.maximumDCOffset = dcOffsetInNs;
    }
 
 

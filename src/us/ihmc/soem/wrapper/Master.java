@@ -6,11 +6,13 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.concurrent.locks.LockSupport;
 
+import us.ihmc.realtime.RealtimeThread;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
+import us.ihmc.soem.wrapper.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
 
 /**
@@ -31,7 +33,8 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
  */
 public class Master
 {
-   private static final boolean TRACE = false;
+   public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 10000;
+   public static final long MINIMUM_JITTER_SAMPLES = 1000;
    
    static
    {
@@ -40,6 +43,7 @@ public class Master
    
    private static boolean initialized = false;
    
+   private EtherCATStatusCallback etherCATStatusCallback = new EtherCATStatusCallback();
    private final EtherCATMasterHouseHolder etherCATHouseHolder = new EtherCATMasterHouseHolder();
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
@@ -54,6 +58,13 @@ public class Master
    private long cycleTimeInNs = -1;
    
    private final EtherCATController etherCATController;
+   
+   private long maximumExecutionJitter = MAXIMUM_EXECUTION_JITTER_DEFAULT;
+   private long previousArrivalTime = 0;
+   private volatile long jitterSamples = 0;
+   private volatile long jitterEstimate = 0;
+   
+
    
    /**
     * Create new EtherCAT master.
@@ -89,6 +100,28 @@ public class Master
    }
    
    /**
+    * Set a custom EtherCAT status handler.
+    * 
+    * Note that the calling thread of the status message is not guaranteed
+    * 
+    * @param callback Callback class for status messages from the master
+    */
+   public void setEtherCATStatusCallback(EtherCATStatusCallback callback)
+   {
+      this.etherCATStatusCallback = callback;
+   }
+   
+   /**
+    * Internal function.
+    * 
+    * @return the EtherCAT status callback
+    */
+   EtherCATStatusCallback getEtherCATStatusCallback()
+   {
+      return this.etherCATStatusCallback;
+   }
+   
+   /**
     * Register a SDO object before cyclic operation. The SDO object can request data without blocking from the control thread.
     * 
     * @param sdo
@@ -111,14 +144,6 @@ public class Master
       this.cycleTimeInNs = cycleTimeInNs;
    }
    
-   public static void trace(String msg)
-   {
-      if(TRACE)
-      {
-         System.out.println("[" + System.nanoTime() + "] " + msg);
-      }
-   }
-   
    /**
     * Initialize the master, configure all slaves registered with registerSlave() 
     * 
@@ -134,44 +159,54 @@ public class Master
     */
    public void init() throws IOException
    {
-      trace("Setting up fast IRQ");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.FAST_IRQ);
       setupFastIRQ(iface);
 
-      trace("Creating context");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.CREATE_CONTEXT);
       context = soem.ecx_create_context();
       
-      trace("Context created");
       
+      getEtherCATStatusCallback().trace(TRACE_EVENT.OPEN_INTERFACE);
       if(soem.ecx_init(context, iface) == 0)
       {
          throw new IOException("Cannot open interface " + iface + ". Make sure to run as root.");
       }
       
       
-      trace("Opened interface");
       
       
+      getEtherCATStatusCallback().trace(TRACE_EVENT.INITIALIZING_SLAVES);
       if(soem.ecx_config_init(context, (short)0) == 0)
       {
          throw new IOException("Cannot initialize slaves");
       }
-      trace("Configured slaves");
       
       if(enableDC)
       {
          boolean dcCapable = soem.ecx_configdc(context) == (short)1;
          enableDC = dcCapable;
-         ec_slavet allSlaves = soem.ecx_slave(context, 0);
-         int masterClock = allSlaves.getDCnext();
-         
-         slaves.get(masterClock - 1).setDCMasterClock(true);
-         
-         trace("DC ENABLED " + enableDC + " master clock is " + masterClock);
+         if(enableDC)
+         {
+            ec_slavet allSlaves = soem.ecx_slave(context, 0);
+            int masterClock = allSlaves.getDCnext();
+            
+            slaves.get(masterClock - 1).setDCMasterClock(true);            
+            
+         }
+      }
+
+      if(enableDC)
+      {
+         getEtherCATStatusCallback().trace(TRACE_EVENT.DC_ENABLED);
+      }
+      else
+      {
+         getEtherCATStatusCallback().trace(TRACE_EVENT.DC_DISABLED);
       }
       
-      int slavecount = soem.ecx_slavecount(context);
       
-      trace("Got slave count");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURING_SLAVES);
+      int slavecount = soem.ecx_slavecount(context);
       if(slaves.size() != slavecount)
       {
          if(slaves.size() < slavecount)
@@ -216,9 +251,7 @@ public class Master
                throw new IOException("Invalid slave configuration for slave " + slave.getAliasAddress() + ":" + slave.getPosition() + ". Invalid vendor and/or product code");
             }
             
-            
-            trace(slave.toString());
-            slave.configure(context, ec_slave, i + 1, enableDC, cycleTimeInNs);
+            slave.configure(this, context, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
             processDataSize += slave.processDataSize();
          }
@@ -236,7 +269,7 @@ public class Master
          previousPosition = position;
          
       }
-      trace("Configured slaves");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.ALLOCATE_IOMAP);
       
 
       
@@ -251,27 +284,23 @@ public class Master
          throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
       }      
 
-      trace("Configured map");
 
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
          throw new IOException("Cannot transfer to SAFE_OP state");
       }      
-      
-      trace("In SAFEOP");
-      
-      
+       
+      getEtherCATStatusCallback().trace(TRACE_EVENT.LINK_BUFFERS);
       
       for(int i = 0; i < slavecount; i++)
       {
          Slave slave = slaveMap[i];
          slave.linkBuffers(ioMap);
       }
-      trace("Linked buffers");
       
-      send();
-      receive();
-
+      getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_TXRX);
+      soem.ecx_send_processdata(context);
+      soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
       
       etherCATHouseHolder.start();
       
@@ -283,7 +312,7 @@ public class Master
          }
       });
       
-      
+      getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
    }
    
    private void setupFastIRQ(String iface) throws IOException
@@ -316,7 +345,7 @@ public class Master
     */
    public void shutdown()
    {
-      trace("Waiting for EtherCAT Controller to stop");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.WAIT_SHUTDOWN);
       etherCATController.stopController();
       try
       {
@@ -326,7 +355,7 @@ public class Master
       {
       }
       
-      trace("Shutting down controller thread");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.STOP_HOUSEHOLDER);
       etherCATHouseHolder.stopExecution();
       
       
@@ -348,19 +377,19 @@ public class Master
       }
       
       
-      trace("Switching slaves to PRE-OP state");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_PREOP);
       ec_slavet allSlaves = soem.ecx_slave(context, 0);
       allSlaves.setState(ec_state.EC_STATE_PRE_OP.swigValue());
       soem.ecx_writestate(context, 0);
       
-      trace("Cleanup slaves");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.CLEANUP_SLAVES);
       
       for(int i = 0; i < slaves.size(); i ++)
       {
          slaves.get(i).cleanup();
       }
       
-      trace("Switching slaves to INIT state");
+      getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_TO_INIT);
       allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
       soem.ecx_writestate(context, 0);
    }
@@ -373,8 +402,9 @@ public class Master
    public void send()
    {
       soem.ecx_send_processdata(context);
+      
    }
-   
+   int i = 0;
    /**
     * Read the process data. 
     * 
@@ -383,6 +413,24 @@ public class Master
    public void receive()
    {
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      
+      if(enableDC)
+      {
+         // Calculate jitter using RFC 1889
+         long arrivalTime = RealtimeThread.getCurrentMonotonicClockTime();
+         if(previousArrivalTime != 0)
+         {
+            long D = (arrivalTime - previousArrivalTime) - (cycleTimeInNs);
+            if(D < 0) D = -D;
+            
+            long jitterEstimate = this.jitterEstimate; // Localize volatile variable         
+            jitterEstimate += (D - jitterEstimate)/16;
+            this.jitterEstimate = jitterEstimate;
+            ++this.jitterSamples;
+         }
+         
+         previousArrivalTime = arrivalTime;
+      }
    }
 
    
@@ -411,10 +459,35 @@ public class Master
       return soem.ecx_dcTime(context);
    }
    
-   private class EtherCATMasterHouseHolder extends Thread
+   
+   /**
+    * Get an estimate of the jitter between subsequent calls of receive() 
+    * 
+    * @return jitter estimate in nanoseconds, 0 when DC is disabled
+    */
+   public long getJitterEstimate()
    {
+      return jitterEstimate;
+   }
+   
+   /**
+    * Set the absolute bound for the jitter estimate before allowing the slaves to go to OP mode. 
+    * 
+    * This depends on the precision of your realtime system and is only used when DC clocks are enabled. 
+    * Setting this number too high could result in slaves refusing to go to OP mode.  
+    * 
+    * @param jitterInNanoseconds default 1000ns
+    */
+   public void setMaximumExecutionJitter(long jitterInNanoseconds)
+   {
+      this.maximumExecutionJitter = jitterInNanoseconds;
+   }
+   
+   private class EtherCATMasterHouseHolder extends Thread
+   {      
       private volatile boolean running = false;
       private final ArrayList<SDO> SDOs = new ArrayList<>();
+      private boolean masterThreadStableExecution = false;
       
       public EtherCATMasterHouseHolder()
       {
@@ -435,13 +508,23 @@ public class Master
       @Override
       public void run()
       {         
+         long startTime = System.nanoTime();
          while(running)
          {
+            // Check if DC convergence needs to be reported
+            long runTime = System.nanoTime() - startTime;
             soem.ecx_readstate(context);
 
+            if(enableDC && !masterThreadStableExecution && Master.this.jitterSamples > MINIMUM_JITTER_SAMPLES)
+            {
+               long jitterEstimate = Master.this.jitterEstimate;
+               masterThreadStableExecution = jitterEstimate != 0 && jitterEstimate < maximumExecutionJitter;
+               getEtherCATStatusCallback().reportMasterThreadStableRateTime(runTime, jitterEstimate);
+            }
+            
             for(int i = 0; i < slaves.size(); i++)
             {
-               slaves.get(i).doEtherCATStateControl();
+               slaves.get(i).doEtherCATStateControl(masterThreadStableExecution, runTime);
             }
             
             for(int i = 0; i < SDOs.size(); i++)
