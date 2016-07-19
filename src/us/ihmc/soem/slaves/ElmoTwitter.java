@@ -1,5 +1,6 @@
 package us.ihmc.soem.slaves;
 
+import us.ihmc.soem.wrapper.ReadSDO;
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.TxPDO;
 
@@ -148,11 +149,16 @@ public abstract class ElmoTwitter extends DSP402Slave
    private final long MOTOR_ENABLED = 16;
    private final long MOTOR_FAULT = 64;
    private final long CURRENT_LIMITED = 8192;
-
+   
+   private boolean errorCodeRead = false;
+   private final ReadSDO elmoErrorCodeSDO;
+   private int elmoErrorCode = 0;
    
    public ElmoTwitter(int alias, int position)
    {
       super(vendorID, productCode, alias, position);
+      
+      elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 32);
    }
 
    public abstract long getElmoStatusRegister();
@@ -163,6 +169,30 @@ public abstract class ElmoTwitter extends DSP402Slave
       return isUnderVoltage() || isOverVoltage() || isSTODisabled() || isCurrentShorted() || isOverTemperature() || isMotorFaulted();
    }
 
+   @Override
+   public void doStateControl()
+   {
+      super.doStateControl();
+      
+      if(isFaulted())
+      {
+         if(elmoErrorCodeSDO.hasNewData())
+         {
+            elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
+            errorCodeRead = true;
+         }
+         else if (!errorCodeRead)
+         {
+            elmoErrorCodeSDO.update();
+         }
+      }
+      else
+      {
+         errorCodeRead = false;
+         elmoErrorCode = 0;
+      }
+   }
+   
 
    private boolean getStatusValue(long maskValue)
    {
@@ -209,6 +239,16 @@ public abstract class ElmoTwitter extends DSP402Slave
    public boolean isCurrentLimited()
    {
       return getStatusValue(CURRENT_LIMITED);
+   }
+   
+   public int getMotorFaultCode()
+   {
+      return elmoErrorCode;
+   }
+   
+   public String getElmoErrorCodeString()
+   {
+      return ElmoErrorCodes.errorCodeToString(getMotorFaultCode());
    }
 
 
