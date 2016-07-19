@@ -176,12 +176,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       
       if(isFaulted())
       {
-         if(elmoErrorCodeSDO.hasNewData())
-         {
-            elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
-            errorCodeRead = true;
-         }
-         else if (!errorCodeRead)
+         if (!errorCodeRead)
          {
             elmoErrorCodeSDO.update();
          }
@@ -189,7 +184,12 @@ public abstract class ElmoTwitter extends DSP402Slave
       else
       {
          errorCodeRead = false;
-         elmoErrorCode = 0;
+      }
+      
+      if(elmoErrorCodeSDO.hasNewData())
+      {
+         elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
+         errorCodeRead = true;
       }
    }
    
@@ -241,14 +241,14 @@ public abstract class ElmoTwitter extends DSP402Slave
       return getStatusValue(CURRENT_LIMITED);
    }
    
-   public int getMotorFaultCode()
+   public int getLastElmoErrorCode()
    {
       return elmoErrorCode;
    }
    
-   public String getElmoErrorCodeString()
+   public String getLastElmoErrorCodeString()
    {
-      return ElmoErrorCodes.errorCodeToString(getMotorFaultCode());
+      return ElmoErrorCodes.errorCodeToString(getLastElmoErrorCode());
    }
 
 
