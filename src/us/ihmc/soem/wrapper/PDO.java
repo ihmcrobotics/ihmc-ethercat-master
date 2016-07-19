@@ -42,6 +42,11 @@ abstract class PDO extends Struct
       {
          return longValue() == 1;
       }
+      
+      public boolean get()
+      {
+         return value();
+      }
 
       public void set(boolean value)
       {

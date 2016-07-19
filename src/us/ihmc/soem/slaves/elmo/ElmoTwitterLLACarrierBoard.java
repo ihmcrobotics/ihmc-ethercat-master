@@ -205,5 +205,14 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
 
       maxDriveTorque = readSDOUnsignedInt(0x6076, 0x0);
       System.out.println(toString() + " max drive torque is " + maxDriveTorque);
+      
+      if(dcEnabled)
+      {
+         configureDCSync0(true, cycleTimeInNs, 0);
+      }
+      else
+      {
+         configureDCSync0(false, 0, 0);
+      }
    }
 }
