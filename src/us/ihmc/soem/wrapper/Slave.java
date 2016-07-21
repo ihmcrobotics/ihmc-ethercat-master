@@ -104,10 +104,8 @@ public abstract class Slave
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
 
-      master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
-      configure(enableDC, cycleTimeInNs);
-
-
+      configureDCSync0(false, 0, 0);   // Disable DC Sync
+      
       for (int i = 0; i < syncManagers.length; i++)
       {
          if (syncManagers[i] != null)
@@ -120,6 +118,9 @@ public abstract class Slave
       {
          throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
       }
+
+      master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
+      configure(enableDC, cycleTimeInNs);
 
    }
 
@@ -182,7 +183,9 @@ public abstract class Slave
     */
    public int writeSDO(int index, int subindex, ByteBuffer buffer)
    {
-      return soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 9, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
+      int wc = soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 9, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
+      master.getEtherCATStatusCallback().notifySDOWrite(this, index, subindex, wc, buffer);
+      return wc;
    }
 
    
@@ -199,7 +202,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, double value)
    {
       sdoBuffer.clear();
-      sdoBuffer.putDouble(0, value);
+      sdoBuffer.putDouble(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
    
@@ -216,7 +219,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, long value)
    {
       sdoBuffer.clear();
-      sdoBuffer.putLong(0, value);
+      sdoBuffer.putLong(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
    
@@ -233,7 +236,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, float value)
    {
       sdoBuffer.clear();
-      sdoBuffer.putFloat(0, value);
+      sdoBuffer.putFloat(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
    
@@ -250,7 +253,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, int value)
    {
       sdoBuffer.clear();
-      sdoBuffer.putInt(0, value);
+      sdoBuffer.putInt(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
    
@@ -267,7 +270,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, short value)
    {
       sdoBuffer.clear();
-      sdoBuffer.putShort(0, value);
+      sdoBuffer.putShort(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
    
@@ -284,7 +287,7 @@ public abstract class Slave
    public int writeSDO(int index, int subIndex, byte value)
    {
       sdoBuffer.clear();
-      sdoBuffer.put(0, value);
+      sdoBuffer.put(value);
       return writeSDO(index, subIndex, sdoBuffer);
    }
 
@@ -309,6 +312,7 @@ public abstract class Slave
       int wc = soem.ecx_SDOread_java_helper(context, slaveIndex, index, (short) subIndex, (short) 0, size, sdoBuffer, soemConstants.EC_TIMEOUTRXM);
       sdoBuffer.position(0);
       sdoBuffer.limit(size);
+      master.getEtherCATStatusCallback().notifyReadSDO(this, index, size, subIndex, wc, sdoBuffer);
       return wc;
    }
    
@@ -818,6 +822,11 @@ public abstract class Slave
    public void setMaximumDCOffsetForOPMode(int dcOffsetInNs)
    {
       this.maximumDCOffset = dcOffsetInNs;
+   }
+
+   public boolean supportsCA()
+   {
+      return true;
    }
 
 

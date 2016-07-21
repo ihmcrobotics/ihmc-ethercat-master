@@ -43,7 +43,7 @@ public class Master
    
    private static boolean initialized = false;
    
-   private EtherCATStatusCallback etherCATStatusCallback = new EtherCATStatusCallback();
+   private EtherCATStatusCallback etherCATStatusCallback = new EtherCATStatusCallback(false);
    private final EtherCATMasterHouseHolder etherCATHouseHolder = new EtherCATMasterHouseHolder();
    
    private final ArrayList<Slave> slaves = new ArrayList<>();
@@ -109,6 +109,14 @@ public class Master
    public void setEtherCATStatusCallback(EtherCATStatusCallback callback)
    {
       this.etherCATStatusCallback = callback;
+   }
+   
+   /**
+    * Enable trace level debugging
+    */
+   public void enableTrace()
+   {
+      setEtherCATStatusCallback(new EtherCATStatusCallback(true));
    }
    
    /**
@@ -261,9 +269,12 @@ public class Master
          }
          
          // Disable Complete Access reading of SDO configuration.
-         short config = ec_slave.getCoEdetails();
-         config &= ~soemConstants.ECT_COEDET_SDOCA;
-         ec_slave.setCoEdetails(config);
+         if(!slave.supportsCA())
+         {
+            short config = ec_slave.getCoEdetails();
+            config &= ~soemConstants.ECT_COEDET_SDOCA;
+            ec_slave.setCoEdetails(config);
+         }
          
          previousAlias = alias;
          previousPosition = position;

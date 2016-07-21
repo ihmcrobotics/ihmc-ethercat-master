@@ -43,6 +43,7 @@ public class DCExample extends DistributedClockRealtimeThread
       super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), 50000);
 
       master = getMaster();
+      master.enableTrace();
 
       // Register slaves to the master
       master.registerSlave(ek1100);

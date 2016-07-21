@@ -1,10 +1,11 @@
 package us.ihmc.soem.wrapper;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 public class EtherCATStatusCallback
 {
-   private static final boolean TRACE = false;
+   private final boolean TRACE;
    private static final long SYNC_MESSAGES_INTERVAL = 5000000000l;
 
    public enum TRACE_EVENT
@@ -43,6 +44,12 @@ public class EtherCATStatusCallback
       }
    }
 
+   
+   public EtherCATStatusCallback(boolean trace)
+   {
+      this.TRACE = trace;
+   }
+   
    public void trace(TRACE_EVENT event)
    {
       if (TRACE)
@@ -53,7 +60,10 @@ public class EtherCATStatusCallback
 
    public void trace(Slave slave, TRACE_EVENT event)
    {
-
+      if (TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] " + slave + " " + event.getMessage());         
+      }
    }
 
    public void trace(SyncManager syncManager, Slave slave, TRACE_EVENT event)
@@ -121,6 +131,37 @@ public class EtherCATStatusCallback
       {
          System.err.println("[" + System.nanoTime() + "] Master thread not converged to stable rate for " + (runTime/1000000) + "ms. Current jitter estimate is " + jitterEstimate + "ns.");
          printedMasterThreadStableRateMessages = cycle;
+      }
+   }
+
+   public static String hex(long n) {
+      return String.format("%2s", Long.toHexString(n)).replace(' ', '0');
+  }
+   
+   public void notifySDOWrite(Slave slave, int index, int subindex, int wc, ByteBuffer buffer)
+   {
+      if(TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc + "; size: " + buffer.position());
+         System.out.print("Data: ");
+         for(int i = 0; i < buffer.position(); i++)
+         {
+            System.out.print(hex(buffer.get(i)));
+         }
+         System.out.println();
+      }
+   }
+
+   public void notifyReadSDO(Slave slave, int index, int size, int subindex, int wc, ByteBuffer buffer)
+   {
+      if(TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
+         for(int i = 0; i < size; i++)
+         {
+            System.out.println(hex(buffer.get(i)));
+         }
+         System.out.println();
       }
    }
 
