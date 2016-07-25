@@ -183,7 +183,7 @@ public abstract class Slave
     */
    public int writeSDO(int index, int subindex, ByteBuffer buffer)
    {
-      int wc = soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 9, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
+      int wc = soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 0, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
       master.getEtherCATStatusCallback().notifySDOWrite(this, index, subindex, wc, buffer);
       return wc;
    }
