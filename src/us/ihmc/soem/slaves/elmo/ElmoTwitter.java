@@ -251,6 +251,12 @@ public abstract class ElmoTwitter extends DSP402Slave
    {
       return ElmoErrorCodes.errorCodeToString(getLastElmoErrorCode());
    }
+   
+   @Override
+   public final boolean supportsCA()
+   {
+      return false;
+   }
 
 
 }
