@@ -67,31 +67,6 @@ public class OmronGXJC06
          super(vendor, productCode, aliasAddress, position);
       }
 
-      @Override
-      protected void shutdown()
-      {
-
-      }
-
-      @Override
-      protected boolean hasShutdown()
-      {
-         return true;
-      }
-
-      @Override
-      protected void configure(boolean dcEnabled, long cycleTimeInNs)
-      {
-         if (dcEnabled)
-         {
-            configureDCSync0(true, cycleTimeInNs, 0);
-         }
-         else
-         {
-            configureDCSync0(false, 0, 0);
-         }
-
-      }
 
    }
 

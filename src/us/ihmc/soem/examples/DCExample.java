@@ -7,7 +7,7 @@ import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.soem.slaves.beckhoff.EK1100;
 import us.ihmc.soem.slaves.beckhoff.EL3314;
 import us.ihmc.soem.slaves.beckhoff.EL4134;
-import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
+import us.ihmc.soem.wrapper.EtherCATRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
 
 /**
@@ -20,12 +20,11 @@ import us.ihmc.soem.wrapper.Master;
  * @author Jesper Smith
  *
  */
-public class DCExample extends DistributedClockRealtimeThread
+public class DCExample extends EtherCATRealtimeThread
 {
    public static final boolean SWITCH_SIGNAL_EVERY_TICK = false;
 
    private static final int period = 1000000;
-   private final Master master;
 
    // Create slaves
    private final EK1100 ek1100 = new EK1100(101, 0); // Coupler
@@ -40,15 +39,14 @@ public class DCExample extends DistributedClockRealtimeThread
 
    public DCExample() throws IOException
    {
-      super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), 50000);
+      super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), true, 50000);
 
-      master = getMaster();
-      master.enableTrace();
+      enableTrace();
 
       // Register slaves to the master
-      master.registerSlave(ek1100);
-      master.registerSlave(el3314);
-      master.registerSlave(el4134);
+      registerSlave(ek1100);
+      registerSlave(el3314);
+      registerSlave(el4134);
 
 
    }
@@ -61,7 +59,7 @@ public class DCExample extends DistributedClockRealtimeThread
       // Initialize master
       try
       {
-         master.init();
+         init();
       }
       catch (IOException e)
       {

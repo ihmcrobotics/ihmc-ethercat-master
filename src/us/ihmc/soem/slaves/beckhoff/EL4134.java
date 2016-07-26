@@ -61,20 +61,6 @@ public class EL4134 extends Slave
    }
 
    @Override
-   protected void shutdown()
-   {
-      // TODO Auto-generated method stub
-      
-   }
-   
-
-   @Override
-   protected boolean hasShutdown()
-   {
-      return true;
-   }
-
-   @Override
    protected void configure(boolean dcEnabled, long cycleTimeInNs)
    {
       if(dcEnabled)

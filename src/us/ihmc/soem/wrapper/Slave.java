@@ -17,7 +17,7 @@ import us.ihmc.soem.wrapper.SyncManager.MailbusDirection;
  * @author Jesper Smith
  *
  */
-public abstract class Slave
+public class Slave
 {
    public static final int MAX_DC_OFFSET_DEFAULT = 200;
    public static final int MAX_DC_OFFSET_SAMLES = 10;
@@ -774,12 +774,17 @@ public abstract class Slave
 
    }
    
+   
+   
    /**
     * Shutdown hook for the slave. Use to clear up state machines
     * 
     * Will be called cyclically on shutdown till hasShutDown is true.
     */
-   protected abstract void shutdown();
+   protected void shutdown()
+   {
+      
+   }
    
    /**
     * Signal that the slave has succesfully been shutdown. 
@@ -789,7 +794,10 @@ public abstract class Slave
     * @return true if the slave has shutdown
     * 
     */
-   protected abstract boolean hasShutdown();
+   protected boolean hasShutdown()
+   {
+      return true;
+   }
 
    
    /**
@@ -801,7 +809,18 @@ public abstract class Slave
     * 
     * @param cycleTimeInNs
     */
-   protected abstract void configure(boolean dcEnabled, long cycleTimeInNs);
+   protected void configure(boolean dcEnabled, long cycleTimeInNs)
+   {
+
+      if (dcEnabled)
+      {
+         configureDCSync0(true, cycleTimeInNs, 0);
+      }
+      else
+      {
+         configureDCSync0(false, 0, 0);
+      }
+   }
 
    
    /**

@@ -246,20 +246,6 @@ public class EL3356 extends Slave
    }
 
    @Override
-   protected void shutdown()
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   protected boolean hasShutdown()
-   {
-      // TODO Auto-generated method stub
-      return false;
-   }
-
-   @Override
    protected void configure(boolean dcEnabled, long cycleTimeInNs)
    {
       writeSDO(0x8000, 0x23, (float)nominalSensitivity);
@@ -289,6 +275,8 @@ public class EL3356 extends Slave
       
       writeSDO(0x8000, 0x03, (byte)(enableAverager?(byte)1:(byte)0));
       writeSDO(0x8000, 0x04, (byte)(enableAverager?(byte)1:(byte)0));
+      
+      super.configure(dcEnabled, cycleTimeInNs);
    }
    
 }

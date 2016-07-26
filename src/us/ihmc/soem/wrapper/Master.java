@@ -6,7 +6,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.concurrent.locks.LockSupport;
 
-import us.ihmc.realtime.RealtimeThread;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
@@ -56,6 +55,8 @@ public class Master
    
    private boolean enableDC = false;
    private long cycleTimeInNs = -1;
+   
+   private long startTime;
    
    private final EtherCATController etherCATController;
    
@@ -313,6 +314,11 @@ public class Master
       soem.ecx_send_processdata(context);
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
       
+      if(enableDC)
+      {
+         startTime = getDCTime();
+      }
+      
       etherCATHouseHolder.start();
       
       Runtime.getRuntime().addShutdownHook(new Thread()
@@ -326,6 +332,18 @@ public class Master
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
    }
    
+   /**
+    * Internal function to speed up the EtherCAT send/receive time.  
+    * 
+    * Calls the equivalent of 
+    * 
+    * ethtool -C iface rx-usecs 0 rx-frames 1 tx-usecs 0 tx-frames 1
+    * 
+    * This drastically reduces the time to complete a send/receive cycle. Tests show a decrease from 200us to 50us.
+    * 
+    * @param iface
+    * @throws IOException
+    */
    private void setupFastIRQ(String iface) throws IOException
    {
       int ret = soem.ecx_setup_socket_fast_irq(iface);
@@ -415,7 +433,7 @@ public class Master
       soem.ecx_send_processdata(context);
       
    }
-   int i = 0;
+
    /**
     * Read the process data. 
     * 
@@ -428,7 +446,7 @@ public class Master
       if(enableDC)
       {
          // Calculate jitter using RFC 1889
-         long arrivalTime = RealtimeThread.getCurrentMonotonicClockTime();
+         long arrivalTime = getDCTime();
          if(previousArrivalTime != 0)
          {
             long D = (arrivalTime - previousArrivalTime) - (cycleTimeInNs);
@@ -458,7 +476,7 @@ public class Master
    
    
    /**
-    * Gets the time of the DC Master clcok from the last datagram.
+    * Gets the time of the DC Master clock from the last datagram.
     * 
     * This value corresponds to when send() is called. More precisely, it is the moment the datagram
     * passed the DC master clock. Useful for synchronization between the control loop and the DC master clock.
@@ -470,9 +488,21 @@ public class Master
       return soem.ecx_dcTime(context);
    }
    
+   /**
+    * Gets the time read from the DC Master clock from when init() was run
+    * 
+    * @return Time init() was run as seen from the Master Clock
+    */
+   public long getStartDCTime()
+   {
+      return startTime;
+   }
+   
    
    /**
-    * Get an estimate of the jitter between subsequent calls of receive() 
+    * Get an estimate of the jitter based on the time the EtherCAT datagram arrives at the DC Master Clock (usually, slave 1)
+    * 
+    * Calculated using the method described in RFC 1889
     * 
     * @return jitter estimate in nanoseconds, 0 when DC is disabled
     */

@@ -6,20 +6,17 @@ import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.soem.slaves.elmo.ElmoTwitter;
 import us.ihmc.soem.slaves.elmo.ElmoTwitterTCB;
-import us.ihmc.soem.wrapper.DistributedClockRealtimeThread;
+import us.ihmc.soem.wrapper.EtherCATRealtimeThread;
 import us.ihmc.soem.wrapper.Master;
 
-public class ElmoTwitterTCBExample extends DistributedClockRealtimeThread
+public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
 {
-   private final Master master;
    private final ElmoTwitter carrier = new ElmoTwitterTCB(0, 0);
 
    public ElmoTwitterTCBExample() throws IOException
    {
-      super("eth2", new PriorityParameters(PriorityParameters.getMaximumPriority()), new MonotonicTime(0, 1000000), 100000);
-      master = getMaster();
-      master.registerSlave(carrier);
-      master.init();
+      super("eth2", new PriorityParameters(PriorityParameters.getMaximumPriority()), new MonotonicTime(0, 1000000), true, 100000);
+      registerSlave(carrier);
       // Test SDO reading
       byte receiveSDOLength = carrier.readSDOByte(0x1c12, 0x0);
       System.out.println("Number of elements in receive PDO: " + receiveSDOLength);
@@ -32,7 +29,14 @@ public class ElmoTwitterTCBExample extends DistributedClockRealtimeThread
 
    public void run()
    {
-
+      try
+      {
+         init();
+      }
+      catch (IOException e)
+      {
+         throw new RuntimeException(e);
+      }
       while (isRunning())
       {
          waitForNextPeriodAndDoTransfer();

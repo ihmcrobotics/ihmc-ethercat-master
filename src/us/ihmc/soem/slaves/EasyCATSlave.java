@@ -82,29 +82,4 @@ public class EasyCATSlave extends Slave
       }
 
    }
-
-   @Override
-   protected void shutdown()
-   {
-      
-   }
-
-   @Override
-   protected boolean hasShutdown()
-   {
-      return true;
-   }
-
-   @Override
-   protected void configure(boolean dcEnabled, long cycleTimeInNs)
-   {
-      if(dcEnabled)
-      {
-         configureDCSync0(true, cycleTimeInNs, 0);
-      }
-      else
-      {
-         configureDCSync0(false, 0, 0);
-      }
-   }
 }

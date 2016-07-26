@@ -14,30 +14,4 @@ public class EK1100 extends Slave
    }
 
 
-   @Override
-   protected void configure(boolean dcEnabled, long cycleTimeInNs)
-   {
-      if(dcEnabled)
-      {
-         configureDCSync0(true, cycleTimeInNs, 0);
-      }
-      else
-      {
-         configureDCSync0(false, 0, 0);
-      }
-   }
-   
-   @Override
-   protected void shutdown()
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   protected boolean hasShutdown()
-   {
-      return true;
-   }
-
 }

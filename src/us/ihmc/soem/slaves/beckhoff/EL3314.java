@@ -71,29 +71,4 @@ public class EL3314 extends Slave
       return in4.value.get();
    }
 
-   @Override
-   protected void shutdown()
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   @Override
-   protected boolean hasShutdown()
-   {
-      return true;
-   }
-
-   @Override
-   protected void configure(boolean dcEnabled, long cycleTimeInNs)
-   {
-      if(dcEnabled)
-      {
-         configureDCSync0(true, cycleTimeInNs, 0);
-      }
-      else
-      {
-         configureDCSync0(false, 0, 0);
-      }
-   }
 }
