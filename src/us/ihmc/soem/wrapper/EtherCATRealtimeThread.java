@@ -16,7 +16,7 @@ import us.ihmc.realtime.RealtimeThread;
 public abstract class EtherCATRealtimeThread extends RealtimeThread implements EtherCATController
 {
    private final Master master;
-   private final boolean enableDC;
+   private boolean enableDC;
    
    private long dcControlIntegral = 0;
    private long syncOffset = 0;
@@ -24,6 +24,8 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
    private final long cycleTimeInNs;
    private volatile boolean running = true;
    
+   private long lastEtherCATTransactionTime = 0;
+   private long lastIdleTime = 0;
    private long startTimeFreeRun = 0;
    
    
@@ -111,6 +113,23 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
          return startTimeFreeRun;
       }
    }
+   
+   /**
+    * @return Time spent parked waiting for next execution. Does not include EtherCAT transaction time.
+    */
+   public long getLastIdleTime()
+   {
+      return lastIdleTime;
+   }
+   
+   /**
+    * 
+    * @return Time spent doing the EtherCAT transaction. 
+    */
+   public long getLastEtherCATTransactionTime()
+   {
+      return lastEtherCATTransactionTime;
+   }
 
    /**
     * Call every tick to wait for the next trigger time followed by the EtherCAT transaction.
@@ -119,10 +138,13 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
     */
    public boolean waitForNextPeriodAndDoTransfer()
    {
-      if(waitForNextPeriod() > 0)
+      lastIdleTime = waitForNextPeriodInternal(); 
+      if(lastIdleTime > 0)
       {
+         long startTime = getCurrentMonotonicClockTime();
          master.send();
          master.receive();
+         lastEtherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
          return true;
       }
       else
@@ -162,13 +184,7 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
       return -(delta / 100) - (dcControlIntegral / 20);
    }
 
-   
-   /**
-    * Wait for next trigger period. It is recommended to use waitForNextPeriodAndDoTransfer()
-    * 
-    */
-   @Override
-   public final long waitForNextPeriod()
+   private final long waitForNextPeriodInternal()
    {
       if(enableDC)
       {
@@ -179,6 +195,19 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
       {
          return super.waitForNextPeriod();
       }
+   }
+   
+   
+   /**
+    * Wait for next trigger period. Use waitForNextPeriodAndDoTransfer()
+    * 
+    * @throws RuntimeException 
+    * 
+    */
+   @Override
+   public final long waitForNextPeriod()
+   {
+      throw new RuntimeException("waitForNextPeriod not valid in EtherCATRealtimeThread. Use waitForNextPeriodAndDoTransfer()");
    }
 
    /**
@@ -228,6 +257,8 @@ public abstract class EtherCATRealtimeThread extends RealtimeThread implements E
    public void init() throws IOException
    {
       master.init();
+      this.enableDC = master.getDCEnabled();
+      
       if(!enableDC)
       {
          startTimeFreeRun = getCurrentMonotonicClockTime();

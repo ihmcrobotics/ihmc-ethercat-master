@@ -39,7 +39,7 @@ public class DCExample extends EtherCATRealtimeThread
 
    public DCExample() throws IOException
    {
-      super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), true, 50000);
+      super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), true, 100000);
 
       enableTrace();
 

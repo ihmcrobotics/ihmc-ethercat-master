@@ -51,18 +51,34 @@ public class SyncManager
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.CLEAR_PDOS);
          
          // Set the size of the SM configuration array to zero, allows writing to the elements
-         slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
+         int wc = slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
+         
+         if(wc == 0)
+         {
+            master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex);
+            return;
+         }
          
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDOS);
          // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)
          {
-            slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
+            wc = slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
+            if(wc == 0)
+            {
+               master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex, PDOs.get(i).getAddress(), i + 1);
+               return;
+            }
          }
          
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDO_SIZE);
          // Set the correct size of the SM array
-         slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
+         wc = slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
+         if(wc == 0)
+         {
+            master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex);
+            return;
+         }
       }
    }
 

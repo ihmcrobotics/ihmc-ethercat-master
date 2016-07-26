@@ -129,7 +129,7 @@ public class EtherCATStatusCallback
       long cycle = runTime / SYNC_MESSAGES_INTERVAL;
       if(cycle != printedMasterThreadStableRateMessages)
       {
-         System.err.println("[" + System.nanoTime() + "] Master thread not converged to stable rate for " + (runTime/1000000) + "ms. Current jitter estimate is " + jitterEstimate + "ns.");
+         System.err.println("[" + System.nanoTime() + "] Master thread not converged to stable rate for " + (runTime/1000000) + "ms. Current jitter estimate is " + jitterEstimate + "ns. Make sure to run a real time kernel. To increase maximum allowed jitter, use EtherCATRealtimeThread.setMaximumExecutionJitter()");
          printedMasterThreadStableRateMessages = cycle;
       }
    }
@@ -163,6 +163,29 @@ public class EtherCATStatusCallback
          }
          System.out.println();
       }
+   }
+
+   public void pdoConfigurationError(Slave slave, int index, int pdoConfigurationIndex)
+   {
+      System.err.println("[" + System.nanoTime() + "] " + slave +" sm("+ index + "): Cannot configure PDO size on index " + Integer.toHexString(pdoConfigurationIndex) + ". Object is read-only");
+   }
+
+   public void pdoConfigurationError(Slave slave, int index, int pdoConfigurationIndex, int pdoConfigurationSubIndex, int pdoIndex)
+   {
+      System.err.println("[" + System.nanoTime() + "] " + slave +" sm("+ index + "): Cannot Write PDO " + Integer.toHexString(pdoIndex) + " configuration to index " + Integer.toHexString(pdoConfigurationIndex) + ":" + Integer.toHexString(pdoConfigurationSubIndex) + ". Object is read-only.");
+   }
+
+   public void notifyExpectedWorkingCounter(long expectedWorkingCounter)
+   {
+      if(TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] Calculated expected working counter: " + expectedWorkingCounter);
+      }
+   }
+
+   public void notifyDCNotCapable()
+   {
+      System.err.println("[" + System.nanoTime() + "] Cannot configure distrubed clocks, running without.");
    }
 
 }

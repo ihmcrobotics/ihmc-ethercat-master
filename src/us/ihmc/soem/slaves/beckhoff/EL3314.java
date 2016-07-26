@@ -42,10 +42,8 @@ public class EL3314 extends Slave
    {
       super(vendorID, productCode, aliasAddress, configAddress);
       
-      for(int i = 0; i < 4; i++)
-      {
-         registerSyncManager(new SyncManager(i, true));
-      }
+      registerSyncManager(new SyncManager(2, true));
+      registerSyncManager(new SyncManager(3, true));
 
       sm(3).registerPDO(in1);
       sm(3).registerPDO(in2);

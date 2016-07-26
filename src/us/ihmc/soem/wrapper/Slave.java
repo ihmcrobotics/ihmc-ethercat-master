@@ -513,7 +513,7 @@ public class Slave
    @Override
    public String toString()
    {
-      return "Slave [aliasAddress=" + aliasAddress + ", position=" + position + "]";
+      return "Slave [name=" + getClass().getSimpleName() + ", aliasAddress=" + aliasAddress + ", position=" + position + "]";
    }
 
    /**

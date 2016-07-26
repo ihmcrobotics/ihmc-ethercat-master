@@ -1,0 +1,6 @@
+IHMC EtherCAT Master 0.5
+
+ * Created EtherCATRealtimeThread supporting both DC synchronization and free run
+ * Hide master from EtherCATRealtimeThread users, make delegates
+ * Default implementations for slave.shutdown()/slave.hasShutdown()/slave.configure()
+ * Improved error handling

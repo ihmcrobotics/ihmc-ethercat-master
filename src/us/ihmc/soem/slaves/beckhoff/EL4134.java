@@ -31,7 +31,7 @@ public class EL4134 extends Slave
    {
       super(vendorID, productCode, aliasAddress, configAddress);
 
-      registerSyncManager(new SyncManager(2, true));
+      registerSyncManager(new SyncManager(2, false));
 
       sm(2).registerPDO(out1);
       sm(2).registerPDO(out2);

@@ -32,7 +32,7 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
  */
 public class Master
 {
-   public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 10000;
+   public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 25000;
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
    
    static
@@ -59,6 +59,8 @@ public class Master
    private long startTime;
    
    private final EtherCATController etherCATController;
+   
+   private long expectedWorkingCounter = 0;
    
    private long maximumExecutionJitter = MAXIMUM_EXECUTION_JITTER_DEFAULT;
    private long previousArrivalTime = 0;
@@ -202,6 +204,10 @@ public class Master
             slaves.get(masterClock - 1).setDCMasterClock(true);            
             
          }
+         else
+         {
+            getEtherCATStatusCallback().notifyDCNotCapable();
+         }
       }
 
       if(enableDC)
@@ -313,6 +319,11 @@ public class Master
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_TXRX);
       soem.ecx_send_processdata(context);
       soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      
+      
+      expectedWorkingCounter = context.getGrouplist().getOutputsWKC() * 2 + context.getGrouplist().getInputsWKC();
+      getEtherCATStatusCallback().notifyExpectedWorkingCounter(expectedWorkingCounter);
+            
       
       if(enableDC)
       {
@@ -432,6 +443,15 @@ public class Master
    {
       soem.ecx_send_processdata(context);
       
+   }
+   
+   /**
+    * Check if DC is enabled
+    * @return true if DC is enabled after init(), false if not
+    */
+   public boolean getDCEnabled()
+   {
+      return enableDC;
    }
 
    /**
