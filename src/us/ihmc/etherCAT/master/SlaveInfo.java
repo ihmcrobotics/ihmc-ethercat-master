@@ -110,15 +110,39 @@ public class SlaveInfo
       }
    }
 
+   public static void showOptions()
+   {
+      System.out.println("Usage:  SlaveInfo [network interface] [options]");
+      System.out.println("[options] can be");
+      System.out.println("\t--pdo\tShow PDO configuration");
+      System.out.println("\t-h\tShow this message");
+      
+   }
+   
    public static void main(String[] args) throws IOException
    {
 
       if (args.length == 0)
       {
-         System.out.println("Usage:  SlaveInfo [network interface]");
+         showOptions();
          System.exit(-1);
       }
       String iface = args[0];
+      
+      
+      boolean printPDO = false;
+      for(int i = 1; i < args.length; i++)
+      {
+         if(args[i].equals("--pdo"))
+         {
+            printPDO = true;
+         }
+         else if (args[i].equals("-h"))
+         {
+            showOptions();
+            System.exit(0);
+         }
+      }
 
       ecx_contextt context = soem.ecx_create_context();
 
@@ -187,7 +211,7 @@ public class SlaveInfo
 
                System.out.println("\tSM(" + nSM + ") Address: " + hex(sm.getStartAddr()) + ", length: " + sm.getSMlength() + "\tFlags: " + sm.getSMflags() + "\tType: " + type);
 
-               if ((ec_slave.getMbx_proto() & soem.ECT_MBXPROT_COE) > 0)
+               if (printPDO && (ec_slave.getMbx_proto() & soem.ECT_MBXPROT_COE) > 0)
                {
                   if (soem.ecx_smtype(ec_slave, nSM) == 3 || soem.ecx_smtype(ec_slave, nSM) == 4)
                   {

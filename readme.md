@@ -27,6 +27,9 @@ Custom slave code is straightforward to implement based on provided slave exampl
 
 Example code is provided in us.ihmc.etherCAT.examples. Feel free to use.
 
+## Slave information
+To show the slaves available on the bus the provided class us.ihmc.etherCAT.master.SlaveInfo can be used. 
+
 ## License
 
 Copyright 2016 Florida Institute for Human and Machine Cognition (IHMC)
