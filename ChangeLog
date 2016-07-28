@@ -4,3 +4,6 @@ IHMC EtherCAT Master 0.5
  * Hide master from EtherCATRealtimeThread users, make delegates
  * Default implementations for slave.shutdown()/slave.hasShutdown()/slave.configure()
  * Improved error handling
+ * Have EtherCATRealtimeThread do loop control and shutdown control
+ * Renamed BooleanField to Bool
+ * Removed Javalution dependency

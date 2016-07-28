@@ -168,11 +168,51 @@ ec_slavet* ecx_slave(ecx_contextt* context, uint32 slave)
     return &(context->slavelist[slave]);
 }
 
+ec_smt* ecx_sm(ec_slavet* slave, uint32 sm)
+{
+	if(sm >= EC_MAXSM)
+	{
+		return NULL;
+	}
+	
+	return &(slave->SM[sm]);
+}
+
+uint8 ecx_smtype(ec_slavet* slave, uint32 sm)
+{
+	if(sm >= EC_MAXSM)
+	{
+		return 0;
+	}
+	
+	return slave->SMtype[sm];
+}
+
+ec_fmmut* ecx_fmmu(ec_slavet* slave, uint32 fmmu)
+{
+	if(fmmu >= EC_MAXFMMU)
+	{
+		return NULL;
+	}
+	
+	return &(slave->FMMU[fmmu]);
+}
+
 int32_t ecx_inputoffset(ec_slavet* slave, void* buffer)
 {
     return ((uint64_t) slave->inputs) - ((uint64_t) buffer);
 }
 
+char* ecx_oelist_name(ec_OElistt* OElist, int32 index)
+{
+	return OElist->Name[index];
+}
+
+
+char* ecx_odlist_name(ec_ODlistt* ODlist, int32 index)
+{
+	return ODlist->Name[index];
+}
 
 int32_t ecx_outputoffset(ec_slavet* slave, void* buffer)
 {

@@ -25,7 +25,7 @@ Custom slave code is straightforward to implement based on provided slave exampl
 
 ## Examples
 
-Example code is provided in us.ihmc.soem.examples. Feel free to use.
+Example code is provided in us.ihmc.etherCATMaster.examples. Feel free to use.
 
 ## License
 

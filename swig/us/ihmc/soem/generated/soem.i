@@ -3,6 +3,8 @@
 %include "various.i"
 %apply unsigned char *NIOBUFFER { void* };
 
+%include "carrays.i"
+
 
 %javaconst(1);
 %{
@@ -16,6 +18,10 @@
 #define PACKED
 #define PACKED_BEGIN
 #define PACKED_END
+
+
+%array_functions(uint16, uint16Array);
+%array_functions(uint8, uint8Array);
 
 %include "osal_defs.h"
 %include "osal.h"

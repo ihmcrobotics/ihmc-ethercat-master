@@ -19,6 +19,12 @@ int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, u
                       boolean CA, int size, void *p, int timeout);
 int ecx_reconfig_slave_to_preop(ecx_contextt *context, uint16 slave, int timeout);
 int ecx_reconfig_slave_to_safeop(ecx_contextt *context, uint16 slave, int timeout);
+ec_smt* ecx_sm(ec_slavet* slave, uint32 sm);
+uint8 ecx_smtype(ec_slavet* slave, uint32 sm);
+ec_fmmut* ecx_fmmu(ec_slavet* slave, uint32 fmmu);
+char* ecx_oelist_name(ec_OElistt* OElist, int32 index);
+char* ecx_odlist_name(ec_ODlistt* ODlist, int32 index);
+
 
 
 
