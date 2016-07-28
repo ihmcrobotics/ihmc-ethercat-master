@@ -81,18 +81,26 @@ public class Master
       initialized = true;
    }
    
-   private Slave getSlave(int alias, int position)
+   private Slave getSlave(int alias, int position) throws IOException
    {
+      Slave retSlave = null;
       for(int i = 0; i < slaves.size(); i++)
       {
          Slave slave = slaves.get(i);
          
          if(slave.getAliasAddress() == alias && slave.getPosition() == position)
          {
-            return slave;
+            if(retSlave == null)
+            {
+               retSlave = slave;
+            }
+            else
+            {
+               throw new IOException("Cannot configure slave " + alias + ":" + position + ". Multiple slaves with this address are specified. Change the alias addresses to a unique value.");
+            }
          }
       }
-      return null;
+      return retSlave;
    }
    
    /**

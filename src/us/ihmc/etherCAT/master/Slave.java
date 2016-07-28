@@ -927,4 +927,13 @@ public class Slave
    }
 
 
+   /**
+    * Check if the slave is configured.
+    * 
+    * @return true if the slave is configured by the master
+    */
+   public boolean isConfigured()
+   {
+      return ec_slave != null;
+   }
 }
