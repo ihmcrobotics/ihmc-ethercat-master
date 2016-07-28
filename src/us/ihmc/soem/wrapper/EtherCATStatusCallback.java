@@ -29,7 +29,9 @@ public class EtherCATStatusCallback
       CONFIGURE_DC("Configuring DC settings"),
       CLEAR_PDOS("Clearing PDO configuration"),
       WRITE_PDOS("Writing PDO entries"),
-      WRITE_PDO_SIZE("Writing Number of PDO entries");
+      WRITE_PDO_SIZE("Writing Number of PDO entries"), 
+      RECONFIG_TO_PREOP("Reconfiguring slave to PRE-OP"),
+      RECONFIG_TO_SAFEOP("Reconfiguring slave to SAFE-OP"), RECOVER_SLAVE("Slave lost. Recovering slave"), RECOVERED_SLAVE("Sucessfully recovered slave"), SLAVE_FOUND("Slave found"), SLAVE_LOST("Slave lost");
 
       private final String msg;
 
@@ -142,8 +144,8 @@ public class EtherCATStatusCallback
    {
       if(TRACE)
       {
-         System.out.println("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc + "; size: " + buffer.position());
-         System.out.print("Data: ");
+         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc + "; size: " + buffer.position());
+         System.out.print(" Data: ");
          for(int i = 0; i < buffer.position(); i++)
          {
             System.out.print(hex(buffer.get(i)));
@@ -156,10 +158,11 @@ public class EtherCATStatusCallback
    {
       if(TRACE)
       {
-         System.out.println("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
+         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
+         System.out.print(" Data: ");
          for(int i = 0; i < size; i++)
          {
-            System.out.println(hex(buffer.get(i)));
+            System.out.print(hex(buffer.get(i)));
          }
          System.out.println();
       }
@@ -181,6 +184,11 @@ public class EtherCATStatusCallback
       {
          System.out.println("[" + System.nanoTime() + "] Calculated expected working counter: " + expectedWorkingCounter);
       }
+   }
+   
+   public void notifyWorkingCounterMismatch()
+   {
+      System.err.println("[" + System.nanoTime() + "] Working counter mismatch. Recovering slaves.");
    }
 
    public void notifyDCNotCapable()

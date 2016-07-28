@@ -2,7 +2,7 @@ package us.ihmc.soem.slaves.elmo;
 
 import java.io.IOException;
 
-import javolution.io.Struct.Unsigned16;
+import us.ihmc.soem.javalution.Struct.Unsigned16;
 import us.ihmc.soem.wrapper.SyncManager;
 
 public class ElmoTwitterTCB extends ElmoTwitter

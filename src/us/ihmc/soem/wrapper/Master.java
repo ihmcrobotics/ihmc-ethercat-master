@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.concurrent.locks.LockSupport;
 
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
@@ -16,16 +15,11 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
 
 /**
  * 
- * EtherCAT master class. 
+ * EtherCAT master class. Advanced use only, most developers want to use EtherCATRealtimeThread to develop their controllers.
  * 
- * This class is the main entry point for EtherCAT operations. It requires raw socket access, so it is recommended
- * to be run as root or administrator. 
- * 
- * This class will create a seperate EtherCAT controller thread that does various non-realtime householding tasks for 
+ * This class will create a separate EtherCAT controller thread that does various non-realtime householding tasks for 
  * the EtherCAT protocol, like state switching and SDO communication.
  * 
- * 
- * If you want (recommended) to use Distributed Clocks, use in conjunction with DistrubutedCLockRealtimeThread.
  * 
  * @author Jesper Smith
  *
@@ -58,12 +52,12 @@ public class Master
    
    private long startTime;
    
-   private final EtherCATController etherCATController;
-   
    private long expectedWorkingCounter = 0;
    
    private long maximumExecutionJitter = MAXIMUM_EXECUTION_JITTER_DEFAULT;
    private long previousArrivalTime = 0;
+   
+   private volatile boolean workingCounterMismatch = false;
    private volatile long jitterSamples = 0;
    private volatile long jitterEstimate = 0;
    
@@ -76,7 +70,7 @@ public class Master
     * 
     * @param iface The network interface to listen on
     */
-   public Master(String iface, EtherCATController etherCATController)
+   public Master(String iface)
    {
       if(initialized)
       {
@@ -84,7 +78,6 @@ public class Master
       }
       
       this.iface = iface;
-      this.etherCATController = etherCATController;
       initialized = true;
    }
    
@@ -332,13 +325,6 @@ public class Master
       
       etherCATHouseHolder.start();
       
-      Runtime.getRuntime().addShutdownHook(new Thread()
-      {
-         public void run()
-         {
-            shutdown();
-         }
-      });
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
    }
@@ -378,60 +364,39 @@ public class Master
          
       }
    }
+   
+   /**
+    * Call cyclically to run the slave shutdown code. Does not call master.send()/master.receive()
+    *  
+    * @return true if all slaves are shut down.
+    */
+   public boolean shutdownSlaves()
+   {
+      boolean allSlavesShutdown = true;
+      for(int i = 0; i < slaves.size(); i++)
+      {
+         if(!slaves.get(i).hasShutdown())
+         {
+            allSlavesShutdown = false;
+            slaves.get(i).shutdown();
+         }
+      }
+      return allSlavesShutdown;
+   }
 
    /**
     * Stop the EtherCAT master
     * 
+    * This function will stop the house holder thread and bring all slaves to the INIT state.
+    * 
+    * Note: Calling the slave shutdown sequence is the responsibility of the caller. This function will only shutdown the master.
+    * 
     */
    public void shutdown()
    {
-      getEtherCATStatusCallback().trace(TRACE_EVENT.WAIT_SHUTDOWN);
-      etherCATController.stopController();
-      try
-      {
-         etherCATController.join();
-      }
-      catch (InterruptedException e)
-      {
-      }
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.STOP_HOUSEHOLDER);
       etherCATHouseHolder.stopExecution();
-      
-      
-      boolean allSlavesShutdown = false;
-      
-      while(!allSlavesShutdown)
-      {
-         allSlavesShutdown = true;
-         for(int i = 0; i < slaves.size(); i++)
-         {
-            if(!slaves.get(i).hasShutdown())
-            {
-               allSlavesShutdown = false;
-               slaves.get(i).shutdown();
-            }
-         }
-         
-         LockSupport.parkNanos(cycleTimeInNs);
-      }
-      
-      
-      getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_PREOP);
-      ec_slavet allSlaves = soem.ecx_slave(context, 0);
-      allSlaves.setState(ec_state.EC_STATE_PRE_OP.swigValue());
-      soem.ecx_writestate(context, 0);
-      
-      getEtherCATStatusCallback().trace(TRACE_EVENT.CLEANUP_SLAVES);
-      
-      for(int i = 0; i < slaves.size(); i ++)
-      {
-         slaves.get(i).cleanup();
-      }
-      
-      getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_TO_INIT);
-      allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
-      soem.ecx_writestate(context, 0);
    }
    
    /**
@@ -458,28 +423,60 @@ public class Master
     * Read the process data. 
     * 
     * Call after send()
+    * 
+    * @return true if receive was successful, false if no datagram was received
     */
-   public void receive()
+   public boolean receive()
    {
-      soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      int wkc = soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
       
-      if(enableDC)
+      if(wkc < 0)
       {
-         // Calculate jitter using RFC 1889
-         long arrivalTime = getDCTime();
-         if(previousArrivalTime != 0)
+         return false;
+      }
+      else
+      {
+         if(wkc < expectedWorkingCounter)
          {
-            long D = (arrivalTime - previousArrivalTime) - (cycleTimeInNs);
-            if(D < 0) D = -D;
-            
-            long jitterEstimate = this.jitterEstimate; // Localize volatile variable         
-            jitterEstimate += (D - jitterEstimate)/16;
-            this.jitterEstimate = jitterEstimate;
-            ++this.jitterSamples;
+            workingCounterMismatch = true;
+         }
+         else
+         {
+            workingCounterMismatch = false;
          }
          
-         previousArrivalTime = arrivalTime;
+         if(enableDC)
+         {
+            // Calculate jitter using RFC 1889
+            long arrivalTime = getDCTime();
+            if(previousArrivalTime != 0)
+            {
+               long D = (arrivalTime - previousArrivalTime) - (cycleTimeInNs);
+               if(D < 0) D = -D;
+               
+               long jitterEstimate = this.jitterEstimate; // Localize volatile variable         
+               jitterEstimate += (D - jitterEstimate)/16;
+               this.jitterEstimate = jitterEstimate;
+               ++this.jitterSamples;
+            }
+            
+            previousArrivalTime = arrivalTime;
+         }
+         
+         return true;
       }
+   }
+   
+   /**
+    * Function to check if there is a mismatch between the expected and returned working counter.
+    * 
+    * Call after receive() to check if all slaves reacted as expected.
+    * 
+    * @return true if there is a mismatch in the working counter
+    */
+   public boolean isWorkingCounterMismatch()
+   {
+      return workingCounterMismatch;
    }
 
    
@@ -550,6 +547,8 @@ public class Master
       private final ArrayList<SDO> SDOs = new ArrayList<>();
       private boolean masterThreadStableExecution = false;
       
+      private boolean inOp = false;
+      
       public EtherCATMasterHouseHolder()
       {
          super("EtherCATController");
@@ -570,23 +569,30 @@ public class Master
       public void run()
       {         
          long startTime = System.nanoTime();
+         
+         boolean printedWKCMismatch = false;
          while(running)
          {
-            // Check if DC convergence needs to be reported
-            long runTime = System.nanoTime() - startTime;
-            soem.ecx_readstate(context);
-
-            if(enableDC && !masterThreadStableExecution && Master.this.jitterSamples > MINIMUM_JITTER_SAMPLES)
+            boolean localWKCMismatch = workingCounterMismatch;
+            
+            if(localWKCMismatch)
             {
-               long jitterEstimate = Master.this.jitterEstimate;
-               masterThreadStableExecution = jitterEstimate != 0 && jitterEstimate < maximumExecutionJitter;
-               getEtherCATStatusCallback().reportMasterThreadStableRateTime(runTime, jitterEstimate);
+               if(!printedWKCMismatch)
+               {
+                  getEtherCATStatusCallback().notifyExpectedWorkingCounter(startTime);
+                  printedWKCMismatch = true;
+               }
+            }
+            else
+            {
+               printedWKCMismatch = false;
             }
             
-            for(int i = 0; i < slaves.size(); i++)
+            if(!inOp || localWKCMismatch)
             {
-               slaves.get(i).doEtherCATStateControl(masterThreadStableExecution, runTime);
+               doStateControl(startTime);               
             }
+            
             
             for(int i = 0; i < SDOs.size(); i++)
             {
@@ -603,6 +609,46 @@ public class Master
             }
          }
          
+         getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_PREOP);
+         ec_slavet allSlaves = soem.ecx_slave(context, 0);
+         allSlaves.setState(ec_state.EC_STATE_PRE_OP.swigValue());
+         soem.ecx_writestate(context, 0);
+         
+         getEtherCATStatusCallback().trace(TRACE_EVENT.CLEANUP_SLAVES);
+         
+         for(int i = 0; i < slaves.size(); i ++)
+         {
+            slaves.get(i).cleanup();
+         }
+         
+         getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_TO_INIT);
+         allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
+         soem.ecx_writestate(context, 0);
+         
+      }
+
+      private void doStateControl(long startTime)
+      {
+         // Check if DC convergence needs to be reported
+         long runTime = System.nanoTime() - startTime;
+         soem.ecx_readstate(context);
+
+         if(enableDC && !masterThreadStableExecution && Master.this.jitterSamples > MINIMUM_JITTER_SAMPLES)
+         {
+            long jitterEstimate = Master.this.jitterEstimate;
+            masterThreadStableExecution = jitterEstimate != 0 && jitterEstimate < maximumExecutionJitter;
+            getEtherCATStatusCallback().reportMasterThreadStableRateTime(runTime, jitterEstimate);
+         }
+         
+         inOp = true;
+         for(int i = 0; i < slaves.size(); i++)
+         {
+            slaves.get(i).doEtherCATStateControl(masterThreadStableExecution, runTime);
+            if(slaves.get(i).getState() != Slave.State.OP)
+            {
+               inOp = false;
+            }
+         }
       }
       
       @Override

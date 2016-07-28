@@ -69,11 +69,11 @@ public class EL3356 extends Slave
          super(0x1600);
       }
       
-      BooleanField startCalibration = new BooleanField();
-      BooleanField disableCalibration = new BooleanField();
-      BooleanField inputFreeze = new BooleanField();
-      BooleanField sampleMode = new BooleanField();
-      BooleanField tara = new BooleanField();
+      Bool startCalibration = new Bool();
+      Bool disableCalibration = new Bool();
+      Bool inputFreeze = new Bool();
+      Bool sampleMode = new Bool();
+      Bool tara = new Bool();
       Unsigned8 gap0 = new Unsigned8();
       Bit3 gap1 = new Bit3();
    }
@@ -87,18 +87,18 @@ public class EL3356 extends Slave
       }
       
       
-      BooleanField gap0 = new BooleanField();
-      BooleanField overRange = new BooleanField();
-      BooleanField gap2 = new BooleanField();
-      BooleanField dataInvalid = new BooleanField();
+      Bool gap0 = new Bool();
+      Bool overRange = new Bool();
+      Bool gap2 = new Bool();
+      Bool dataInvalid = new Bool();
       Bit2 gap3 = new Bit2();
-      BooleanField error = new BooleanField();
-      BooleanField calibrationInProgress = new BooleanField();
-      BooleanField steadystate = new BooleanField();
+      Bool error = new Bool();
+      Bool calibrationInProgress = new Bool();
+      Bool steadystate = new Bool();
       Bit4 gap4 = new Bit4();
-      BooleanField syncError = new BooleanField();
-      BooleanField gap5 = new BooleanField();
-      BooleanField txPDOToggle = new BooleanField();
+      Bool syncError = new Bool();
+      Bool gap5 = new Bool();
+      Bool txPDOToggle = new Bool();
       
       
    }

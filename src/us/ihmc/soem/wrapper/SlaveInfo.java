@@ -22,7 +22,6 @@ public class SlaveInfo
    }
    
    public static String hex(long n) {
-      // call toUpperCase() if that's required
       return String.format("0x%8s", Long.toHexString(n)).replace(' ', '0');
   }
    

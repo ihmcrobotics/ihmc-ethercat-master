@@ -186,6 +186,60 @@ int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, u
 	
 }
 
+int ecx_reconfig_slave_to_preop(ecx_contextt *context, uint16 slave, int timeout)
+{
+   int state, nSM;
+   uint16 configadr;
+
+   configadr = context->slavelist[slave].configadr;
+   if (ecx_FPWRw(context->port, configadr, ECT_REG_ALCTL, htoes(EC_STATE_INIT) , timeout) <= 0)
+   {
+      return 0;
+   }
+   state = 0;
+   ecx_eeprom2pdi(context, slave); /* set Eeprom control to PDI */
+   /* check state change init */
+   state = ecx_statecheck(context, slave, EC_STATE_INIT, EC_TIMEOUTSTATE);
+   if(state == EC_STATE_INIT)
+   {
+      /* program all enabled SM */
+      for( nSM = 0 ; nSM < EC_MAXSM ; nSM++ )
+      {
+         if (context->slavelist[slave].SM[nSM].StartAddr)
+         {
+            ecx_FPWR(context->port, configadr, ECT_REG_SM0 + (nSM * sizeof(ec_smt)),
+               sizeof(ec_smt), &context->slavelist[slave].SM[nSM], timeout);
+         }
+      }
+      ecx_FPWRw(context->port, configadr, ECT_REG_ALCTL, htoes(EC_STATE_PRE_OP) , timeout);
+      state = ecx_statecheck(context, slave, EC_STATE_PRE_OP, EC_TIMEOUTSTATE); /* check state change pre-op */
+   }
+
+   return state;
+}
+
+int ecx_reconfig_slave_to_safeop(ecx_contextt *context, uint16 slave, int timeout)
+{
+   int state, FMMUc;
+   uint16 configadr;
+
+   configadr = context->slavelist[slave].configadr;
+
+   state = ecx_statecheck(context, slave, EC_STATE_PRE_OP, EC_TIMEOUTSTATE); /* check state change pre-op */
+   if( state == EC_STATE_PRE_OP)
+      {
+         ecx_FPWRw(context->port, configadr, ECT_REG_ALCTL, htoes(EC_STATE_SAFE_OP) , timeout); /* set safeop status */
+         state = ecx_statecheck(context, slave, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE); /* check state change safe-op */
+         /* program configured FMMU */
+         for( FMMUc = 0 ; FMMUc < context->slavelist[slave].FMMUunused ; FMMUc++ )
+         {
+            ecx_FPWR(context->port, configadr, ECT_REG_FMMU0 + (sizeof(ec_fmmut) * FMMUc),
+               sizeof(ec_fmmut), &context->slavelist[slave].FMMU[FMMUc], timeout);
+         }
+      }
+}
+
+
 
 uint8 ecx_setup_socket_fast_irq(char *iface)
 {

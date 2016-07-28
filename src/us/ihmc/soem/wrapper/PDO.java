@@ -2,7 +2,7 @@ package us.ihmc.soem.wrapper;
 
 import java.nio.ByteOrder;
 
-import javolution.io.Struct;
+import us.ihmc.soem.javalution.Struct;
 
 /**
  * PDO class based on Javalution's struct. 
@@ -14,45 +14,8 @@ import javolution.io.Struct;
  */
 abstract class PDO extends Struct
 {
-   private final short address;
+   private final short address;   
 
-   
-   public class Bool extends Struct.Bool
-   {
-      public Bool()
-      {
-         throw new RuntimeException("Bool is a 8 bit field and should not be used, use BooleanField instead");
-      }
-   }
-   
-   /**
-    * 1 bit boolean. Use instead of Bool(!)
-    * 
-    * @author jesper
-    *
-    */
-   public class BooleanField extends BitField
-   {
-      public BooleanField()
-      {
-         super(1);
-      }
-
-      public boolean value()
-      {
-         return longValue() == 1;
-      }
-      
-      public boolean get()
-      {
-         return value();
-      }
-
-      public void set(boolean value)
-      {
-         set(value ? 1 : 0);
-      }
-   }
 
    /**
     * 2 bit padding field

@@ -17,6 +17,10 @@ boolean ecx_ecaterror(ecx_contextt* ecx_context);
 int64 ecx_dcTime(ecx_contextt* context);
 int ecx_SDOread_java_helper(ecx_contextt *context, uint16 slave, uint16 index, uint8 subindex,
                       boolean CA, int size, void *p, int timeout);
+int ecx_reconfig_slave_to_preop(ecx_contextt *context, uint16 slave, int timeout);
+int ecx_reconfig_slave_to_safeop(ecx_contextt *context, uint16 slave, int timeout);
+
+
 
 uint8 ecx_setup_socket_fast_irq(char *iface);
 

@@ -43,6 +43,11 @@ public class SerialPortRTSPulseGenerator
    }
    
    
+   public void close()
+   {
+      serial.close();
+   }
+   
    public void setRTS(boolean RTS)
    {
       serial.setRTS(RTS);

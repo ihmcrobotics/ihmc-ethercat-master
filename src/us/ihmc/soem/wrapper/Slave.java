@@ -22,6 +22,9 @@ public class Slave
    public static final int MAX_DC_OFFSET_DEFAULT = 200;
    public static final int MAX_DC_OFFSET_SAMLES = 10;
 
+   public static final int ECT_SMT_SIZE = 8;
+   
+   
    /**
     * EtherCAT state machine states.
     *
@@ -50,7 +53,10 @@ public class Slave
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
 
-   private volatile State state = State.OFFLINE;
+   private volatile State state = State.SAFE_OP; // Slaves are in SAFE_OP when the master has been initialized
+   
+   private boolean enableDC;
+   private long cycleTimeInNs;
    
    /**
     * Create a new slave and set the address 
@@ -103,7 +109,15 @@ public class Slave
       this.context = context;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
+      this.enableDC = enableDC;
+      this.cycleTimeInNs = cycleTimeInNs;
 
+      configureImpl(master, slave, enableDC, cycleTimeInNs);
+
+   }
+
+   private void configureImpl(Master master, ec_slavet slave, boolean enableDC, long cycleTimeInNs)
+   {
       configureDCSync0(false, 0, 0);   // Disable DC Sync
       
       for (int i = 0; i < syncManagers.length; i++)
@@ -121,7 +135,6 @@ public class Slave
 
       master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
       configure(enableDC, cycleTimeInNs);
-
    }
 
    /**
@@ -698,7 +711,7 @@ public class Slave
       int diff = sm32ToInt32(dcDiff.getInt(0));
       return diff;
    }
-
+   
    
    /**
     * Internal function. Householding functionality. Gets called cyclically by the householding thread.
@@ -720,10 +733,29 @@ public class Slave
       switch (this.state)
       {
       case BOOT:
-         break;
       case INIT:
+         if(!enableDC)
+         {
+            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECONFIG_TO_PREOP);
+            if(soem.ecx_reconfig_slave_to_preop(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
+            {
+               ec_slave.setIslost((short) 0);
+            }
+         }
+         
          break;
       case PRE_OP:
+         
+         if(!enableDC)
+         {
+            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECONFIG_TO_SAFEOP);
+            configureImpl(master, ec_slave, enableDC, cycleTimeInNs);
+            if(soem.ecx_reconfig_slave_to_safeop(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
+            {
+               ec_slave.setIslost((short) 0);
+            }
+         }
+         
          dcOffsetSamples = 0;
          break;
       case PRE_OPERR:
@@ -764,12 +796,41 @@ public class Slave
          break;
       case SAFE_OPERR:
          dcOffsetSamples = 0;
+         ec_slave.setState(ec_state.EC_STATE_SAFE_OP.swigValue() + ec_state.EC_STATE_ACK.swigValue());
+         soem.ecx_writestate(context, slaveIndex);
          break;
       case OP:
          dcOffsetSamples = 0;
          break;
       case OFFLINE:         
+         if(ec_slave.getIslost() == 0)
+         {
+            soem.ecx_statecheck(context, slaveIndex, ec_state.EC_STATE_OPERATIONAL.swigValue(), soemConstants.EC_TIMEOUTRET);
+            if(ec_slave.getState() == 0)
+            {
+               ec_slave.setIslost((short)1);
+               master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.SLAVE_LOST);
+            }
+         }
          break;
+      }
+      
+      if(!enableDC && ec_slave.getIslost() > 0)
+      {
+         if(ec_slave.getState() == 0)
+         {
+            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECOVER_SLAVE);
+            if(soem.ecx_recover_slave(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
+            {
+               ec_slave.setIslost((short)0);
+               master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECOVERED_SLAVE);
+            }
+         }
+         else
+         {
+            ec_slave.setIslost((short)0);
+            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.SLAVE_FOUND);
+         }
       }
 
    }

@@ -1,6 +1,6 @@
 package us.ihmc.soem.slaves;
 
-import javolution.io.Struct.Unsigned16;
+import us.ihmc.soem.javalution.Struct.Unsigned16;
 import us.ihmc.soem.wrapper.Slave;
 
 /**

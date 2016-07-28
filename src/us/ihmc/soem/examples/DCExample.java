@@ -8,7 +8,6 @@ import us.ihmc.soem.slaves.beckhoff.EK1100;
 import us.ihmc.soem.slaves.beckhoff.EL3314;
 import us.ihmc.soem.slaves.beckhoff.EL4134;
 import us.ihmc.soem.wrapper.EtherCATRealtimeThread;
-import us.ihmc.soem.wrapper.Master;
 
 /**
  * Simple example to show the usage of Distributed Clocks. 
@@ -31,81 +30,80 @@ public class DCExample extends EtherCATRealtimeThread
    private final EL3314 el3314 = new EL3314(601, 0); // Random slave that is plugged in our test bench
    private final EL4134 el4134 = new EL4134(201, 0); // Analog output
 
-
+   private int counter = 0;
    private final SerialPortRTSPulseGenerator pulseGenerator = new SerialPortRTSPulseGenerator("/dev/ttyS7");
 
-   
    private boolean signal = false;
-
+   
    public DCExample() throws IOException
    {
       super("eth2", PriorityParameters.getRelativePriority(50), new MonotonicTime(0, period), true, 100000);
 
-      enableTrace();
+//      enableTrace();
 
       // Register slaves to the master
       registerSlave(ek1100);
       registerSlave(el3314);
       registerSlave(el4134);
 
+   }
+
+   @Override
+   public void doControl()
+   {
+
+      if (SWITCH_SIGNAL_EVERY_TICK)
+      {
+         signal = !signal;
+         pulseGenerator.setRTS(signal);
+         el4134.setOut1(signal ? Short.MAX_VALUE : Short.MIN_VALUE);
+      }
+      else
+      {
+         // Generate a signal on both the serial RTS line of the computer and the analog output of the EL4134
+         if (counter++ % 100 == 0)
+         {
+            pulseGenerator.setRTS(true);
+            el4134.setOut1(Short.MAX_VALUE);
+         }
+         else
+         {
+            pulseGenerator.setRTS(false);
+            el4134.setOut1(Short.MIN_VALUE);
+         }
+      }
+   }
+
+   public void close()
+   {
+      pulseGenerator.close();
+   }
+   
+   public static void main(String[] args) throws IOException
+   {
+      
+      DCExample ek1100example = new DCExample();
+
+      
+      ek1100example.start();
+      ek1100example.join();
+      ek1100example.close();
+      
+      
+   }
+
+   @Override
+   protected void slaveNotResponding()
+   {
+      System.err.println("LOST COMMUNICATION WITH SLAVE");
 
    }
 
    @Override
-   public void run()
+   protected void deadlineMissed()
    {
+      System.out.println("DEADLINE MISSED");
 
-      int counter = 0;
-      // Initialize master
-      try
-      {
-         init();
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
-      
-      while (isRunning())
-      {
-         // Wait for the next period and do the transfer. If deadline is missed, skip calculations
-         if (waitForNextPeriodAndDoTransfer())
-         {
-
-            if (SWITCH_SIGNAL_EVERY_TICK)
-            {
-               signal = !signal;
-               pulseGenerator.setRTS(signal);
-               el4134.setOut1(signal ? Short.MAX_VALUE : Short.MIN_VALUE);
-            }
-            else
-            {
-               // Generate a signal on both the serial RTS line of the computer and the analog output of the EL4134
-               if (counter++ % 100 == 0)
-               {
-                  pulseGenerator.setRTS(true);
-                  el4134.setOut1(Short.MAX_VALUE);
-               }
-               else
-               {
-                  pulseGenerator.setRTS(false);
-                  el4134.setOut1(Short.MIN_VALUE);
-               }
-            }
-         }
-         else
-         {
-            System.out.println("DEADLINE MISSED");
-         }
-      }
-
-   }
-
-   public static void main(String[] args) throws IOException
-   {
-      DCExample ek1100example = new DCExample();
-      ek1100example.start();
-      ek1100example.join();
    }
 
 }

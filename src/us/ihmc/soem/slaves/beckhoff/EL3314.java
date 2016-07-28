@@ -20,14 +20,14 @@ public class EL3314 extends Slave
       
       
       
-      BooleanField underrange = new BooleanField();
-      BooleanField overrange = new BooleanField();
+      Bool underrange = new Bool();
+      Bool overrange = new Bool();
       Member limit1 = new Bit2();
       Member limit2 = new Bit2();
-      BooleanField error = new BooleanField();
+      Bool error = new Bool();
       Bit7 gap = new Bit7();
-      BooleanField txPDOState = new BooleanField();
-      BooleanField txPDOToggle = new BooleanField();
+      Bool txPDOState = new Bool();
+      Bool txPDOToggle = new Bool();
       Signed16 value = new Signed16();
       
       

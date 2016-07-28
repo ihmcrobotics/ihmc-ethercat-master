@@ -2,8 +2,8 @@ package us.ihmc.soem.slaves.copley;
 
 import java.io.IOException;
 
-import javolution.io.Struct.Unsigned16;
-import javolution.io.Union;
+import us.ihmc.soem.javalution.Struct.Unsigned16;
+import us.ihmc.soem.javalution.Union;
 import us.ihmc.soem.slaves.DSP402Slave;
 import us.ihmc.soem.wrapper.RxPDO;
 import us.ihmc.soem.wrapper.SyncManager;

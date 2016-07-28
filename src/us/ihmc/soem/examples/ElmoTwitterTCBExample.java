@@ -4,14 +4,12 @@ import java.io.IOException;
 
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
-import us.ihmc.soem.slaves.elmo.ElmoTwitter;
 import us.ihmc.soem.slaves.elmo.ElmoTwitterTCB;
 import us.ihmc.soem.wrapper.EtherCATRealtimeThread;
-import us.ihmc.soem.wrapper.Master;
 
 public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
 {
-   private final ElmoTwitter carrier = new ElmoTwitterTCB(0, 0);
+   private final ElmoTwitterTCB carrier = new ElmoTwitterTCB(0, 0);
 
    public ElmoTwitterTCBExample() throws IOException
    {
@@ -26,36 +24,38 @@ public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
       }
 
    }
-
-   public void run()
-   {
-      try
-      {
-         init();
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
-      while (isRunning())
-      {
-         waitForNextPeriodAndDoTransfer();
-         //      System.out.println(carrier.getPositionActualValue());
-         //      System.out.println(carrier.getDigitalInputs());
-         //      System.out.println(carrier.getVelocityActualValue());
-         //      System.out.println(carrier.getStatus());
-         //      System.out.println(carrier.getActualTorque());
-         //      System.out.println(carrier.getPositionFollowingError());
-         //      System.out.println(carrier.getActualAuxiliaryPosition());
-         //      System.out.println(carrier.getElmoStatusRegister());
-      }
-   }
-
+   
    public static void main(String[] args) throws IOException
    {
       ElmoTwitterTCBExample elmoTwitterTTSpecialCarrierExample = new ElmoTwitterTCBExample();
       elmoTwitterTTSpecialCarrierExample.start();
       elmoTwitterTTSpecialCarrierExample.join();
+   }
+
+   @Override
+   protected void slaveNotResponding()
+   {
+      carrier.disableDrive();
+   }
+
+   @Override
+   protected void deadlineMissed()
+   {
+      
+   }
+
+   @Override
+   protected void doControl()
+   {
+      System.out.println(carrier.getPositionActualValue());
+      System.out.println(carrier.getDigitalInputs());
+      System.out.println(carrier.getVelocityActualValue());
+      System.out.println(carrier.getStatus());
+      System.out.println(carrier.getActualTorque());
+      System.out.println(carrier.getPositionFollowingError());
+      System.out.println(carrier.getActualAuxiliaryPosition());
+      System.out.println(carrier.getElmoStatusRegister());
+      
    }
 
 }
