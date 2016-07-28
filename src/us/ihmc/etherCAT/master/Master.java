@@ -31,7 +31,7 @@ public class Master
    
    static
    {
-      NativeLibraryLoader.loadLibrary("us.ihmc.etherCAT.generated", "soemJava");
+      NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
    }
    
    private static boolean initialized = false;

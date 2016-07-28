@@ -7,3 +7,6 @@ IHMC EtherCAT Master 0.5
  * Have EtherCATRealtimeThread do loop control and shutdown control
  * Renamed BooleanField to Bool
  * Removed Javalution dependency
+ * Improved SlaveInfo
+ * Renamed us.ihmc.soem to us.ihmc.etherCAT
+ * Renamed us.ihmc.soem.wrapper to us.ihmc.etherCAT.master

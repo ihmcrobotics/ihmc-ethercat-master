@@ -24,7 +24,7 @@ public class SlaveInfo
 
    static
    {
-      NativeLibraryLoader.loadLibrary("us.ihmc.etherCAT.generated", "soemJava");
+      NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
    }
 
    public static String hex(long n)
