@@ -123,7 +123,7 @@ jar {
       "Bundle-License": project.ext.licenseURL,
       "Bundle-Vendor": "IHMC",
       'Class-Path': depend.join(' '),
-      'Main-class': 'us.ihmc.etherCATMaster.wrapper.SlaveInfo')
+      'Main-class': 'us.ihmc.etherCAT.master.SlaveInfo')
    }
 }
 
