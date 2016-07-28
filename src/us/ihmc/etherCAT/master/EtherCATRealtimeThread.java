@@ -2,6 +2,7 @@ package us.ihmc.etherCAT.master;
 
 import java.io.IOException;
 
+import us.ihmc.affinity.Processor;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PeriodicParameters;
 import us.ihmc.realtime.PriorityParameters;
@@ -18,7 +19,7 @@ import us.ihmc.realtime.RealtimeThread;
  * @author Jesper Smith
  *
  */
-public abstract class EtherCATRealtimeThread
+public abstract class EtherCATRealtimeThread implements MasterInterface
 {
    
    private final RealtimeThread realtimeThread;
@@ -337,6 +338,7 @@ public abstract class EtherCATRealtimeThread
    /**
     * @see us.ihmc.etherCAT.master.Master#registerSDO(us.ihmc.etherCAT.master.SDO)
     */
+   @Override
    public void registerSDO(SDO sdo)
    {
       master.registerSDO(sdo);
@@ -345,6 +347,7 @@ public abstract class EtherCATRealtimeThread
    /**
     * @see us.ihmc.etherCAT.master.Master#registerSlave(us.ihmc.etherCAT.master.Slave)
     */
+   @Override
    public void registerSlave(Slave slave)
    {
       master.registerSlave(slave);
@@ -353,6 +356,7 @@ public abstract class EtherCATRealtimeThread
    /**
     * @see us.ihmc.etherCAT.master.Master#getJitterEstimate()
     */
+   @Override
    public long getJitterEstimate()
    {
       return master.getJitterEstimate();
@@ -361,6 +365,7 @@ public abstract class EtherCATRealtimeThread
    /**
     * @see us.ihmc.etherCAT.master.Master#setMaximumExecutionJitter(long)
     */
+   @Override
    public void setMaximumExecutionJitter(long jitterInNanoseconds)
    {
       master.setMaximumExecutionJitter(jitterInNanoseconds);
@@ -374,6 +379,15 @@ public abstract class EtherCATRealtimeThread
    public long getLastCycleDuration()
    {
       return lastCycleDuration;
+   }
+   
+   /**
+    * 
+    * @see us.ihmc.realtime.RealtimeThread#setAffinity(Processor...)
+    */
+   public void setAffinity(Processor... processors)
+   {
+      realtimeThread.setAffinity(processors);
    }
 
 

@@ -1,3 +1,9 @@
+IHMC EtherCAT Master 0.5.1
+
+ * Added MasterInterface to support switching between Master and EtherCATRealtimeThread
+ * Added setAffinity delegate to EtherCATRealtimeThread
+
+
 IHMC EtherCAT Master 0.5
 
  * Created EtherCATRealtimeThread supporting both DC synchronization and free run

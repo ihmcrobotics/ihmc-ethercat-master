@@ -24,7 +24,7 @@ import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
  * @author Jesper Smith
  *
  */
-public class Master
+public class Master implements MasterInterface
 {
    public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 25000;
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
