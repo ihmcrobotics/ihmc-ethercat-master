@@ -3,7 +3,14 @@ package us.ihmc.etherCAT.master;
 /**
  * SDO write delegator class for asynchronous SDO transfer
  * 
- * The SDO will be delegated to the house holding objects and can be polled for data.
+ * The SDO will be delegated to the house holding thread and can be polled for data.
+ * This class is meant to be used to write SDO's during execution of the realtime EtherCAT
+ * transfer. To write SDO's for slave configuration purposes, call slave.writeSDO() directly from the 
+ * configure() function overridden from Slave. 
+ * 
+ * The public class interface is not thread safe. Calling dataHasBeenWritten, canWriteData and write() 
+ * from multiple threads on the same object will result in  data corruption. However, SDO's can be written
+ * from outside the EtherCAT thread.
  * 
  * @author Jesper Smith
  *
@@ -28,25 +35,44 @@ public class WriteSDO extends SDO
     * 
     * @return true if ready for a write request
     */
-   public boolean isReady()
+   private boolean isReady()
    {
       return sdoIsIdle();
    }
 
    /**
-    * Checks if data was written and go back to idle state
+    * Checks if data was written and go back to idle state.
+    * 
+    * Only the first call after a successful write will return true, subsequent calls will return false
     * 
     * @return true if the data was written
     */
-   public boolean checkIfSuccessful()
+   public boolean dataHasBeenWritten()
    {
-      return transactionIsDone();
+      return checkIfRequestSuccess();
+   }
+   
+   /**
+    * Check if data can be written.
+    * 
+    * - If no data has ever been written, return true
+    * - If data has successfully been written, return true
+    * - If data is currently been written from a previous command, return false
+    * 
+    * As side effect, calling this function will result in dataHasBeenWritten to be false. 
+    * If the result of a previous write needs to be checked, use dataHsBeenWritten()
+    * 
+    * @return true if new data can be written
+    */
+   public boolean canWriteData()
+   {
+      return dataHasBeenWritten() || isReady();
    }
 
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -66,7 +92,7 @@ public class WriteSDO extends SDO
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -86,7 +112,7 @@ public class WriteSDO extends SDO
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -106,7 +132,7 @@ public class WriteSDO extends SDO
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -126,7 +152,7 @@ public class WriteSDO extends SDO
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -146,7 +172,7 @@ public class WriteSDO extends SDO
    /**
     * Write value to SDO. 
     * 
-    * Data can only be written if isReady() is true. Use checkIfSuccessfull to see if a previous write is done and reset.
+    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
@@ -166,7 +192,7 @@ public class WriteSDO extends SDO
    @Override
    protected boolean doTransaction()
    {
-      slave.writeSDO(index, subindex, buffer);
-      return true;
+      return slave.writeSDO(index, subindex, buffer) != 0;
    }
+
 }

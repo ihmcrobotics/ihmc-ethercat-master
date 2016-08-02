@@ -160,6 +160,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       super(vendorID, productCode, alias, position);
       
       elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 32);
+      registerSDO(elmoErrorCodeSDO);
    }
 
    public abstract long getElmoStatusRegister();
@@ -179,7 +180,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       {
          if (!errorCodeRead)
          {
-            elmoErrorCodeSDO.update();
+            elmoErrorCodeSDO.requestNewData();
          }
       }
       else

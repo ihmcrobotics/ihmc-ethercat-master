@@ -1,3 +1,14 @@
+IHMC EtherCAT Master 0.6
+ * Renamed getLastEtherCATTransactionTime and getLastIdleTime to getEtherCATTransactionTime and getIdleTime to better reflect what is measured.
+ * Added getters for the error of the actual arrival time and desired arrival time of the datagram at the first slave. 
+ * Fixed endianness in SDO reading
+ * Renamed ReadSDO.update() to ReadSDO.requestNewData()
+ * Removed WriteSDO.isReady(). Replaced by WriteSDO.dataHasBeenWritten() and WriteSDO.canWriteData()
+ * Allow registration of SDOs with the Slave as well as the Master. This makes it easier to write Slave code with SDO objects.
+ * Register error code SDO in ElmoTwitter
+ * Make Elmo Error Codes public
+ * Disallow duplicate registration of the same SDO object 
+
 IHMC EtherCAT Master 0.5.1
 
  * Added MasterInterface to support switching between Master and EtherCATRealtimeThread

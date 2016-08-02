@@ -2,6 +2,7 @@ package us.ihmc.etherCAT.master;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.etherCAT.master.SyncManager.MailbusDirection;
@@ -58,6 +59,8 @@ public class Slave
    private boolean enableDC;
    private long cycleTimeInNs;
    
+   private final ArrayList<SDO> SDOs = new ArrayList<>();
+   
    /**
     * Create a new slave and set the address 
     * 
@@ -80,9 +83,9 @@ public class Slave
       this.aliasAddress = aliasAddress;
       this.position = position;
 
-      sdoBuffer.order(ByteOrder.nativeOrder()); // EtherCAT is a big-endian protocol, but this has to be LITTLE_ENDIAN
+      sdoBuffer.order(ByteOrder.LITTLE_ENDIAN); // EtherCAT is a LITTLE ENDIAN protocol
 
-      dcDiff.order(ByteOrder.nativeOrder());
+      dcDiff.order(ByteOrder.LITTLE_ENDIAN);
    }
 
    final int getVendor()
@@ -111,6 +114,11 @@ public class Slave
       this.slaveIndex = slaveIndex;
       this.enableDC = enableDC;
       this.cycleTimeInNs = cycleTimeInNs;
+      
+      for(int i = 0; i < SDOs.size(); i++)
+      {
+         master.registerSDO(SDOs.get(i));
+      }
 
       configureImpl(master, slave, enableDC, cycleTimeInNs);
 
@@ -935,5 +943,24 @@ public class Slave
    public boolean isConfigured()
    {
       return ec_slave != null;
+   }
+   
+   /**
+    * Register a SDO with the Master. 
+    * 
+    *  This is purely a convenience function for when master.registerSDO is not available (like inside a Slave definition).
+    * 
+    * @param sdo SDO to register
+    */
+   public void registerSDO(SDO sdo)
+   {
+      if(sdo.getSlave() == this)
+      {
+         SDOs.add(sdo);         
+      }
+      else
+      {
+         throw new RuntimeException("Cannot register " + sdo + " to " + toString());
+      }
    }
 }

@@ -3,7 +3,7 @@ package us.ihmc.etherCAT.slaves.elmo;
 public class ElmoErrorCodes
 {
 
-   private static final String[] EC = new String[246];
+   public static final String[] EC = new String[246];
 
    static
    {

@@ -115,7 +115,7 @@ abstract class PDO extends Struct
    @Override
    public final ByteOrder byteOrder()
    {
-      return ByteOrder.nativeOrder();
+      return ByteOrder.LITTLE_ENDIAN;
    }
 
    /**

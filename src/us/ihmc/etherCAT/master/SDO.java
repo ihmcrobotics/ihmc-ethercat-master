@@ -1,6 +1,7 @@
 package us.ihmc.etherCAT.master;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,6 +34,7 @@ public abstract class SDO
       this.subindex = subindex;
       this.size = size;
       buffer = ByteBuffer.allocateDirect(size);
+      buffer.order(ByteOrder.LITTLE_ENDIAN);
 
    }
 
@@ -75,6 +77,17 @@ public abstract class SDO
       case IDLE:
          break;
       }
+   }
+   
+   Slave getSlave()
+   {
+      return slave;
+   }
+   
+   @Override
+   public String toString()
+   {
+      return "SDO[Slave: " + slave + "]; Address: " + EtherCATStatusCallback.hex(index) + ":" + EtherCATStatusCallback.hex(subindex) + "]";
    }
 
 }

@@ -136,9 +136,10 @@ public class EtherCATStatusCallback
       }
    }
 
-   public static String hex(long n) {
+   public static String hex(long n)
+   {
       return String.format("%2s", Long.toHexString(n)).replace(' ', '0');
-  }
+   }
    
    public void notifySDOWrite(Slave slave, int index, int subindex, int wc, ByteBuffer buffer)
    {

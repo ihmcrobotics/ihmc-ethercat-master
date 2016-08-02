@@ -6,7 +6,14 @@ import java.nio.ByteBuffer;
 /**
  * SDO read delegator class for asynchronous SDO transfer
  * 
- * The SDO will be delegated to the house holding objects and can be polled for data.
+ * The SDO will be delegated to the house holding thread and can be polled for data.
+ * This class is meant to be used to read SDO's during execution of the realtime EtherCAT
+ * transfer. To read SDO's for slave configuration purposes, call slave.readSDO() directly from the 
+ * configure() function overridden from Slave. 
+ * 
+ * The public class interface is not thread safe. Calling requestNewData(), hasNewData()
+ * and the various getters from multiple threads on the same object will result in data
+ * corruption. However, SDO's can be read from outside the EtherCAT thread.
  * 
  * @author Jesper Smith
  *
@@ -30,7 +37,7 @@ public class ReadSDO extends SDO
    /**
     * Request new data if hasNewData() is false and no data has previously been requested.
     */
-   public void update()
+   public void requestNewData()
    {
       requestUpdateOnNextTick();
    }
@@ -155,7 +162,6 @@ public class ReadSDO extends SDO
    @Override
    protected boolean doTransaction()
    {
-      slave.readSDOToBuffer(index, subindex, size, buffer);
-      return true;
+      return slave.readSDOToBuffer(index, subindex, size, buffer) != 0;
    }
 }

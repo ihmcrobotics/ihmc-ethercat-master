@@ -32,10 +32,12 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    private final long cycleTimeInNs;
    private volatile boolean running = true;
    
-   private long lastEtherCATTransactionTime = 0;
+   private long currentCycleTimestamp = 0;
+   private long etherCATTransactionTime = 0;
    private long lastCycleDuration = 0;
-   private long lastIdleTime = 0;
+   private long idleTime = 0;
    private long startTimeFreeRun = 0;
+   private long dcOffsetError = 0;
    
    
    /**
@@ -126,6 +128,15 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    public long getCurrentCycleTimestamp()
    {
+      return currentCycleTimestamp;
+   }
+   
+   /** 
+    * Internal function. Calculated the timestamp for the current cycle
+    * @return timestamp for the current cycle.
+    */
+   private long calculateCurrentCycleTimestamp()
+   {
       if(enableDC)
       {
          // Rounding the DC time down to the cycle time gives the previous sync0 time.
@@ -162,18 +173,27 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    /**
     * @return Time spent parked waiting for next execution. Does not include EtherCAT transaction time.
     */
-   public long getLastIdleTime()
+   public long getIdleTime()
    {
-      return lastIdleTime;
+      return idleTime;
    }
    
    /**
     * 
     * @return Time spent doing the EtherCAT transaction. 
     */
-   public long getLastEtherCATTransactionTime()
+   public long getEtherCATTransactionTime()
    {
-      return lastEtherCATTransactionTime;
+      return etherCATTransactionTime;
+   }
+   
+   /**
+    * 
+    * @return The error between the desired and actual DC receive time on slave 0.  
+    */
+   public long getDCOffsetError()
+   {
+      return dcOffsetError;
    }
    
    /**
@@ -201,7 +221,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       {
          long startTime = getCurrentMonotonicClockTime();
          if(waitForNextPeriodAndDoTransfer())
-         {
+         {            
+            currentCycleTimestamp = calculateCurrentCycleTimestamp();  
             doControl();
          }
          else
@@ -209,6 +230,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
             deadlineMissed();
          }
          lastCycleDuration = getCurrentMonotonicClockTime() - startTime;
+         
       }
       
       boolean allSlavesShutdown = false;
@@ -235,13 +257,13 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    private boolean waitForNextPeriodAndDoTransfer()
    {
-      lastIdleTime = waitForNextPeriodInternal(); 
-      if(lastIdleTime > 0)
+      idleTime = waitForNextPeriodInternal(); 
+      if(idleTime > 0)
       {
          long startTime = getCurrentMonotonicClockTime();
          master.send();
          boolean receive = master.receive();
-         lastEtherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
+         etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
          
          if(master.isWorkingCounterMismatch())
          {
@@ -267,21 +289,20 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       long reftime = master.getDCTime();
 
-      /* set linux sync point 50us later than DC sync, just as example */
-      long delta = (reftime - syncOffset) % cycleTimeInNs;
-      if (delta > (cycleTimeInNs / 2))
+      dcOffsetError = (reftime - syncOffset) % cycleTimeInNs;
+      if (dcOffsetError > (cycleTimeInNs / 2))
       {
-         delta = delta - cycleTimeInNs;
+         dcOffsetError = dcOffsetError - cycleTimeInNs;
       }
-      if (delta > 0)
+      if (dcOffsetError > 0)
       {
          dcControlIntegral++;
       }
-      if (delta < 0)
+      if (dcOffsetError < 0)
       {
          dcControlIntegral--;
       }
-      return -(delta / 100) - (dcControlIntegral / 20);
+      return -(dcOffsetError / 100) - (dcControlIntegral / 20);
    }
 
    /**
@@ -372,7 +393,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    }
    
    /**
-    * The measured cycle time. Should be equal to the desired period with a small amount of jitter.
+    * The measured cycle time of the previous control tick. Should be equal to the desired period with a small amount of jitter.
     * 
     * @return Duration of the complete control cycle, including time spent waiting for the next cycle.
     */
@@ -389,7 +410,6 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       realtimeThread.setAffinity(processors);
    }
-
 
    /**
     * Callback to notify controller that one or more slaves are not responding.

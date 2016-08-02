@@ -140,6 +140,13 @@ public class Master implements MasterInterface
     */
    public void registerSDO(SDO sdo)
    {
+      for(int i = 0; i < etherCATHouseHolder.SDOs.size(); i++)
+      {
+         if(etherCATHouseHolder.SDOs.get(i).equals(sdo))
+         {
+            throw new RuntimeException("Cannot register " + sdo + " twice.");
+         }
+      }
       etherCATHouseHolder.addSDO(sdo);
    }
    
@@ -294,7 +301,7 @@ public class Master implements MasterInterface
       
       
       ioMap = ByteBuffer.allocateDirect(processDataSize);
-      ioMap.order(ByteOrder.nativeOrder());
+      ioMap.order(ByteOrder.LITTLE_ENDIAN);
       
       
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
