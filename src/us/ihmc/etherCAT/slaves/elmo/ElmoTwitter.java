@@ -159,7 +159,7 @@ public abstract class ElmoTwitter extends DSP402Slave
    {
       super(vendorID, productCode, alias, position);
       
-      elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 32);
+      elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 4);
       registerSDO(elmoErrorCodeSDO);
    }
 

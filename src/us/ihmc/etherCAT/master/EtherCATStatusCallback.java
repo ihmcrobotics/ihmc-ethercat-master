@@ -159,7 +159,7 @@ public class EtherCATStatusCallback
    {
       if(TRACE)
       {
-         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
+         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Read " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
          System.out.print(" Data: ");
          for(int i = 0; i < size; i++)
          {
