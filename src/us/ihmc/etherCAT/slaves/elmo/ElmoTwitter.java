@@ -160,7 +160,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       super(vendorID, productCode, alias, position);
       
       elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 4);
-      registerSDO(elmoErrorCodeSDO);
+      
+      // TODO: This can result in slaves going offline
+//      registerSDO(elmoErrorCodeSDO);
    }
 
    public abstract long getElmoStatusRegister();
@@ -251,6 +253,18 @@ public abstract class ElmoTwitter extends DSP402Slave
    public String getLastElmoErrorCodeString()
    {
       return ElmoErrorCodes.errorCodeToString(getLastElmoErrorCode());
+   }
+   
+   @Override 
+   protected boolean hasShutdown()
+   {
+      if(super.hasShutdown())
+      {
+         int error = readSDOInt(0x306A, 0x1);
+         System.out.println(toString() + " Last elmo error code: " + error + ": " + ElmoErrorCodes.errorCodeToString(error));
+         return true;
+      }
+      return false;
    }
    
    @Override

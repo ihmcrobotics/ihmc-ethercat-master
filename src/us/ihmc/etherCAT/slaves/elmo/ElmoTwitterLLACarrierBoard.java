@@ -36,7 +36,7 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
 
       //Sync Manager, only SM2 and SM3 are used for PDOs.  SM0 and SM1 are used for the mailbox mechanism (See: EtherCAT_Application_Manual.pdf)
 
-      for (int i = 0; i < 4; i++)
+      for (int i = 2; i < 4; i++)
       {
          registerSyncManager(new SyncManager(i, true));
       }
