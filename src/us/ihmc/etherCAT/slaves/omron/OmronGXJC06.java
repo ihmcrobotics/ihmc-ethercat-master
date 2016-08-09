@@ -1,6 +1,8 @@
 package us.ihmc.etherCAT.slaves.omron;
 
 import us.ihmc.etherCAT.master.Slave;
+import us.ihmc.etherCAT.master.SyncManager;
+import us.ihmc.etherCAT.master.TxPDO;
 
 public class OmronGXJC06
 {
@@ -8,6 +10,18 @@ public class OmronGXJC06
    public static final int vendorID = 0x00000083;
    public static final int productID = 0x00000081;
    public static final int subProductID = 0x00000082;
+
+   private class TxPDO1A00 extends TxPDO
+   {
+      private TxPDO1A00()
+      {
+         super(0x1a00);
+      }
+
+      public Unsigned16 ID = new Unsigned16();
+   }
+
+   private final TxPDO1A00 txPDO1A00 = new TxPDO1A00();
 
    private final Junction main;
    private final Junction sub;
@@ -21,7 +35,17 @@ public class OmronGXJC06
       this.omronSubJunctionAlias = omronSubJunctionAlias;
 
       this.main = new Junction(vendorID, productID, omronJunctionAlias, position);
-      this.sub = new Junction(vendorID, productID, omronSubJunctionAlias, subPosition);
+      this.sub = new Junction(vendorID, subProductID, omronSubJunctionAlias, subPosition);
+
+      SyncManager sm1 = new SyncManager(1, false);
+      sm1.registerPDO(txPDO1A00);
+      main.registerSyncManager(sm1);
+
+   }
+
+   public boolean isOperational()
+   {
+      return main.isOperational() && sub.isOperational();
    }
 
    public Slave getMainJunction()
@@ -33,6 +57,12 @@ public class OmronGXJC06
    {
       return sub;
    }
+
+   public int getID()
+   {
+      return txPDO1A00.ID.get();
+   }
+
 
    public int getPort2Alias()
    {
@@ -71,3 +101,4 @@ public class OmronGXJC06
    }
 
 }
+

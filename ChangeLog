@@ -1,5 +1,6 @@
-IHMC EtherCAT Master HEAD
+IHMC EtherCAT Master 0.6.3
  * Fixed error in BlueBox configuration due to read-only PDOs
+ * Fixed Omron GX-JC06 junction
 
 IHMC EtherCAT Master 0.6.2
  * Fixed configuration bug in ElmoTwitter
