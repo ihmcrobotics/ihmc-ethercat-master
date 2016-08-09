@@ -39,7 +39,7 @@ public class Slave
    private final int position;
    private final int vendor;
    private final int productCode;
-   private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(12);
+   private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(128);
 
    private final SyncManager[] syncManagers = new SyncManager[4];
 
@@ -200,13 +200,134 @@ public class Slave
     * @param index Index of the SDO 
     * @param subindex Subindex of the SDO
     * @param buffer data
+    * @param timeout in nanoseconds
+    * @return working counter
+    */
+   public int writeSDO(int index, int subindex, ByteBuffer buffer, int timeout)
+   {
+      int wc = soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 0, buffer.position(), buffer, timeout);
+      master.getEtherCATStatusCallback().notifySDOWrite(this, index, subindex, wc, buffer);
+      return wc;
+   }
+   
+   /**
+    * Write the data in buffer from position 0 to buffer.position() to a SDO index. Blocking.
+    * 
+    *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param buffer data
     * @return working counter
     */
    public int writeSDO(int index, int subindex, ByteBuffer buffer)
    {
-      int wc = soem.ecx_SDOwrite(context, slaveIndex, index, (short) subindex, (short) 0, buffer.position(), buffer, soemConstants.EC_TIMEOUTRXM);
-      master.getEtherCATStatusCallback().notifySDOWrite(this, index, subindex, wc, buffer);
-      return wc;
+      return writeSDO(index, subindex, buffer, soemConstants.EC_TIMEOUTRXM);
+   }
+   
+   
+   /**
+    * Write ASCII or UTF-8 string to SDO. 
+    * 
+    * Will reuse internal buffers to write the value if the string length < 128 characters. To 
+    * improve performance, conversion to ASCII is done using casting of the string characters. UTF-16
+    * characters will fail.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param string data to write, behavior unspecified if not all characters are ASCII
+    * @return working counter
+    */
+   public int writeSDOASCII(int index, int subindex, String string)
+   {
+      return writeSDOASCII(index, subindex, string, soemConstants.EC_TIMEOUTRXM);
+   }
+   
+   /**
+    * Write ASCII or UTF-8 string to SDO. 
+    * 
+    * Will reuse internal buffers to write the value if the string length < 128 characters. To 
+    * improve performance, conversion to ASCII is done using casting of the string characters. UTF-16
+    * characters will fail.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param string data to write, behavior unspecified if not all characters are ASCII
+    * @param timeout timeout in nanoseconds
+    * @return working counter
+    */
+   public int writeSDOASCII(int index, int subindex, String string, int timeout)
+   {
+      ByteBuffer stringBuffer;
+      if(string.length() > sdoBuffer.capacity())
+      {
+         stringBuffer = ByteBuffer.allocateDirect(string.length());
+         stringBuffer.order(ByteOrder.LITTLE_ENDIAN);
+      }
+      else
+      {
+         stringBuffer = sdoBuffer;
+      }
+      stringBuffer.clear();
+      
+      for(int i = 0; i < string.length(); i++)
+      {
+         byte ch = (byte) string.charAt(i);
+         stringBuffer.put(ch);
+      }
+      
+      return writeSDO(index, subindex, stringBuffer, timeout);
+   }
+   
+
+   /**
+    * Write UTF-16 string to SDO. 
+    * 
+    * Will reuse internal buffers to write the value if the string length < 64 characters.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param string data to write
+    * @param timeout timeout in nanoseconds
+    * @return working counter
+    */
+   public int writeSDOUTF16(int index, int subindex, String string)
+   {
+      return writeSDOUTF16(index, subindex, string, soemConstants.EC_TIMEOUTRXM);
+   }
+   
+   /**
+    * Write UTF-16 string to SDO. 
+    * 
+    * Will reuse internal buffers to write the value if the string length < 64 characters.
+    * 
+    * @param index Index of the SDO 
+    * @param subindex Subindex of the SDO
+    * @param string data to write
+    * @param timeout timeout in nanoseconds
+    * @return working counter
+    */
+   public int writeSDOUTF16(int index, int subindex, String string, int timeout)
+   {
+      ByteBuffer stringBuffer;
+      if(string.length() * 2 > sdoBuffer.capacity())
+      {
+         stringBuffer = ByteBuffer.allocateDirect(string.length() * 2);
+         stringBuffer.order(ByteOrder.LITTLE_ENDIAN);
+      }
+      else
+      {
+         stringBuffer = sdoBuffer;
+      }
+      stringBuffer.clear();
+      
+      for(int i = 0; i < string.length(); i++)
+      {
+         char ch = string.charAt(i);
+         stringBuffer.putChar(ch);
+      }
+      
+      return writeSDO(index, subindex, stringBuffer, timeout);
    }
 
    
