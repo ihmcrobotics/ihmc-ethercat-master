@@ -636,9 +636,9 @@ public class Master implements MasterInterface
             slaves.get(i).cleanup();
          }
          
-         getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_TO_INIT);
-         allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
-         soem.ecx_writestate(context, 0);
+//         getEtherCATStatusCallback().trace(TRACE_EVENT.SWITCH_TO_INIT);
+//         allSlaves.setState(ec_state.EC_STATE_INIT.swigValue());
+//         soem.ecx_writestate(context, 0);
          
       }
 
