@@ -63,7 +63,7 @@ public class IHMCBlueBox extends Slave
       
       for (int i = 2; i < 4; i++)
       {
-         registerSyncManager(new SyncManager(i, true));
+         registerSyncManager(new SyncManager(i, false));
       }
 
       

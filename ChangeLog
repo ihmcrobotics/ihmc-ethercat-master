@@ -1,3 +1,13 @@
+IHMC EtherCAT Master HEAD
+ * Fixed error in BlueBox configuration due to read-only PDOs
+
+IHMC EtherCAT Master 0.6.2
+ * Fixed configuration bug in ElmoTwitter
+
+IHMC EtherCAT Master 0.6.1
+ * SDO reading fixes
+ * IHMC Blue Box code
+
 IHMC EtherCAT Master 0.6
  * Renamed getLastEtherCATTransactionTime and getLastIdleTime to getEtherCATTransactionTime and getIdleTime to better reflect what is measured.
  * Added getters for the error of the actual arrival time and desired arrival time of the datagram at the first slave. 
