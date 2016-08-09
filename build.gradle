@@ -18,7 +18,7 @@ apply plugin: "us.ihmc.gradle.ihmc-build"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.6.1'
+version = '0.6.2'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"

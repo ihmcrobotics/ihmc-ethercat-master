@@ -75,6 +75,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       Unsigned32 digitalInputs = new Unsigned32();
       Signed32 velocityActualValue = new Signed32();
       Unsigned16 statusWord = new Unsigned16();
+      Unsigned8 dummyByte0 = new Unsigned8();
 
    }
 
@@ -84,7 +85,6 @@ public abstract class ElmoTwitter extends DSP402Slave
       {
          super(0x1a12);
       }
-      Unsigned8 dummyByte0 = new Unsigned8();
       Signed16 torqueDemand = new Signed16();
 
    }
