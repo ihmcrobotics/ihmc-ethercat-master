@@ -483,6 +483,34 @@ public class Master implements MasterInterface
    }
    
    /**
+    * Receive process data. Do not calculate jitter.
+    * 
+    * Use to send multiple datagrams per control cycle.
+    * 
+    * @return true if wc matches
+    */
+   public boolean receiveSimple()
+   {
+      int wkc = soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      
+      if(wkc < 0)
+      {
+         return false;
+      }
+      else
+      {
+         if(wkc < expectedWorkingCounter)
+         {
+            return false;
+         }
+         else
+         {
+            return true;
+         }
+      }
+   }
+   
+   /**
     * Function to check if there is a mismatch between the expected and returned working counter.
     * 
     * Call after receive() to check if all slaves reacted as expected.

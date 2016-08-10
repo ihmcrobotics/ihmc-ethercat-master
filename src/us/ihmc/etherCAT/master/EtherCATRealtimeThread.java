@@ -39,6 +39,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    private long startTimeFreeRun = 0;
    private long dcOffsetError = 0;
    
+   private long cycleStartTime = 0;
+   
    
    /**
     * Create new Thread that is free running with respect to the slaves
@@ -219,7 +221,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       
       while(running)
       {
-         long startTime = getCurrentMonotonicClockTime();
+         cycleStartTime = getCurrentMonotonicClockTime();
          if(waitForNextPeriodAndDoTransfer())
          {            
             currentCycleTimestamp = calculateCurrentCycleTimestamp();  
@@ -229,7 +231,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          {
             deadlineMissed();
          }
-         lastCycleDuration = getCurrentMonotonicClockTime() - startTime;
+         lastCycleDuration = getCurrentMonotonicClockTime() - cycleStartTime;
          
       }
       
@@ -273,6 +275,30 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          return receive;
       }
       return false;
+   }
+   
+   /**
+    * Do an EtherCAT send/receive cycle.
+    * 
+    * Use this to decrease latency by sending two packets per control cycle. This will allow sending new setpoints before the next pulse happens.
+    * 
+    * @param extraTimeHeadroomInNs Extra time available on top of the last etherCAT transaction time and sync offset
+    *
+    * @return true if there is enough time to do an EtherCAT transaction and the transaction was successful
+    * 
+    */
+   public boolean doSecondaryTransfer(long extraTimeHeadroomInNs) 
+   {
+      long currentTime = getCurrentMonotonicClockTime();
+      if((cycleStartTime - currentTime) > (syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs))
+      {
+         master.send();
+         return master.receiveSimple();
+      }
+      else
+      {
+         return false;
+      }
    }
    
    /* PI calculation to get linux time synced to DC time */
