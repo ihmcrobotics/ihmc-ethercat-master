@@ -41,6 +41,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    
    private long cycleStartTime = 0;
    
+   private long dcTime = 0;
    
    /**
     * Create new Thread that is free running with respect to the slaves
@@ -142,7 +143,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       if(enableDC)
       {
          // Rounding the DC time down to the cycle time gives the previous sync0 time.
-         return (master.getDCTime() / cycleTimeInNs) * cycleTimeInNs;
+         return (dcTime / cycleTimeInNs) * cycleTimeInNs;
       }
       else
       {
@@ -272,6 +273,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
             slaveNotResponding();
          }
          
+         dcTime = master.getDCTime();
+         
          return receive;
       }
       return false;
@@ -290,7 +293,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    public boolean doSecondaryTransfer(long extraTimeHeadroomInNs) 
    {
       long currentTime = getCurrentMonotonicClockTime();
-      if((cycleStartTime - currentTime) > (syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs))
+      if((currentTime - cycleStartTime) > (syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs))
       {
          master.send();
          return master.receiveSimple();
@@ -313,7 +316,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    private long calculateDCOffsetTime(long syncOffset)
    {
-      long reftime = master.getDCTime();
+      long reftime = dcTime;
 
       dcOffsetError = (reftime - syncOffset) % cycleTimeInNs;
       if (dcOffsetError > (cycleTimeInNs / 2))
