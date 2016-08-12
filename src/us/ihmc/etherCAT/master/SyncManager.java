@@ -24,6 +24,8 @@ public class SyncManager
    private final boolean cconfigurePDOs;
    private final int index;
    
+   private boolean configured = false;
+   
    private MailbusDirection direction = MailbusDirection.UNKNOWN;
    
    /**
@@ -45,6 +47,8 @@ public class SyncManager
     */
    void configure(Master master, Slave slave)
    {
+      configured = true;
+      
       if(cconfigurePDOs)
       {
          int pdoConfigurationIndex = 0x1C10 + index;
@@ -100,6 +104,10 @@ public class SyncManager
     */
    public void registerPDO(RxPDO pdo)
    {
+      if(configured)
+      {
+         throw new RuntimeException("Cannot register PDOs after initializing the master");
+      }
       switch(direction)
       {
       case TXPDO:
@@ -122,6 +130,10 @@ public class SyncManager
     */
    public void registerPDO(TxPDO pdo)
    {
+      if(configured)
+      {
+         throw new RuntimeException("Cannot register PDOs after initializing the master");
+      }
       switch(direction)
       {
       case RXPDO:

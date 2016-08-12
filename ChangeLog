@@ -1,6 +1,8 @@
-IHMC EtherCAT Master 0.6.5
- * Add option to do an extra EtherCAT transaction
+IHMC EtherCAT Master 0.7
+ * PDO Watchdog configuration for slaves
 
+IHMC EtherCAT Master 0.6.6
+ * Add option to do an extra EtherCAT transaction
 
 IHMC EtherCAT Master 0.6.5
  * Custom timeout parameter added for writing SDO from buffer

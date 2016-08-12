@@ -24,7 +24,8 @@ public class Slave
    public static final int MAX_DC_OFFSET_SAMLES = 10;
 
    public static final int ECT_SMT_SIZE = 8;
-   
+   public static final int ECT_REG_WATCHDOG_DIV = 0x0400;
+   public static final int ECT_REG_WATCHDOG_PDO_TIMEOUT = 0x0420;
    
    /**
     * EtherCAT state machine states.
@@ -61,6 +62,9 @@ public class Slave
    
    private final ArrayList<SDO> SDOs = new ArrayList<>();
    
+   private boolean configurePDOWatchdog = false;
+   private int pdoWatchdogTimeout = 0;
+   
    /**
     * Create a new slave and set the address 
     * 
@@ -84,7 +88,6 @@ public class Slave
       this.position = position;
 
       sdoBuffer.order(ByteOrder.LITTLE_ENDIAN); // EtherCAT is a LITTLE ENDIAN protocol
-
       dcDiff.order(ByteOrder.LITTLE_ENDIAN);
    }
 
@@ -96,6 +99,18 @@ public class Slave
    final int getProductCode()
    {
       return productCode;
+   }
+
+   
+   public void configurePDOWatchdog(int watchdogTimeoutInNanoseconds)
+   {
+      if(ec_slave != null)
+      {
+         throw new RuntimeException("Cannot register PDOs after initializing the master");
+      }
+      
+      configurePDOWatchdog = true;
+      pdoWatchdogTimeout = watchdogTimeoutInNanoseconds;
    }
 
    /**
@@ -127,6 +142,35 @@ public class Slave
    private void configureImpl(Master master, ec_slavet slave, boolean enableDC, long cycleTimeInNs)
    {
       configureDCSync0(false, 0, 0);   // Disable DC Sync
+      
+      // Configure the PDO watchdog register by reading the divisor first
+      if(configurePDOWatchdog)
+      {
+         ByteBuffer pdoWatchdogBuffer = ByteBuffer.allocateDirect(4);
+         pdoWatchdogBuffer.order(ByteOrder.LITTLE_ENDIAN);
+         
+         master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.READ_WATCHDOG_DIV);
+         int wc = soem.ecx_FPRD(context.getPort(), ec_slave.getConfigadr(), ECT_REG_WATCHDOG_DIV, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
+         if(wc > 0)
+         {
+            int watchdogDivRaw = pdoWatchdogBuffer.getInt(0);
+            int watchdogDiv = 40 * (watchdogDivRaw + 2);
+            
+            int watchdogPDORaw = pdoWatchdogTimeout / watchdogDiv;
+            pdoWatchdogBuffer.putInt(watchdogPDORaw);
+            master.getEtherCATStatusCallback().notifyWatchdogConfiguration(this, pdoWatchdogTimeout, watchdogDiv, watchdogPDORaw);
+            wc = soem.ecx_FPWR(context.getPort(), ec_slave.getConfigadr(), ECT_REG_WATCHDOG_PDO_TIMEOUT, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
+            if(wc == 0)
+            {
+               master.getEtherCATStatusCallback().notifyWatchdogConfigurationError(this);
+            }
+         }
+         else
+         {
+            master.getEtherCATStatusCallback().notifyWatchdogConfigurationError(this);
+         }
+         
+      }
       
       for (int i = 0; i < syncManagers.length; i++)
       {
