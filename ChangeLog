@@ -1,4 +1,7 @@
-IHMC EtherCAT Master 0.7
+IHMC EtherCAT Master 0.6.8
+ * Disable CA for all slaves due bug https://github.com/OpenEtherCATsociety/SOEM/issues/50
+
+IHMC EtherCAT Master 0.6.7
  * PDO Watchdog configuration for slaves
 
 IHMC EtherCAT Master 0.6.6

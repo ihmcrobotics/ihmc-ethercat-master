@@ -28,6 +28,7 @@ public class Master implements MasterInterface
 {
    public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 25000;
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
+   public static final boolean DISABLE_CA = true;
    
    static
    {
@@ -284,7 +285,7 @@ public class Master implements MasterInterface
          }
          
          // Disable Complete Access reading of SDO configuration.
-         if(!slave.supportsCA())
+         if(!slave.supportsCA() || DISABLE_CA)
          {
             short config = ec_slave.getCoEdetails();
             config &= ~soemConstants.ECT_COEDET_SDOCA;
