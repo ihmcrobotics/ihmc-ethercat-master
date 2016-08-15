@@ -162,7 +162,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 4);
       
       // TODO: This can result in slaves going offline
-//      registerSDO(elmoErrorCodeSDO);
+      registerSDO(elmoErrorCodeSDO);
    }
 
    public abstract long getElmoStatusRegister();

@@ -1,5 +1,6 @@
 IHMC EtherCAT Master 0.6.8
  * Disable CA for all slaves due bug https://github.com/OpenEtherCATsociety/SOEM/issues/50
+ * Re-enabled SDO error read for beast
 
 IHMC EtherCAT Master 0.6.7
  * PDO Watchdog configuration for slaves
