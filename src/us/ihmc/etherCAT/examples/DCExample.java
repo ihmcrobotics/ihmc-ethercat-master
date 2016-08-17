@@ -91,19 +91,24 @@ public class DCExample extends EtherCATRealtimeThread
       
       
    }
-
-   @Override
-   protected void slaveNotResponding()
-   {
-      System.err.println("LOST COMMUNICATION WITH SLAVE");
-
-   }
-
+   
    @Override
    protected void deadlineMissed()
    {
       System.out.println("DEADLINE MISSED");
 
+   }
+
+   @Override
+   protected void workingCounterMismatch(int expected, int actual)
+   {
+      System.err.println("LOST COMMUNICATION WITH SLAVE");
+   }
+
+   @Override
+   protected void datagramLost()
+   {
+      System.err.println("Datagram lost");
    }
 
 }

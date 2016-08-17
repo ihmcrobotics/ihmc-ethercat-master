@@ -53,7 +53,7 @@ public class Master implements MasterInterface
    
    private long startTime;
    
-   private long expectedWorkingCounter = 0;
+   private int expectedWorkingCounter = 0;
    
    private long maximumExecutionJitter = MAXIMUM_EXECUTION_JITTER_DEFAULT;
    private long previousArrivalTime = 0;
@@ -62,7 +62,7 @@ public class Master implements MasterInterface
    private volatile long jitterSamples = 0;
    private volatile long jitterEstimate = 0;
    
-
+   private int ethercatReceiveTimeout = soemConstants.EC_TIMEOUTRET;
    
    /**
     * Create new EtherCAT master.
@@ -162,6 +162,7 @@ public class Master implements MasterInterface
    {
       enableDC = true;
       this.cycleTimeInNs = cycleTimeInNs;
+      this.ethercatReceiveTimeout = (int) (cycleTimeInNs / 1000);
    }
    
    /**
@@ -438,21 +439,21 @@ public class Master implements MasterInterface
    /**
     * Read the process data. 
     * 
-    * Call after send()
+    * Call after send(). Check resulting value with master.getExpectedWorkingCounter()
     * 
-    * @return true if receive was successful, false if no datagram was received
+    * @return working counter of soem.EC_NOFRAME (-1) if no datagram has been received
     */
-   public boolean receive()
+   public int receive()
    {
-      int wkc = soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
+      int wkc = soem.ecx_receive_processdata(context, ethercatReceiveTimeout);
       
-      if(wkc < 0)
+      if(wkc == soem.EC_NOFRAME)
       {
-         return false;
+         return wkc;
       }
       else
       {
-         if(wkc < expectedWorkingCounter)
+         if(wkc != expectedWorkingCounter)
          {
             workingCounterMismatch = true;
          }
@@ -479,7 +480,7 @@ public class Master implements MasterInterface
             previousArrivalTime = arrivalTime;
          }
          
-         return true;
+         return wkc;
       }
    }
    
@@ -488,40 +489,25 @@ public class Master implements MasterInterface
     * 
     * Use to send multiple datagrams per control cycle.
     * 
-    * @return true if wc matches
+    * @return working counter or soem.EC_NOFRAME if datagram is lost
     */
-   public boolean receiveSimple()
+   public int receiveSimple()
    {
-      int wkc = soem.ecx_receive_processdata(context, soemConstants.EC_TIMEOUTRET);
-      
-      if(wkc < 0)
-      {
-         return false;
-      }
-      else
-      {
-         if(wkc < expectedWorkingCounter)
-         {
-            return false;
-         }
-         else
-         {
-            return true;
-         }
-      }
+      int wkc = soem.ecx_receive_processdata(context, ethercatReceiveTimeout);
+      return wkc;
    }
    
    /**
-    * Function to check if there is a mismatch between the expected and returned working counter.
-    * 
-    * Call after receive() to check if all slaves reacted as expected.
-    * 
-    * @return true if there is a mismatch in the working counter
+    * Get the expected working counter from the master
     */
-   public boolean isWorkingCounterMismatch()
+   public int getExpectedWorkingCounter()
    {
-      return workingCounterMismatch;
+      return expectedWorkingCounter;
    }
+   
+   /**
+    * 
+    */
 
    
    /**

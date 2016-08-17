@@ -33,12 +33,6 @@ public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
    }
 
    @Override
-   protected void slaveNotResponding()
-   {
-      carrier.disableDrive();
-   }
-
-   @Override
    protected void deadlineMissed()
    {
       
@@ -55,6 +49,20 @@ public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
       System.out.println(carrier.getPositionFollowingError());
       System.out.println(carrier.getActualAuxiliaryPosition());
       System.out.println(carrier.getElmoStatusRegister());
+      
+   }
+
+   @Override
+   protected void workingCounterMismatch(int expected, int actual)
+   {
+      carrier.disableDrive();
+
+   }
+
+   @Override
+   protected void datagramLost()
+   {
+      // TODO Auto-generated method stub
       
    }
 

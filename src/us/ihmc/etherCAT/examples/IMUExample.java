@@ -15,13 +15,7 @@ public class IMUExample extends EtherCATRealtimeThread
       super("eth2", PriorityParameters.MAXIMUM_PRIORITY, new MonotonicTime(0, 1000000), true, 100000);
       registerSlave(blueBox);
    }
-
-   @Override
-   protected void slaveNotResponding()
-   {
-      
-   }
-
+   
    @Override
    protected void deadlineMissed()
    {
@@ -42,5 +36,17 @@ public class IMUExample extends EtherCATRealtimeThread
       IMUExample imuExample = new IMUExample();
       imuExample.start();
       imuExample.join();
+   }
+
+   @Override
+   protected void workingCounterMismatch(int expected, int actual)
+   {
+
+   }
+
+   @Override
+   protected void datagramLost()
+   {
+      
    }
 }

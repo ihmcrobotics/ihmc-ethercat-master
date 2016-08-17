@@ -7,6 +7,7 @@ import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PeriodicParameters;
 import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.realtime.RealtimeThread;
+import us.ihmc.soem.generated.soem;
 
 /**
  * Thread that is synchronized to the DC Master clock or Free running.
@@ -265,21 +266,26 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       {
          long startTime = getCurrentMonotonicClockTime();
          master.send();
-         boolean receive = master.receive();
+         int wkc = master.receive();
          etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
          
-         if(master.isWorkingCounterMismatch())
+         if(wkc == soem.EC_NOFRAME)
          {
-            slaveNotResponding();
+            datagramLost();
+            return false;
          }
          
          dcTime = master.getDCTime();
-         
-         return receive;
+         if(wkc != master.getExpectedWorkingCounter())
+         {
+            workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
+         }
+         return true;
       }
       return false;
    }
    
+
    /**
     * Do an EtherCAT send/receive cycle.
     * 
@@ -296,7 +302,21 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       if((currentTime - cycleStartTime) > (syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs))
       {
          master.send();
-         return master.receiveSimple();
+         int wkc = master.receiveSimple();
+         if(wkc == soem.EC_NOFRAME)
+         {
+            datagramLost();
+            return false;
+         }
+         else if(wkc != master.getExpectedWorkingCounter())
+         {
+            workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
+            return false;
+         }
+         else
+         {
+            return true;
+         }
       }
       else
       {
@@ -441,7 +461,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    }
 
    /**
-    * Callback to notify controller that one or more slaves are not responding.
+    * Callback to notify controller that there was a difference in working counter
     * 
     * This gets called when the expected working counter and actual working counter differ. 
     * It is recommended to go to a safe state when this function gets called.
@@ -450,7 +470,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     * in OP mode till the EtherCAT householder thread checks the state. This can take 10ms or more.
     * 
     */
-   protected abstract void slaveNotResponding();
+   protected abstract void workingCounterMismatch(int expected, int actual);
    
    /**
     * Callback to notify controller of missed deadline
@@ -461,5 +481,13 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     * Callback called cyclically to do the control loop
     */
    protected abstract void doControl();
+   
+   /**
+    * The receive function of the master timed out and no packet was received.
+    * 
+    * This means a packet got corrupted or dropped on the slave network and is generally bad news.
+    * 
+    */
+   protected abstract void datagramLost();
 
 }
