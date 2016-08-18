@@ -12,8 +12,9 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
    static final int assignActivate = 0x0300;
 
    //Receive PDOs
-   private final RPDO_1605 RPDO_1605 = new RPDO_1605();
-   private final RPDO_161D RPDO_161D = new RPDO_161D();
+   private final RPDO_1606 rpdo_1606 = new RPDO_1606();
+   private final RPDO_160B rpdo_160B = new RPDO_160B();
+
 
    //Transmit PDOs
    private final TPDO_1a03 TPDO_1a03 = new TPDO_1a03();
@@ -25,7 +26,6 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
 
    //Max Torque
    private long maxDriveTorque;
-   private double doubleMaxTorque;
 
    //Digital Outputs
    private long digitalOutputBitString = 0l;
@@ -41,8 +41,8 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
          registerSyncManager(new SyncManager(i, true));
       }
 
-      sm(2).registerPDO(RPDO_1605);
-      sm(2).registerPDO(RPDO_161D);
+      sm(2).registerPDO(rpdo_1606);
+      sm(2).registerPDO(rpdo_160B);
 
       sm(3).registerPDO(TPDO_1a03);
       sm(3).registerPDO(TPDO_1a12);
@@ -51,42 +51,28 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
       sm(3).registerPDO(TPDO_1a1e);
       sm(3).registerPDO(TPDO_1a22);
 
-      //Max Torque (SDO because not PDO mappable.  See: MAN-G-DS402.pdf)
-      doubleMaxTorque = 0.0;
-
    }
 
    public void setTargetPosition(int position)
    {
-      RPDO_1605.targetPosition.set(position);
+      rpdo_1606.targetPosition.set(position);
    }
 
    public void setTargetVelocity(int velocity)
    {
-      RPDO_1605.targetVelocity.set(velocity);
+      rpdo_1606.velocityOffset.set(velocity);
    }
 
    public void setTargetTorque(double torque)
    {
-      RPDO_1605.targetTorque.set((short) (((long) (torque * 1000000.0)) / maxDriveTorque));
+      rpdo_1606.torqueOffset.set((short) (((long) (torque * 1000000.0)) / maxDriveTorque));
 
-   }
-
-   public void setMaxTorque(double mTorque)
-   {
-      doubleMaxTorque = mTorque;
-      RPDO_1605.maxTorque.set((int) (((long) (mTorque * 1000000.0)) / maxDriveTorque));
-   }
-
-   public double getMaxTorque()
-   {
-      return doubleMaxTorque;
    }
 
    public void setModeOfOperation(ElmoModeOfOperation mode)
    {
 
-      RPDO_1605.modeOfOperation.set(mode.getMode());
+      rpdo_160B.modeOfOperation.set(mode.getMode());
 
    }
 
@@ -114,7 +100,7 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
          digitalOutputBitString = digitalOutputBitString & ((1 << shift) ^ 4294967295l);
       }
 
-      RPDO_161D.digitalOutputs.set(digitalOutputBitString);
+      rpdo_1606.digitalOutputs.set(digitalOutputBitString);
 
    }
 
@@ -155,7 +141,7 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
 
    protected Unsigned16 getControlWordPDOEntry()
    {
-      return RPDO_1605.controlWord;
+      return rpdo_1606.controlWord;
    }
 
    public int getAnalogInputVoltageInMilliVolts()
