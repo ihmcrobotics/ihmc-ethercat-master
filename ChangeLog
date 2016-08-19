@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.7.2
+ * Added IHMC EtherCAT IMU slave
+
 IHMC EtherCAT Master 0.7.1
  * Fixed LLA Carrier board to use offsets instead of setpoints
  

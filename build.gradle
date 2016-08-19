@@ -14,17 +14,21 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: "org.hidetake.ssh"
 apply plugin: "us.ihmc.gradle.ihmc-build"
+apply plugin: 'application'
 
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.7.1'
+version = '0.7.2'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"
 project.ext.licenseURL = "http://www.apache.org/licenses/LICENSE-2.0.txt"
 project.ext.licenseName = "Apache License, Version 2.0"
 project.ext.bintrayLicenseName = "Apache-2.0"
+
+
+mainClassName = "us.ihmc.etherCAT.examples.IMUExample"
 
 
 
