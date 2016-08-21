@@ -2,6 +2,7 @@ package us.ihmc.etherCAT.master;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.concurrent.locks.LockSupport;
 
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 
@@ -54,34 +55,37 @@ public class SyncManager
          int pdoConfigurationIndex = 0x1C10 + index;
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.CLEAR_PDOS);
          
+         LockSupport.parkNanos(10000000);
          // Set the size of the SM configuration array to zero, allows writing to the elements
          int wc = slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) 0);
          
          if(wc == 0)
          {
             master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex);
-            return;
+
          }
          
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDOS);
          // Configure all the PDOs
          for(int i = 0; i < PDOs.size(); i++)
          {
+
+            LockSupport.parkNanos(10000000);
             wc = slave.writeSDO(pdoConfigurationIndex, i + 1, (short) PDOs.get(i).getAddress());
             if(wc == 0)
             {
                master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex, PDOs.get(i).getAddress(), i + 1);
-               return;
             }
          }
          
          master.getEtherCATStatusCallback().trace(this, slave, TRACE_EVENT.WRITE_PDO_SIZE);
          // Set the correct size of the SM array
+
+         LockSupport.parkNanos(10000000);
          wc = slave.writeSDO(pdoConfigurationIndex, 0x0, (byte) PDOs.size());
          if(wc == 0)
          {
             master.getEtherCATStatusCallback().pdoConfigurationError(slave, index, pdoConfigurationIndex);
-            return;
          }
       }
    }

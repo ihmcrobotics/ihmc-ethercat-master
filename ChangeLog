@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.8
+ * Put in some sleeps between SDO requests. This seems to improve startup behavior.
+
 IHMC EtherCAT Master 0.7.2
  * Added IHMC EtherCAT IMU slave
 

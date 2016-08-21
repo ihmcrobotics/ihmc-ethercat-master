@@ -1,19 +1,22 @@
 package us.ihmc.etherCAT.examples;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
+import us.ihmc.etherCAT.slaves.IHMCBlueBox;
 import us.ihmc.etherCAT.slaves.ihmc.IHMCEtherCATIMU;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 
 public class IMUExample extends EtherCATRealtimeThread
 {
-   private final IHMCEtherCATIMU ihmcEtherCATIMU = new IHMCEtherCATIMU(0, 0);
+   private final IHMCEtherCATIMU ihmcEtherCATIMU = new IHMCEtherCATIMU(3, 0);
+   private final IHMCBlueBox ihmcBlueBox = new IHMCBlueBox(3, 1);
    private int counter = 0;
    
    public IMUExample()
    {
       super("enx9cebe830b0db", PriorityParameters.MAXIMUM_PRIORITY, new MonotonicTime(0, 1000000), true, 100000);
       registerSlave(ihmcEtherCATIMU);
+      registerSlave(ihmcBlueBox);
    }
    
    @Override

@@ -601,6 +601,9 @@ public class Master implements MasterInterface
          long startTime = System.nanoTime();
          
          boolean printedWKCMismatch = false;
+         
+         int sdoToCheck = 0;
+         
          while(running)
          {
             boolean localWKCMismatch = workingCounterMismatch;
@@ -623,10 +626,13 @@ public class Master implements MasterInterface
                doStateControl(startTime);               
             }
             
-            
-            for(int i = 0; i < SDOs.size(); i++)
+            if(SDOs.size() > 0)
             {
-               SDOs.get(i).updateInMasterThread();
+               SDOs.get(sdoToCheck).updateInMasterThread();
+               if(++sdoToCheck >= SDOs.size())
+               {
+                  sdoToCheck = 0;
+               }
             }
             
             try

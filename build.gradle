@@ -19,7 +19,7 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.7.2'
+version = '0.8'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"
@@ -28,7 +28,7 @@ project.ext.licenseName = "Apache License, Version 2.0"
 project.ext.bintrayLicenseName = "Apache-2.0"
 
 
-mainClassName = "us.ihmc.etherCAT.examples.IMUExample"
+mainClassName = "us.ihmc.etherCAT.examples.ElmoTwitterTCBExample"
 
 
 
@@ -61,7 +61,7 @@ dependencies {
 
 remotes {
    test {
-      host = '10.7.1.160'
+      host = '10.7.4.50'
 
       // Set the username and password in ~/.gradle/gradle.properties.
       user = project.hasProperty('testbed_username') ? "${testbed_username}" : "invalid"
