@@ -111,4 +111,11 @@ public class DCExample extends EtherCATRealtimeThread
       System.err.println("Datagram lost");
    }
 
+   @Override
+   protected void doReporting()
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
 }

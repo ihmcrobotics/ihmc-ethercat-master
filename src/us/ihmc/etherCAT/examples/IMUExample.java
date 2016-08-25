@@ -59,4 +59,11 @@ public class IMUExample extends EtherCATRealtimeThread
    {
       System.out.println("DATAGRAM LOST");
    }
+
+   @Override
+   protected void doReporting()
+   {
+      // TODO Auto-generated method stub
+      
+   }
 }

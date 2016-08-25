@@ -240,6 +240,9 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
                inOP = true;
             }
          }
+         
+         doReporting();
+         
          lastCycleDuration = getCurrentMonotonicClockTime() - cycleStartTime;
          
       }
@@ -493,9 +496,18 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    protected abstract void deadlineMissed();
    
    /**
-    * Callback called cyclically to do the control loop
+    * Callback called cyclically to do the control loop. 
+    * 
+    * Will not get called till all actuators are online. Will also not get called when a deadline is missed or a datagram got lost.
     */
    protected abstract void doControl();
+   
+   /**
+    * Callback called cyclically to do reporting and logging.
+    * 
+    * Will always get called, even when the controller is not yet online or a deadline is missed. Make sure this function returns quickly.
+    */
+   protected abstract void doReporting();
    
    /**
     * The receive function of the master timed out and no packet was received.

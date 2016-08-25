@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
 import us.ihmc.etherCAT.slaves.elmo.ElmoTwitterLLACarrierBoard;
-import us.ihmc.etherCAT.slaves.elmo.ElmoTwitterTCB;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 
@@ -63,6 +62,13 @@ public class ElmoTwitterTCBExample extends EtherCATRealtimeThread
 
    @Override
    protected void datagramLost()
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   @Override
+   protected void doReporting()
    {
       // TODO Auto-generated method stub
       
