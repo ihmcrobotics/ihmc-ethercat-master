@@ -2,6 +2,7 @@ IHMC EtherCAT Master 0.8
  * Removed separate thread for EtherCAT State machine due threading issues with the SOEM library
  * EtherCATRealtimeThread will not run doControl till all slaves are online
  * Fixed detection of DC Master clock
+ * Fixed cycle duration calculation
 
 IHMC EtherCAT Master 0.8
  * Put in some sleeps between SDO requests. This seems to improve startup behavior.

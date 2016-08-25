@@ -227,7 +227,6 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       
       while(running)
       {
-         cycleStartTime = getCurrentMonotonicClockTime();
          if(waitForNextPeriodAndDoTransfer() && inOP)
          {            
             currentCycleTimestamp = calculateCurrentCycleTimestamp();  
@@ -243,7 +242,6 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          
          doReporting();
          
-         lastCycleDuration = getCurrentMonotonicClockTime() - cycleStartTime;
          
       }
       
@@ -271,7 +269,11 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    private boolean waitForNextPeriodAndDoTransfer()
    {
-      idleTime = waitForNextPeriodInternal(); 
+      idleTime = waitForNextPeriodInternal();
+      long currentTime = getCurrentMonotonicClockTime();
+      lastCycleDuration =  currentTime - cycleStartTime;
+      cycleStartTime = currentTime;
+      
       if(idleTime > 0)
       {
          long startTime = getCurrentMonotonicClockTime();
