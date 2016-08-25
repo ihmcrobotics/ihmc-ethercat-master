@@ -1,7 +1,9 @@
 package us.ihmc.etherCAT.examples;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
-import us.ihmc.etherCAT.slaves.IHMCBlueBox;
+import us.ihmc.etherCAT.slaves.beckhoff.EK1100;
+import us.ihmc.etherCAT.slaves.beckhoff.EL3314;
+import us.ihmc.etherCAT.slaves.beckhoff.EL4134;
 import us.ihmc.etherCAT.slaves.ihmc.IHMCEtherCATIMU;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
@@ -9,14 +11,19 @@ import us.ihmc.realtime.PriorityParameters;
 public class IMUExample extends EtherCATRealtimeThread
 {
    private final IHMCEtherCATIMU ihmcEtherCATIMU = new IHMCEtherCATIMU(3, 0);
-   private final IHMCBlueBox ihmcBlueBox = new IHMCBlueBox(3, 1);
+   private final EK1100 ek1100 = new EK1100(101, 0); // Coupler
+   private final EL3314 el3314 = new EL3314(201, 0); // Random slave that is plugged in our test bench
+   private final EL4134 el4134 = new EL4134(601, 0); // Analog output
    private int counter = 0;
    
    public IMUExample()
    {
-      super("enx9cebe830b0db", PriorityParameters.MAXIMUM_PRIORITY, new MonotonicTime(0, 1000000), true, 100000);
+      super("p3p1", PriorityParameters.MAXIMUM_PRIORITY, new MonotonicTime(0, 1000000), true, 100000);
       registerSlave(ihmcEtherCATIMU);
-      registerSlave(ihmcBlueBox);
+      registerSlave(ek1100);
+      registerSlave(el3314);
+      registerSlave(el4134);
+      enableTrace();
    }
    
    @Override
@@ -50,6 +57,6 @@ public class IMUExample extends EtherCATRealtimeThread
    @Override
    protected void datagramLost()
    {
-      
+      System.out.println("DATAGRAM LOST");
    }
 }

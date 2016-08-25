@@ -19,7 +19,7 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.8'
+version = '0.9'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"
@@ -28,7 +28,7 @@ project.ext.licenseName = "Apache License, Version 2.0"
 project.ext.bintrayLicenseName = "Apache-2.0"
 
 
-mainClassName = "us.ihmc.etherCAT.examples.ElmoTwitterTCBExample"
+mainClassName = "us.ihmc.etherCAT.examples.IMUExample"
 
 
 

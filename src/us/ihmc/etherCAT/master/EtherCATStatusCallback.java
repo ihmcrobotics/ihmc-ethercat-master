@@ -37,7 +37,7 @@ public class EtherCATStatusCallback
       SLAVE_FOUND("Slave found"),
       SLAVE_LOST("Slave lost"),
       READ_WATCHDOG_DIV("Reading watchdog division time"),
-      WRITE_WATCHDOG_TIMEOUT("Writing watchdog timeout");
+      WRITE_WATCHDOG_TIMEOUT("Writing watchdog timeout"), IS_MASTER_DC("Is master DC");
 
       private final String msg;
 

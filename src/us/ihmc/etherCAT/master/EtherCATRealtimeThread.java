@@ -3,6 +3,7 @@ package us.ihmc.etherCAT.master;
 import java.io.IOException;
 
 import us.ihmc.affinity.Processor;
+import us.ihmc.etherCAT.master.Slave.State;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PeriodicParameters;
 import us.ihmc.realtime.PriorityParameters;
@@ -43,6 +44,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    private long cycleStartTime = 0;
    
    private long dcTime = 0;
+   
+   private boolean inOP = false;
    
    /**
     * Create new Thread that is free running with respect to the slaves
@@ -91,6 +94,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       if(enableDC)
       {
          master.enableDC(period.asNanoseconds());
+         master.disableRecovery();// Disable recovery mode because it doesn't work under DC at the moment
       }
       
 
@@ -224,14 +228,17 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       while(running)
       {
          cycleStartTime = getCurrentMonotonicClockTime();
-         if(waitForNextPeriodAndDoTransfer())
+         if(waitForNextPeriodAndDoTransfer() && inOP)
          {            
             currentCycleTimestamp = calculateCurrentCycleTimestamp();  
             doControl();
          }
-         else
+         else if (!inOP)
          {
-            deadlineMissed();
+            if(master.getState() == State.OP)
+            {
+               inOP = true;
+            }
          }
          lastCycleDuration = getCurrentMonotonicClockTime() - cycleStartTime;
          
@@ -267,11 +274,11 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          long startTime = getCurrentMonotonicClockTime();
          master.send();
          int wkc = master.receive();
-         etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
          
          if(wkc == soem.EC_NOFRAME)
          {
             datagramLost();
+            etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
             return false;
          }
          
@@ -280,9 +287,17 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          {
             workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
          }
+         
+         master.doEtherCATStateControl();
+         etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
+         
          return true;
       }
-      return false;
+      else
+      {
+         deadlineMissed();
+         return false;
+      }
    }
    
 

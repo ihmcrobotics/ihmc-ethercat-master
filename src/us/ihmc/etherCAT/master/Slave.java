@@ -30,10 +30,11 @@ public class Slave
    /**
     * EtherCAT state machine states.
     *
+    * The states are ordered from Offline to OP.
     */
    public enum State
    {
-      BOOT, INIT, PRE_OP, PRE_OPERR, SAFE_OP, SAFE_OPERR, OP, OFFLINE
+      OFFLINE, BOOT, INIT, PRE_OP, PRE_OPERR, SAFE_OP, SAFE_OPERR, OP
    }
 
    private final int aliasAddress;
@@ -51,19 +52,19 @@ public class Slave
    private final ByteBuffer dcDiff = ByteBuffer.allocateDirect(4);
    
    private int maximumDCOffset = MAX_DC_OFFSET_DEFAULT;
-   private boolean dcMasterClock = false;
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
 
    private volatile State state = State.SAFE_OP; // Slaves are in SAFE_OP when the master has been initialized
    
-   private boolean enableDC;
    private long cycleTimeInNs;
    
    private final ArrayList<SDO> SDOs = new ArrayList<>();
    
    private boolean configurePDOWatchdog = false;
    private int pdoWatchdogTimeout = 0;
+   
+   private boolean dcClockStable = false;
    
    /**
     * Create a new slave and set the address 
@@ -127,7 +128,6 @@ public class Slave
       this.context = context;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
-      this.enableDC = enableDC;
       this.cycleTimeInNs = cycleTimeInNs;
       
       for(int i = 0; i < SDOs.size(); i++)
@@ -187,16 +187,6 @@ public class Slave
 
       master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
       configure(enableDC, cycleTimeInNs);
-   }
-
-   /**
-    * Internal function.
-    * 
-    * @param isDCMasterClock
-    */
-   void setDCMasterClock(boolean isDCMasterClock)
-   {
-      this.dcMasterClock = isDCMasterClock;
    }
 
    /**
@@ -798,7 +788,7 @@ public class Slave
       return state;
    }
 
-   private State requestState()
+   private State getStateFromEcSlave()
    {
       int state = ec_slave.getState();
       if (state == ec_state.EC_STATE_BOOT.swigValue())
@@ -885,6 +875,21 @@ public class Slave
       return diff;
    }
    
+   /**
+    * Internal function. Update slave state from householding thread.
+    */
+   
+   void updateEtherCATState()
+   {
+      State previousState = this.state;
+      this.state = getStateFromEcSlave();
+      
+      if(previousState != this.state)
+      {
+         master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
+      }
+   }
+   
    
    /**
     * Internal function. Householding functionality. Gets called cyclically by the householding thread.
@@ -892,22 +897,13 @@ public class Slave
     * This function does the state control of the slave.
     * 
     */
-   void doEtherCATStateControl(boolean masterThreadStableExecution, long runTime)
+   void doEtherCATStateControl(long runTime)
    {
-
-      State previousState = this.state;
-      this.state = requestState();
-      
-      if(previousState != this.state)
-      {
-         master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
-      }
-
       switch (this.state)
       {
       case BOOT:
       case INIT:
-         if(!enableDC)
+         if(!dcEnabled)
          {
             master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECONFIG_TO_PREOP);
             if(soem.ecx_reconfig_slave_to_preop(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
@@ -919,46 +915,42 @@ public class Slave
          break;
       case PRE_OP:
          
-         if(!enableDC)
+         if(!dcEnabled)
          {
             master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECONFIG_TO_SAFEOP);
-            configureImpl(master, ec_slave, enableDC, cycleTimeInNs);
+            configureImpl(master, ec_slave, dcEnabled, cycleTimeInNs);
             if(soem.ecx_reconfig_slave_to_safeop(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
             {
                ec_slave.setIslost((short) 0);
             }
          }
-         
+         dcClockStable = false;
          dcOffsetSamples = 0;
          break;
       case PRE_OPERR:
          break;
       case SAFE_OP:
-         if (dcEnabled)
+         if(dcEnabled && !dcClockStable)
          {
-            if(masterThreadStableExecution)
+            int dcOffset = getDCSyncOffset();
+            if (dcOffset < maximumDCOffset && dcOffset > -maximumDCOffset)
             {
-               int dcOffset = getDCSyncOffset();
-               if (dcOffset < maximumDCOffset && dcOffset > -maximumDCOffset)
+               // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
+               if (dcOffset != 0 || ec_slave.getDCprevious() == 0)
                {
-                  // At boot dcOffset can be zero. Ignore this. Except for the master clock, which is always zero.
-                  if (dcOffset != 0 || dcMasterClock)
+                  if (dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
                   {
-                     if (dcOffsetSamples++ > MAX_DC_OFFSET_SAMLES)
-                     {
-                        ec_slave.setState(ec_state.EC_STATE_OPERATIONAL.swigValue());
-                        soem.ecx_writestate(context, slaveIndex);
-                     }
-   
+                     dcClockStable = true;
                   }
-                  else
-                  {
-                     dcOffsetSamples = 0;
-                  }
-                  
                }
-               
-               master.getEtherCATStatusCallback().reportDCSyncWaitTime(this, runTime, dcOffset);
+               else
+               {
+                  dcOffsetSamples = 0;
+               }                     
+            }
+            else
+            {
+               master.getEtherCATStatusCallback().reportDCSyncWaitTime(this, runTime, dcOffset);               
             }
          }
          else
@@ -969,11 +961,11 @@ public class Slave
          break;
       case SAFE_OPERR:
          dcOffsetSamples = 0;
+         dcClockStable = false;
          ec_slave.setState(ec_state.EC_STATE_SAFE_OP.swigValue() + ec_state.EC_STATE_ACK.swigValue());
          soem.ecx_writestate(context, slaveIndex);
          break;
       case OP:
-         dcOffsetSamples = 0;
          break;
       case OFFLINE:         
          if(ec_slave.getIslost() == 0)
@@ -988,7 +980,7 @@ public class Slave
          break;
       }
       
-      if(!enableDC && ec_slave.getIslost() > 0)
+      if(!dcEnabled && ec_slave.getIslost() > 0)
       {
          if(ec_slave.getState() == 0)
          {
