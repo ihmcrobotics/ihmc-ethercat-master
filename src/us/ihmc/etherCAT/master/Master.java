@@ -624,5 +624,10 @@ public class Master implements MasterInterface
    {
       etherCATStateMachine.disableRecovery();
    }
+
+   ArrayList<SDO> getSDOs()
+   {
+      return sdos;
+   }
    
 }

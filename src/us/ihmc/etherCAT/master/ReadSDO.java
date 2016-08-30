@@ -4,16 +4,13 @@ import java.nio.ByteBuffer;
 
 
 /**
- * SDO read delegator class for asynchronous SDO transfer
+ * SDO read delegator class for SDO transfer
  * 
  * The SDO will be delegated to the house holding thread and can be polled for data.
  * This class is meant to be used to read SDO's during execution of the realtime EtherCAT
  * transfer. To read SDO's for slave configuration purposes, call slave.readSDO() directly from the 
  * configure() function overridden from Slave. 
  * 
- * The public class interface is not thread safe. Calling requestNewData(), hasNewData()
- * and the various getters from multiple threads on the same object will result in data
- * corruption. However, SDO's can be read from outside the EtherCAT thread.
  * 
  * @author Jesper Smith
  *
@@ -34,44 +31,34 @@ public class ReadSDO extends SDO
       super(slave, index, subindex, size);
    }
    
-   /**
-    * Request new data if hasNewData() is false and no data has previously been requested.
-    */
-   public void requestNewData()
-   {
-      requestUpdateOnNextTick();
-   }
    
+   /**
+    * Request new data
+    * 
+    * @return false if another request is still running
+    */
+   public boolean requestNewData()
+   {
+      return queue();
+   }
 
    
    /**
-    * Get current data if hasNewData() is true; Else throw runtimeException. 
-    * 
-    * After this call, hasNewData() will be false
+    * Get current data if valid() is true; Else throw runtimeException. 
     * 
     * @return latest data.
-    * @throws RuntimeException if hasNewData is false
+    * @throws RuntimeException if valid is false
     */
    private ByteBuffer getData()
    {
-      if(checkIfRequestSuccess())
+      if(isValid())
       {
          return buffer;
       }
       
-      throw new RuntimeException("No new SDO data available. Please only call when hasNewData() is true");
+      throw new RuntimeException("No new SDO data available. Please only call when valid() is true");
    }
 
-   /**
-    * Check if new data is available for this SDO.
-    * 
-    * @return true if new data is available.
-    */
-   public boolean hasNewData()
-   {
-      return transactionIsDone();
-   }
-   
    /**
     * 
     * @return Data as long
@@ -160,8 +147,8 @@ public class ReadSDO extends SDO
    }
 
    @Override
-   protected boolean doTransaction()
+   protected int send()
    {
-      return slave.readSDOToBuffer(index, subindex, size, buffer) != 0;
+      return slave.readSDOToBuffer(index, subindex, size, buffer);
    }
 }

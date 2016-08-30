@@ -1,5 +1,7 @@
 package us.ihmc.etherCAT.master;
 
+import java.util.ArrayList;
+
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
@@ -28,7 +30,9 @@ class EtherCATStateMachine
 
    private long startTime = -1;
    private long runTime = 0;
-
+   
+   private int currentSDO = 0;
+   
    private EtherCATState currentState;
    
    private boolean recoveryDisabled = false;
@@ -80,6 +84,30 @@ class EtherCATStateMachine
       return state;
    }
 
+   private void doSDOTransfer()
+   {
+      ArrayList<SDO> sdos = master.getSDOs();
+      
+      if(sdos.size() > 0)
+      {
+         for(int c = 0; c < sdos.size(); c++)
+         {
+            if(++currentSDO >= sdos.size())
+            {
+               currentSDO = 0;
+            }
+            
+            if(sdos.get(currentSDO).update())
+            {
+               return;
+            }
+            
+         }
+         
+      }
+   }
+   
+   
    private interface EtherCATState
    {
       EtherCATState next();
@@ -182,6 +210,7 @@ class EtherCATStateMachine
          }
          else
          {
+            doSDOTransfer();
             return this;
          }
       }
@@ -207,8 +236,17 @@ class EtherCATStateMachine
             if(previousActualWorkingCounter != wkc)
             {
                updateSlaveStates();
-            }            
+            }
+            else
+            {
+               doSDOTransfer();
+            }
          }
+         else
+         {
+            doSDOTransfer();            
+         }
+         
          previousActualWorkingCounter = wkc;
          
          return this;

@@ -162,7 +162,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       elmoErrorCodeSDO = new ReadSDO(this, 0x306A, 0x1, 4);
       
       // TODO: This can result in slaves going offline
-//      registerSDO(elmoErrorCodeSDO);
+      registerSDO(elmoErrorCodeSDO);
    }
 
    public abstract long getElmoStatusRegister();
@@ -178,11 +178,17 @@ public abstract class ElmoTwitter extends DSP402Slave
    {
       super.doStateControl();
       
+      
+      if(elmoErrorCodeSDO.isValid())
+      {
+         elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
+      }
+      
       if(isFaulted())
       {
          if (!errorCodeRead)
          {
-            elmoErrorCodeSDO.requestNewData();
+            errorCodeRead = elmoErrorCodeSDO.requestNewData();
          }
       }
       else
@@ -190,11 +196,7 @@ public abstract class ElmoTwitter extends DSP402Slave
          errorCodeRead = false;
       }
       
-      if(elmoErrorCodeSDO.hasNewData())
-      {
-         elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
-         errorCodeRead = true;
-      }
+      
    }
    
 

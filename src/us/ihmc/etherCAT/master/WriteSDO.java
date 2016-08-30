@@ -31,62 +31,22 @@ public class WriteSDO extends SDO
    }
 
    /**
-    * Checks if new data can be written 
-    * 
-    * @return true if ready for a write request
-    */
-   private boolean isReady()
-   {
-      return sdoIsIdle();
-   }
-
-   /**
-    * Checks if data was written and go back to idle state.
-    * 
-    * Only the first call after a successful write will return true, subsequent calls will return false
-    * 
-    * @return true if the data was written
-    */
-   public boolean dataHasBeenWritten()
-   {
-      return checkIfRequestSuccess();
-   }
-   
-   /**
-    * Check if data can be written.
-    * 
-    * - If no data has ever been written, return true
-    * - If data has successfully been written, return true
-    * - If data is currently been written from a previous command, return false
-    * 
-    * As side effect, calling this function will result in dataHasBeenWritten to be false. 
-    * If the result of a previous write needs to be checked, use dataHsBeenWritten()
-    * 
-    * @return true if new data can be written
-    */
-   public boolean canWriteData()
-   {
-      return dataHasBeenWritten() || isReady();
-   }
-
-   /**
     * Write value to SDO. 
     * 
-    * Data can only be written if canWriteData is true.
     * 
     * @param value
     */
-   public void write(byte value)
+   public boolean write(byte value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.put(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    /**
@@ -96,17 +56,17 @@ public class WriteSDO extends SDO
     * 
     * @param value
     */
-   public void write(short value)
+   public boolean write(short value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.putShort(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    /**
@@ -116,17 +76,17 @@ public class WriteSDO extends SDO
     * 
     * @param value
     */
-   public void write(int value)
+   public boolean write(int value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.putInt(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    /**
@@ -136,17 +96,17 @@ public class WriteSDO extends SDO
     * 
     * @param value
     */
-   public void write(long value)
+   public boolean write(long value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.putLong(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    /**
@@ -156,17 +116,17 @@ public class WriteSDO extends SDO
     * 
     * @param value
     */
-   public void write(double value)
+   public boolean write(double value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.putDouble(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    /**
@@ -176,23 +136,23 @@ public class WriteSDO extends SDO
     * 
     * @param value
     */
-   public void write(float value)
+   public boolean write(float value)
    {
-      if (!isReady())
+      if (!canSend())
       {
-         throw new RuntimeException("Cannot write new value to SDO, SDO is not ready");
+         return false;
       }
 
       buffer.clear();
       buffer.putFloat(value);
 
-      requestUpdateOnNextTick();
+      return queue();
    }
 
    @Override
-   protected boolean doTransaction()
+   protected int send()
    {
-      return slave.writeSDO(index, subindex, buffer) != 0;
+      return slave.writeSDO(index, subindex, buffer);
    }
 
 }

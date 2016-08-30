@@ -2,7 +2,6 @@ package us.ihmc.etherCAT.master;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Base objects for using SDO objects in cyclic operations.
@@ -15,18 +14,16 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class SDO
 {
 
-   protected enum State
-   {
-      REQUEST_NEW_DATA, REQUEST_SUCCESS, IDLE
-   }
-
    protected final Slave slave;
    protected final int index;
    protected final int subindex;
    protected final int size;
    protected final ByteBuffer buffer;
-   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-
+  
+   protected boolean send = false;
+   protected boolean valid = false;
+   
+   
    protected SDO(Slave slave, int index, int subindex, int size)
    {
       this.slave = slave;
@@ -38,44 +35,65 @@ public abstract class SDO
 
    }
 
-   protected boolean checkIfRequestSuccess()
+   protected boolean canSend()
    {
-      return state.compareAndSet(State.REQUEST_SUCCESS, State.IDLE);
+      return !send;
    }
-
-   protected void requestUpdateOnNextTick()
+   
+   /**
+    * Queue a new transaction
+    * 
+    * @return false if the previous transaction is still ongoing
+    */
+   protected boolean queue()
    {
-      state.compareAndSet(State.IDLE, State.REQUEST_NEW_DATA);
-   }
-
-   protected boolean transactionIsDone()
-   {
-      return state.get() == State.REQUEST_SUCCESS;
-   }
-
-   protected boolean sdoIsIdle()
-   {
-      return state.get() == State.IDLE;
-   }
-
-   protected abstract boolean doTransaction();
-
-   void updateInMasterThread()
-   {
-      State currentState = state.get();
-
-      switch (currentState)
+      if(send)
       {
-      case REQUEST_NEW_DATA:
-         if (doTransaction())
+         return false;
+      }
+      
+      send = true;
+      valid = false;
+      
+      return true;
+      
+   }
+   /**
+    * The last queued SDO transaction was succesful and no new transaction has been queued
+    * 
+    * @return true if the data is valid
+    */
+   public boolean isValid()
+   {
+      return valid;
+   }
+   
+   /**
+    * Send SDO request
+    * 
+    * @return working counter
+    */
+   protected abstract int send();
+   
+   /**
+    * Internal function. Execute from Master EtherCAT state machine.
+    * 
+    * @return true if an EtherCAT transaction was made
+    */
+   boolean update()
+   {
+      if(send)
+      {
+         if(send() > 0)
          {
-            state.set(State.REQUEST_SUCCESS);
+            send = false;
+            valid = true;
          }
-         break;
-
-      case REQUEST_SUCCESS:
-      case IDLE:
-         break;
+         return true;
+      }
+      else
+      {
+         return false;
       }
    }
    
