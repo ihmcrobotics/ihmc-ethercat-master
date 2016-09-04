@@ -65,7 +65,7 @@ public class ReadSDO extends SDO
     */
    public long getLong()
    {
-      return getData().getLong();
+      return getData().getLong(0);
    }
    
 
@@ -75,7 +75,7 @@ public class ReadSDO extends SDO
     */
    public int getInt()
    {
-      return getData().getInt();
+      return getData().getInt(0);
    }
    
 
@@ -95,7 +95,7 @@ public class ReadSDO extends SDO
     */
    public short getShort()
    {
-      return getData().getShort();
+      return getData().getShort(0);
    }
    
 
@@ -115,7 +115,7 @@ public class ReadSDO extends SDO
     */
    public byte getByte()
    {
-      return getData().get();
+      return getData().get(0);
    }
    
 
@@ -134,7 +134,7 @@ public class ReadSDO extends SDO
     */
    public double getDouble()
    {
-      return getData().getDouble();
+      return getData().getDouble(0);
    }
 
    /**
@@ -143,7 +143,7 @@ public class ReadSDO extends SDO
     */
    public double getFloat()
    {
-      return getData().getFloat();
+      return getData().getFloat(0);
    }
 
    @Override
