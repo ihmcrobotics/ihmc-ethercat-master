@@ -36,6 +36,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    
    private long currentCycleTimestamp = 0;
    private long etherCATTransactionTime = 0;
+   private long etherCATStateMachineTime = 0;
    private long lastCycleDuration = 0;
    private long idleTime = 0;
    private long startTimeFreeRun = 0;
@@ -293,8 +294,11 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
             workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
          }
          
+	      long ethercatStateMachineStartTime = getCurrentMonotonicClockTime();
          master.doEtherCATStateControl();
-         etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
+	      long endTime = getCurrentMonotonicClockTime();
+         etherCATTransactionTime = endTime - startTime;
+         etherCATStateMachineTime = endTime - ethercatStateMachineStartTime;
          
          return true;
       }
@@ -470,7 +474,17 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       return lastCycleDuration;
    }
-   
+
+   /**
+    * The time the ethercat state machine took. This should be close to zero during normal operation
+    *
+    * @return time ethercat state machine took
+    */
+   public long getEtherCATStateMachineTime()
+   {
+      return etherCATStateMachineTime;
+   }
+
    /**
     * 
     * @see us.ihmc.realtime.RealtimeThread#setAffinity(Processor...)

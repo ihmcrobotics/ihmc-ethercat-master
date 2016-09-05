@@ -456,7 +456,7 @@ public class Slave
     *  Do not use in cyclical operation, register WriteSDO objects with the master to avoid blocking.
     * 
     * @param index Index of the SDO 
-    * @param subindex Subindex of the SDO
+    * @param subIndex Subindex of the SDO
     * @param value data
     * @return working counter
     */
