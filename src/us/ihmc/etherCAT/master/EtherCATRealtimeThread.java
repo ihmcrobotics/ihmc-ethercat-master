@@ -1,6 +1,7 @@
 package us.ihmc.etherCAT.master;
 
 import java.io.IOException;
+import java.util.List;
 
 import us.ihmc.affinity.Processor;
 import us.ihmc.etherCAT.master.Slave.State;
@@ -494,6 +495,19 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       realtimeThread.setAffinity(processors);
    }
 
+
+   /**
+    * Returns a new unmoddifiable list with all slaves registered with the master.
+    *
+    * @return all slaves registered with the master
+    */
+   @Override
+   public List<Slave> getSlaves()
+   {
+      return master.getSlaves();
+   }
+
+
    /**
     * Callback to notify controller that there was a difference in working counter
     * 
@@ -532,5 +546,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     * 
     */
    protected abstract void datagramLost();
+
+
 
 }

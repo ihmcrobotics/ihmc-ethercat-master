@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.soem.generated.ec_slavet;
@@ -181,6 +183,11 @@ public class Master implements MasterInterface
     */
    public void init() throws IOException
    {
+      if(context != null)
+      {
+         throw new RuntimeException("Master is already initialized. Only call master.init() once");
+      }
+
       getEtherCATStatusCallback().trace(TRACE_EVENT.FAST_IRQ);
       setupFastIRQ(iface);
 
@@ -629,5 +636,16 @@ public class Master implements MasterInterface
    {
       return sdos;
    }
+
+   /**
+    * Returns a new unmoddifiable list with all slaves registered with the master.
+    *
+    * @return all slaves registered with the master
+    */
+   public List<Slave> getSlaves()
+   {
+      return Collections.unmodifiableList(registeredSlaves);
+   }
+
    
 }

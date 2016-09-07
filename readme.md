@@ -7,7 +7,6 @@ Extra functionality built on top of SOEM includes
 - Automatic configuration of PDO's
 - EtherCAT slave state management
 - Thread synchronization with DC Master Clock
-- Asynchronous SDO communication
 
 ## Supported slaves
 

@@ -1,4 +1,17 @@
-IHMC EtherCAT Master 0.8
+IHMC EtherCAT Master 0.9.4
+ * Added getter for all slaves from Master
+
+IHMC EtherCAT Master 0.9.3
+ * More reporting functions to time ethercat state machine
+
+
+IHMC EtherCAT Master 0.9.2
+ * Fix buffer underflow problem with SDO reads
+
+IHMC EtherCAT Master 0.9.1
+ * Single threaded SDO reads
+
+IHMC EtherCAT Master 0.9
  * Removed separate thread for EtherCAT State machine due threading issues with the SOEM library
  * EtherCATRealtimeThread will not run doControl till all slaves are online
  * Fixed detection of DC Master clock

@@ -1,5 +1,6 @@
 package us.ihmc.etherCAT.master;
 
+import java.util.List;
 
 /**
  * Interface for commonly used master functions. Useful to switch between EtherCATRealtimeThread and Master.
@@ -18,4 +19,5 @@ public interface MasterInterface
 
    public void registerSDO(SDO sdo);
 
+   public List<Slave> getSlaves();
 }
