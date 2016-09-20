@@ -158,6 +158,7 @@ public class SlaveInfo
 
       int slavecount = soem.ecx_slavecount(context);
 
+      System.out.println("Found " + slavecount + " slaves");
       int previousAlias = 0;
       int previousPosition = -1;
       for (int slaveIndex = 1; slaveIndex <= slavecount; slaveIndex++)

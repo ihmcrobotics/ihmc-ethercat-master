@@ -20,6 +20,7 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
    private final TPDO_1a03 TPDO_1a03 = new TPDO_1a03();
    private final TPDO_1a12 TPDO_1a12 = new TPDO_1a12();
    private final TPDO_1a13 TPDO_1a13 = new TPDO_1a13();
+   private final TPDO_1a18 TPDO_1a18 = new TPDO_1a18();
    private final TPDO_1a1d TPDO_1a1d = new TPDO_1a1d();
    private final TPDO_1a1e TPDO_1a1e = new TPDO_1a1e();
    private final TPDO_1a22 TPDO_1a22 = new TPDO_1a22();
@@ -47,6 +48,7 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
       sm(3).registerPDO(TPDO_1a03);
       sm(3).registerPDO(TPDO_1a12);
       sm(3).registerPDO(TPDO_1a13);
+      sm(3).registerPDO(TPDO_1a18);
       sm(3).registerPDO(TPDO_1a1d);
       sm(3).registerPDO(TPDO_1a1e);
       sm(3).registerPDO(TPDO_1a22);
@@ -182,6 +184,11 @@ public class ElmoTwitterLLACarrierBoard extends ElmoTwitter
    public long getElmoStatusRegister()
    {
       return TPDO_1a22.elmoStatusRegister.get();
+   }
+   
+   public long getDCLinkVoltageMilliVolts()
+   {
+      return TPDO_1a18.dcLinkVoltage.get();
    }
 
    @Override

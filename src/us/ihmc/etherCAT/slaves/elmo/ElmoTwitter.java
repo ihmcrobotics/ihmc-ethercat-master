@@ -138,6 +138,16 @@ public abstract class ElmoTwitter extends DSP402Slave
 
       Unsigned32 elmoStatusRegister = new Unsigned32();
    }
+   
+   protected class TPDO_1a18 extends TxPDO
+   {
+      protected TPDO_1a18()
+      {
+         super(0x1a18);
+      }
+      
+      Unsigned32 dcLinkVoltage = new Unsigned32();
+   }
 
 
    
@@ -203,7 +213,7 @@ public abstract class ElmoTwitter extends DSP402Slave
    private boolean getStatusValue(long maskValue)
    {
       //Bitwise AND to check bit-string for status events 
-      return (getElmoStatusRegister() & maskValue) == maskValue;
+      return (getElmoStatusRegister() & 0xF) == maskValue;
    }
    
    //Status Register Events
@@ -263,7 +273,8 @@ public abstract class ElmoTwitter extends DSP402Slave
       if(super.hasShutdown())
       {
          int error = readSDOInt(0x306A, 0x1);
-         System.out.println(toString() + " Last elmo error code: " + error + ": " + ElmoErrorCodes.errorCodeToString(error));
+         int temperature = readSDOUnsignedShort(0x22A3, 0x1);
+         System.out.println(toString() + " Last elmo error code: " + error + ": " + ElmoErrorCodes.errorCodeToString(error) + ". Drive temperature: " + temperature + "°C");
          return true;
       }
       return false;
