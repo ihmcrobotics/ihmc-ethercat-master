@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.9.7
+ * Fixed secondary transfer timing check
+
 IHMC EtherCAT Master 0.9.6
  * Removed position following error
 

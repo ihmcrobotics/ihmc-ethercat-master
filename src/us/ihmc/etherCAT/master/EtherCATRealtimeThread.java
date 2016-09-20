@@ -324,7 +324,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    public boolean doSecondaryTransfer(long extraTimeHeadroomInNs) 
    {
       long currentTime = getCurrentMonotonicClockTime();
-      if((currentTime - cycleStartTime) > (syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs))
+      if(((currentTime - cycleStartTime) + syncOffset + etherCATTransactionTime + extraTimeHeadroomInNs) < cycleTimeInNs)
       {
          master.send();
          int wkc = master.receiveSimple();
