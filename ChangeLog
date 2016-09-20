@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.9.6
+ * Removed position following error
+
 IHMC EtherCAT Master 0.9.5
  * Small improvements in the Twitter code, added bus voltage reading and fixed error code reading
 

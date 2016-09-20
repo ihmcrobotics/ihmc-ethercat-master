@@ -13,7 +13,6 @@ public class ElmoTwitterTCB extends ElmoTwitter
    private final TPDO_1a03 tpdo_1a03 = new TPDO_1a03();
    private final TPDO_1a13 tpdo_1a13 = new TPDO_1a13();
    private final TPDO_1a18 tpdo_1a18 = new TPDO_1a18();
-   private final TPDO_1a19 tpdo_1a19 = new TPDO_1a19();
    private final TPDO_1a1e tpdo_1a1e = new TPDO_1a1e();
    private final TPDO_1a22 tpdo_1a22 = new TPDO_1a22();
 
@@ -54,7 +53,6 @@ public class ElmoTwitterTCB extends ElmoTwitter
       sm(3).registerPDO(tpdo_1a03);
       sm(3).registerPDO(tpdo_1a13);
       sm(3).registerPDO(tpdo_1a18);
-      sm(3).registerPDO(tpdo_1a19);
       sm(3).registerPDO(tpdo_1a1e);
       sm(3).registerPDO(tpdo_1a22);
    }
@@ -182,12 +180,6 @@ public class ElmoTwitterTCB extends ElmoTwitter
    public int getElmoErrorCode()
    {
       return errorCodeValue;
-   }
-
-
-   public int getPositionFollowingError()
-   {
-      return tpdo_1a19.positionFollowingError.get();
    }
 
    public void setVelocityOffset(int integerValue)
