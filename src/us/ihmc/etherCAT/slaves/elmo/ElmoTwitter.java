@@ -165,6 +165,8 @@ public abstract class ElmoTwitter extends DSP402Slave
    private final ReadSDO elmoErrorCodeSDO;
    private int elmoErrorCode = 0;
    
+   private boolean readElmoErrorCode = true;
+   
    public ElmoTwitter(int alias, int position)
    {
       super(vendorID, productCode, alias, position);
@@ -194,7 +196,7 @@ public abstract class ElmoTwitter extends DSP402Slave
          elmoErrorCode = (int)elmoErrorCodeSDO.getUnsignedInt();
       }
       
-      if(isFaulted())
+      if(readElmoErrorCode && isMotorFaulted())
       {
          if (!errorCodeRead)
          {
@@ -209,6 +211,10 @@ public abstract class ElmoTwitter extends DSP402Slave
       
    }
    
+   public void disableElmoErrorCodeReading()
+   {
+      readElmoErrorCode = false;
+   }
 
    private boolean getStatusValue(long maskValue)
    {
