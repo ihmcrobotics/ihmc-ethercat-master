@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.9.9
+ * Do not call workingCounterMismatch if the master is not operational yet.
+
 IHMC EtherCAT Master 0.9.8
  * Only read Elmo Twitter error code on motor fault, not on under voltage. 
  * Ability to disable error code read routine

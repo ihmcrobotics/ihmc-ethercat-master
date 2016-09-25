@@ -290,7 +290,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          }
          
          dcTime = master.getDCTime();
-         if(wkc != master.getExpectedWorkingCounter())
+         if(inOP && wkc != master.getExpectedWorkingCounter())
          {
             workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
          }
