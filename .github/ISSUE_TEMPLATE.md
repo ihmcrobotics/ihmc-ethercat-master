@@ -1,5 +1,6 @@
 | Required Info ||
 |---|---|
+|Version or commit hash||
 |Operating System||
 |JDK||
 
