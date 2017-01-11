@@ -1,8 +1,8 @@
-| Required Info ||
+| Required Info | |
 |---|---|
-|Version or commit hash||
-|Operating System||
-|JDK||
+|Version or commit hash| |
+|Operating System| |
+|JDK| |
 
 ####Steps to reproduce issue
 <!-- Detailed instructions on how to reliably reproduce this issue -->
