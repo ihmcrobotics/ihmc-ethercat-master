@@ -19,7 +19,7 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.9.9'
+version = '0.9.10'
 
 project.ext.fullVersion = version
 project.ext.vcsUrl = "https://github.com/ihmcrobotics/ihmcsoemwrapper"
@@ -36,6 +36,11 @@ sourceSets {
 	main {
 		java {
 			srcDirs += 'src/'
+		}
+	}
+	test {
+		java {
+			srcDirs += 'test/'
 		}
 	}
 }

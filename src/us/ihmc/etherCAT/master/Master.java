@@ -307,7 +307,7 @@ public class Master implements MasterInterface
       
       
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
-      if(ioBufferSize != processDataSize)
+      if(ioBufferSize > processDataSize)
       {
          throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
       }      

@@ -165,6 +165,13 @@ public class Struct {
      * to the byte buffer if there is no outer.
      */
     int _outerOffset;
+    
+    
+    /**
+     * Holds the offset in bits of this struct relative to the _outerOffset.
+     */
+    int _outerBitOffset;
+    
     /**
      * Holds this struct alignment in bytes (largest word size of its members).
      */
@@ -172,7 +179,7 @@ public class Struct {
     /**
      * Holds this struct's length.
      */
-    int _length;
+    protected int _length;
     /**
      * Holds the index position during construction.
      * This is the index a the first unused byte available.
@@ -182,12 +189,12 @@ public class Struct {
      * Holds the word size during construction (for bit fields).
      * This is the size of the last word used.
      */
-    int _wordSize;
+    protected int _wordSize;
     /**
      * Holds the bits used in the word during construction (for bit fields).
      * This is the number of bits used in the last word.
      */
-    int _bitsUsed;
+    protected int _bitsUsed;
     /**
      * Indicates if the index has to be reset for each new field (
      * <code>true</code> only for Union subclasses).
@@ -279,6 +286,13 @@ public class Struct {
         _byteBuffer = byteBuffer;
         _outerOffset = position;
         return this;
+    }
+    
+    public final Struct setByteBuffer(ByteBuffer byteBuffer, int position, int bitOffset)
+    {
+       Struct struct = setByteBuffer(byteBuffer, position);
+       _outerBitOffset = bitOffset;
+       return struct;
     }
 
     /**
@@ -966,7 +980,7 @@ public class Struct {
          * the word size.
          */
         public final int bitIndex() {
-            return _bitIndex;
+            return _bitIndex + _outerBitOffset;
         }
 
         /**

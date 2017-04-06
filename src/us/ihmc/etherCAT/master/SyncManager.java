@@ -1,5 +1,6 @@
 package us.ihmc.etherCAT.master;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.locks.LockSupport;
@@ -178,18 +179,24 @@ public class SyncManager
     * 
     * @param ioMap
     * @param inputOffset
+    * @throws IOException 
     * 
-    * @return Offset for the next syncmanager.
     */
-   int linkBuffers(ByteBuffer ioMap, int inputOffset)
+   void linkBuffers(ByteBuffer ioMap, BufferOffsetHolder inputOffset) throws IOException
    {
       for(int i = 0; i < PDOs.size(); i++)
       {
-         PDOs.get(i).setByteBuffer(ioMap, inputOffset);
-         inputOffset += PDOs.get(i).size();
+         try
+         {
+            PDOs.get(i).linkBuffer(ioMap, inputOffset);
+         }
+         catch (IOException e)
+         {
+            throw new IOException("SM[" + getIndex() + "]: " + e.getMessage());
+            
+         }
       }
       
-      return inputOffset;
    }
 
 }

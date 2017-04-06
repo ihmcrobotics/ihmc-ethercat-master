@@ -1,5 +1,7 @@
 package us.ihmc.etherCAT.master;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import us.ihmc.etherCAT.javalution.Struct;
@@ -133,6 +135,30 @@ abstract class PDO extends Struct
    final short getAddress()
    {
       return address;
+   }
+
+   /**
+    * Internal function to link the main buffers to this PDO.
+    * 
+    * This function deals with the alignment and supports bit-orientated slaves
+    *   
+    * @param ioMap
+    * @param inputOffset
+    * @throws IOException
+    */
+   void linkBuffer(ByteBuffer ioMap, BufferOffsetHolder inputOffset) throws IOException
+   {
+      int bytesUsed = _length - _wordSize + (_bitsUsed >> 3);
+      int bitsUsed = _bitsUsed & 7;
+      
+      inputOffset.align(bytesUsed, bitsUsed);
+      
+      setByteBuffer(ioMap, inputOffset.getByteOffset(), inputOffset.getBitOffset());
+      
+      if(!inputOffset.increase(bytesUsed, bitsUsed))
+      {
+         throw new IOException("Not enough space available to allocate PDO " + address);
+      }
    }
 
 }

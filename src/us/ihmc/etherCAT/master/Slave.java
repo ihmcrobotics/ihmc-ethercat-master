@@ -1,5 +1,6 @@
 package us.ihmc.etherCAT.master;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -650,9 +651,12 @@ public class Slave
    }
 
    /**
-    * Internal function. Gets the size of the underlying databuffer this slave needs, calculated from the configured PDO's. Should be getInputBytes() + getOutputBytes()
+    * Internal function. Gets the size of the underlying databuffer this slave needs, calculated from the configured PDO's.
     * 
-    * @return process data size
+    * This function rounds up to the nearest byte. If the slave needs 4 bits, it will return 1 byte. This way, it is guaranteed that a large enough
+    * buffer is allocated.
+    * 
+    * @return process data size in bytes, rounded up
     */
    int processDataSize()
    {
@@ -696,26 +700,36 @@ public class Slave
     * Internal function, configures the syncmanagers and PDO data to backing memory storage.
     * 
     * @param ioMap
+    * @throws IOException 
     */
-   void linkBuffers(ByteBuffer ioMap)
+   void linkBuffers(ByteBuffer ioMap) throws IOException
    {
-      int inputOffset = soem.ecx_inputoffset(ec_slave, ioMap);
 
-      for (int i = 0; i < syncManagers.length; i++)
+      try
       {
-         if (syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
+         BufferOffsetHolder inputOffset = new BufferOffsetHolder(soem.ecx_inputoffset(ec_slave, ioMap), ec_slave.getIstartbit(), ec_slave.getIbits());
+         
+         for (int i = 0; i < syncManagers.length; i++)
          {
-            inputOffset += syncManagers[i].linkBuffers(ioMap, inputOffset);
+            if (syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.TXPDO)
+            {
+               syncManagers[i].linkBuffers(ioMap, inputOffset);
+            }
+         }
+   
+         
+         BufferOffsetHolder outputOffset = new BufferOffsetHolder(soem.ecx_outputoffset(ec_slave, ioMap), ec_slave.getOstartbit(), ec_slave.getObits());
+         for (int i = 0; i < syncManagers.length; i++)
+         {
+            if (syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
+            {
+               syncManagers[i].linkBuffers(ioMap, outputOffset);
+            }
          }
       }
-
-      int outputOffset = soem.ecx_outputoffset(ec_slave, ioMap);
-      for (int i = 0; i < syncManagers.length; i++)
+      catch(IOException e)
       {
-         if (syncManagers[i] != null && syncManagers[i].getMailbusDirection() == MailbusDirection.RXPDO)
-         {
-            outputOffset += syncManagers[i].linkBuffers(ioMap, outputOffset);
-         }
+         throw new IOException(toString() + ": " + e.getMessage());
       }
    }
 
