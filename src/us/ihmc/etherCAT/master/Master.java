@@ -31,6 +31,7 @@ public class Master implements MasterInterface
 {
    public static final long MAXIMUM_EXECUTION_JITTER_DEFAULT = 25000;
    public static final boolean DISABLE_CA = true;
+   public static int IOMAP_SIZE = 655360; // 640K ought to be enough for anybody. 
    
    static
    {
@@ -203,6 +204,7 @@ public class Master implements MasterInterface
          ec_smt sm = soem.ecx_sm(ec_slave, nSM);
          if (sm.getStartAddr() > 0)
          {
+            ec_slave.getSMtype();
             if (soem.ecx_smtype(ec_slave, nSM) == 3 || soem.ecx_smtype(ec_slave, nSM) == 4)
             {
                size += sm.getSMlength();
@@ -365,6 +367,11 @@ public class Master implements MasterInterface
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.ALLOCATE_IOMAP);
       
+      
+      if(processDataSize < IOMAP_SIZE)
+      {
+         processDataSize = IOMAP_SIZE;
+      }
       ioMap = ByteBuffer.allocateDirect(processDataSize);
       ioMap.order(ByteOrder.LITTLE_ENDIAN);
       
@@ -372,7 +379,7 @@ public class Master implements MasterInterface
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
       if(ioBufferSize > processDataSize)
       {
-         throw new IOException("Allocated insufficient memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize + ". This is a bug in the EtherCAT master.");
+         throw new IOException("Allocated insufficient memory for etherCAT I/O. Allocated " + processDataSize + ", required " + ioBufferSize + ". Set Master.IOMAP_SIZE to a large enough value.");
       }      
 
 
