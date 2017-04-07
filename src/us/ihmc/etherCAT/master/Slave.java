@@ -718,6 +718,11 @@ public class Slave
          }
    
          
+         if(inputOffset.getAvailableBits() != 0)
+         {
+            throw new IOException(toString() + ": " + inputOffset.getAvailableBits() + " unmapped bits in the input mappping. Make sure that your PDO configuration matches the slave information.");
+         }
+         
          BufferOffsetHolder outputOffset = new BufferOffsetHolder(soem.ecx_outputoffset(ec_slave, ioMap), ec_slave.getOstartbit(), ec_slave.getObits());
          for (int i = 0; i < syncManagers.length; i++)
          {
@@ -725,6 +730,10 @@ public class Slave
             {
                syncManagers[i].linkBuffers(ioMap, outputOffset);
             }
+         }
+         if(outputOffset.getAvailableBits() != 0)
+         {
+            throw new IOException(toString() + ": " + outputOffset.getAvailableBits() + " unmapped bits in the output mappping. Make sure that your PDO configuration matches the slave information.");
          }
       }
       catch(IOException e)

@@ -23,6 +23,7 @@ public class IMUExample extends EtherCATRealtimeThread
       registerSlave(ek1100);
       registerSlave(el3314);
       registerSlave(el4134);
+      setRequireAllSlaves(false);
       enableTrace();
    }
    

@@ -9,6 +9,7 @@ import java.util.List;
 
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.soem.generated.ec_slavet;
+import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_contextt;
 import us.ihmc.soem.generated.soem;
@@ -66,6 +67,9 @@ public class Master implements MasterInterface
    private int ethercatReceiveTimeout = soemConstants.EC_TIMEOUTRET;
    
    private final ArrayList<SDO> sdos = new ArrayList<>();
+   
+   
+   private boolean requireAllSlaves = true;
    
    /**
     * Create new EtherCAT master.
@@ -168,11 +172,52 @@ public class Master implements MasterInterface
 //      this.ethercatReceiveTimeout = (int) (cycleTimeInNs / 1000);
    }
    
+   
+   /**
+    * Set if all slaves on the EtherCAT bus are required to be configured and all slaves are to be present. 
+    * 
+    * If set to false, only matching slaves get configured.
+    * 
+    * @param requireAllSlaves
+    */
+   public void setRequireAllSlaves(boolean requireAllSlaves)
+   {
+      this.requireAllSlaves = requireAllSlaves;
+   }
+   
+   
+   /**
+    * Calculate the process data size for a slave.
+    * 
+    * The value is rounded up to the nearest byte.
+    * 
+    * @param ec_slave
+    * @return process data size in bytes.
+    */
+   private static int getProcessDataSize(ec_slavet ec_slave)
+   {
+      
+      int size  = 0;
+      for (int nSM = 0; nSM < soemConstants.EC_MAXSM; nSM++)
+      { 
+         ec_smt sm = soem.ecx_sm(ec_slave, nSM);
+         if (sm.getStartAddr() > 0)
+         {
+            if (soem.ecx_smtype(ec_slave, nSM) == 3 || soem.ecx_smtype(ec_slave, nSM) == 4)
+            {
+               size = sm.getSMlength();
+            }
+         }
+      }
+      return size;
+   }
+   
    /**
     * Initialize the master, configure all registeredSlaves registered with registerSlave() 
-    * 
-    * On return, all registeredSlaves will be in SAFE_OP mode. Also, the EtherCAT house holding thread
-    * will be started. 
+    *
+    * On return, all registeredSlaves on the network will be in SAFE_OP mode. Also, the EtherCAT house holding thread
+    * will be started. If the slave is not found on the network and requireAllSlaves is set to true, an IOException
+    * will be thrown. If requireAllSlaves is false, the slave will not be configured. 
     * 
     * If DC is enabled, the ethercat nodes will be switched to OP as soon as synchronization
     * is attained between the slave clocks and the master
@@ -200,9 +245,7 @@ public class Master implements MasterInterface
       {
          throw new IOException("Cannot open interface " + iface + ". Make sure to run as root.");
       }
-      
-      
-      
+                 
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.INITIALIZING_SLAVES);
       if(soem.ecx_config_init(context, (short)0) == 0)
@@ -232,15 +275,19 @@ public class Master implements MasterInterface
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURING_SLAVES);
       int slavecount = soem.ecx_slavecount(context);
-      if(registeredSlaves.size() != slavecount)
+      
+      if(requireAllSlaves)
       {
-         if(registeredSlaves.size() < slavecount)
+         if(registeredSlaves.size() != slavecount)
          {
-            throw new IOException("Not all registeredSlaves are configured, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
-         }
-         else
-         {
-            throw new IOException("Not all registeredSlaves are online, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
+            if(registeredSlaves.size() < slavecount)
+            {
+               throw new IOException("Not all registeredSlaves are configured and requireAllSlaves is true, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
+            }
+            else
+            {
+               throw new IOException("Not all registeredSlaves are online and requireAllSlaves is true, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
+            }
          }
       }
       
@@ -278,11 +325,17 @@ public class Master implements MasterInterface
             
             slave.configure(this, context, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
-            processDataSize += slave.processDataSize();
          }
          else
          {
-            throw new IOException("Unconfigured slave on alias " + alias + ":" + position + ". Make sure to power cycle after changing alias addresses.");
+            if(requireAllSlaves)
+            {
+               throw new IOException("Unconfigured slave on alias " + alias + ":" + position + ". Make sure to power cycle after changing alias addresses.");
+            }
+            else
+            {
+               etherCATStatusCallback.notifyUnconfiguredSlave(alias, position);
+            }
          }
          
          // Disable Complete Access reading of SDO configuration.
@@ -292,15 +345,22 @@ public class Master implements MasterInterface
             config &= ~soemConstants.ECT_COEDET_SDOCA;
             ec_slave.setCoEdetails(config);
          }
+         processDataSize += getProcessDataSize(ec_slave);
          
          previousAlias = alias;
          previousPosition = position;
          
       }
-      getEtherCATStatusCallback().trace(TRACE_EVENT.ALLOCATE_IOMAP);
-      
+      for(int i = 0; i < registeredSlaves.size(); i++)
+      {
+         if(!registeredSlaves.get(i).isConfigured())
+         {
+            etherCATStatusCallback.notifySlaveNotFound(registeredSlaves.get(i));
+         }
+      }
 
       
+      getEtherCATStatusCallback().trace(TRACE_EVENT.ALLOCATE_IOMAP);
       
       ioMap = ByteBuffer.allocateDirect(processDataSize);
       ioMap.order(ByteOrder.LITTLE_ENDIAN);
@@ -309,7 +369,7 @@ public class Master implements MasterInterface
       int ioBufferSize = soem.ecx_config_map_group(context, ioMap, (short)0);
       if(ioBufferSize > processDataSize)
       {
-         throw new IOException("Cannot allocate memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize);
+         throw new IOException("Allocated insufficient memory for etherCAT I/O. Expected process size is " + processDataSize + ", allocated " + ioBufferSize + ". This is a bug in the EtherCAT master.");
       }      
 
 

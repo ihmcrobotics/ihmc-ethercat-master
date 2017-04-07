@@ -30,33 +30,42 @@ public class BufferOffsetHolderTest
       assertTrue(holder.increase(0, 4));      
       assertEquals(0, holder.getByteOffset());
       assertEquals(4, holder.getBitOffset());
+      assertEquals(124, holder.getAvailableBits());
 
       assertTrue(holder.increase(0, 4));      
       assertEquals(1, holder.getByteOffset());
       assertEquals(0, holder.getBitOffset());
+      assertEquals(120, holder.getAvailableBits());
       
       assertTrue(holder.increase(0, 4));      
       assertEquals(1, holder.getByteOffset());
       assertEquals(4, holder.getBitOffset());
+      assertEquals(116, holder.getAvailableBits());
       
       assertTrue(holder.increase(1, 6));      
       assertEquals(3, holder.getByteOffset());
       assertEquals(2, holder.getBitOffset());
+      assertEquals(102, holder.getAvailableBits());
 
       assertTrue(holder.increase(0, 6));      
       assertEquals(4, holder.getByteOffset());
       assertEquals(0, holder.getBitOffset());
+      assertEquals(96, holder.getAvailableBits());
 
       assertTrue(holder.increase(3, 7));      
       assertEquals(7, holder.getByteOffset());
       assertEquals(7, holder.getBitOffset());
+      assertEquals(65, holder.getAvailableBits());
       
       assertFalse(holder.increase(8, 2));     
       
       BufferOffsetHolder holder2 = new BufferOffsetHolder(12, 5, 128);
       assertTrue(holder2.increase(15, 3));
+      assertEquals(5, holder2.getAvailableBits());
       assertTrue(holder2.increase(0, 1));
+      assertEquals(4, holder2.getAvailableBits());
       assertTrue(holder2.increase(0, 4));
+      assertEquals(0, holder2.getAvailableBits());
       assertFalse(holder2.increase(0, 1));
       
    }

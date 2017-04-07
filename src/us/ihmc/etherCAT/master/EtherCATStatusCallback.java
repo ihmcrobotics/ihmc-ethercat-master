@@ -219,4 +219,14 @@ public class EtherCATStatusCallback
       }
    }
 
+   public void notifyUnconfiguredSlave(int alias, int position)
+   {
+      System.err.println("[" + System.nanoTime() + "] Slave not configured. Alias: "  + alias + ", Position: " + position + ". Make sure to power cycle after changing the alias address.");
+   }
+
+   public void notifySlaveNotFound(Slave slave)
+   {
+     System.err.println("[" + System.nanoTime() + "] Slave not found: " + slave + ". Make sure to power cycle after changing the alias address.");
+   }
+
 }

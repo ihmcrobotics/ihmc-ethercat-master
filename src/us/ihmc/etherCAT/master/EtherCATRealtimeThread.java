@@ -467,6 +467,14 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    }
    
    /**
+    * @see us.ihmc.etherCAT.master.Master#setRequireAllSlaves(boolean)
+    */
+   public void setRequireAllSlaves(boolean requireAllSlaves)
+   {
+      master.setRequireAllSlaves(requireAllSlaves);
+   }
+   
+   /**
     * The measured cycle time of the previous control tick. Should be equal to the desired period with a small amount of jitter.
     * 
     * @return Duration of the complete control cycle, including time spent waiting for the next cycle.

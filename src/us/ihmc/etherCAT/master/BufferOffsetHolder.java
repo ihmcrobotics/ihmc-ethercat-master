@@ -31,7 +31,7 @@ class BufferOffsetHolder
 
    public BufferOffsetHolder(int byteOffset, int bitOffset, int bitSize)
    {
-      this.bitSize = byteOffset * 8 + bitOffset + bitSize;
+      this.bitSize = (byteOffset << 3) + bitOffset + bitSize;
       increase(byteOffset, bitOffset);
    }
 
@@ -88,6 +88,14 @@ class BufferOffsetHolder
       
    }
 
+   
+   /**
+    * @return the number of bits available in this buffer
+    */
+   public int getAvailableBits()
+   {
+      return bitSize - ((byteOffset << 3) + bitOffset);
+   }
    
    
 
