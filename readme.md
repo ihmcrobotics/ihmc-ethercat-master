@@ -33,13 +33,12 @@ repositories {
 dependencies {
 	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10'
 }
+```
 
 ### Examples
 
 Example code is provided in us.ihmc.etherCAT.examples. 
 
-
-```
 
 ## Supported slaves
 
