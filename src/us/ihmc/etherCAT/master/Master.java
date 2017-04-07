@@ -205,7 +205,7 @@ public class Master implements MasterInterface
          {
             if (soem.ecx_smtype(ec_slave, nSM) == 3 || soem.ecx_smtype(ec_slave, nSM) == 4)
             {
-               size = sm.getSMlength();
+               size += sm.getSMlength();
             }
          }
       }
@@ -334,7 +334,10 @@ public class Master implements MasterInterface
             }
             else
             {
-               etherCATStatusCallback.notifyUnconfiguredSlave(alias, position);
+               slave = new UnconfiguredSlave(ec_slave.getName(), (int)ec_slave.getEep_man(), (int)ec_slave.getEep_id(), alias, position);
+               slave.configure(this, getContext(), ec_slave, i + 1, false, cycleTimeInNs);
+               slaveMap[i] = slave;
+               etherCATStatusCallback.notifyUnconfiguredSlave(slaveMap[i]);
             }
          }
          

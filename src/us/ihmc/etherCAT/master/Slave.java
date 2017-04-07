@@ -56,7 +56,7 @@ public class Slave
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
 
-   private volatile State state = State.SAFE_OP; // Slaves are in SAFE_OP when the master has been initialized
+   private volatile State state = State.OFFLINE; 
    
    private long cycleTimeInNs;
    
@@ -181,13 +181,11 @@ public class Slave
          }
       }
 
-      if (ec_slave.getIstartbit() != 0 || ec_slave.getOstartbit() != 0)
-      {
-         throw new RuntimeException("Cannot configure slaves with non-zero start bits. Current slave is " + slave.getName());
-      }
-
       master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.CONFIGURE_DC);
       configure(enableDC, cycleTimeInNs);
+      
+      // Slaves are in SAFE_OP when the master has been initialized
+      state = State.SAFE_OP;
    }
 
    /**
@@ -690,10 +688,15 @@ public class Slave
       return position;
    }
 
+   public String getName()
+   {
+      return getClass().getSimpleName();
+   }
+   
    @Override
    public String toString()
    {
-      return "Slave [name=" + getClass().getSimpleName() + ", aliasAddress=" + aliasAddress + ", position=" + position + "]";
+      return "Slave [name=" + getName() + ", aliasAddress=" + aliasAddress + ", position=" + position + "]";
    }
 
    /**
@@ -749,7 +752,14 @@ public class Slave
     */
    public int getALStatusCode()
    {
-      return ec_slave.getALstatuscode();
+      if(ec_slave != null)
+      {
+         return ec_slave.getALstatuscode();
+      }
+      else
+      {
+         return 0x0000;
+      }
    }
 
    /**
