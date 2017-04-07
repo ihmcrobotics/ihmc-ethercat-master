@@ -8,6 +8,39 @@ Extra functionality built on top of SOEM includes
 - EtherCAT slave state management
 - Thread synchronization with DC Master Clock
 
+
+## Usage
+
+### Supported operating systems
+
+The IHMC EtherCAT master has a native component that is currently compiled for Linux only.
+
+- Tested on Ubuntu 14.04, Ubuntu 16.04 and Ubuntu 16.10
+- Requires OpenJDK JRE 7 or higher (Compatible JRE's should work).
+- Native library is compiled statically, should work on most distributions
+
+
+### Gradle
+
+Add the IHMC EtherCAT Master as dependency
+```
+repositories {
+    maven {
+        url  "http://dl.bintray.com/ihmcrobotics/maven-release"
+    }
+}
+	
+dependencies {
+	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10'
+}
+
+### Examples
+
+Example code is provided in us.ihmc.etherCAT.examples. 
+
+
+```
+
 ## Supported slaves
 
 All conforming EtherCAT slaves should work with this wrapper. Slave code has been provided for several devices, including
@@ -22,9 +55,6 @@ General slave code provided
 
 Custom slave code is straightforward to implement based on provided slave examples.
 
-## Examples
-
-Example code is provided in us.ihmc.etherCAT.examples. Feel free to use.
 
 ## Slave information
 To show the slaves available on the bus the provided class us.ihmc.etherCAT.master.SlaveInfo can be used. 
