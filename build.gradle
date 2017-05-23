@@ -28,7 +28,7 @@ project.ext.licenseName = "Apache License, Version 2.0"
 project.ext.bintrayLicenseName = "Apache-2.0"
 
 
-mainClassName = "us.ihmc.etherCAT.examples.IMUExample"
+mainClassName = "us.ihmc.etherCAT.master.SlaveInfo"
 
 
 
