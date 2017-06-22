@@ -7,22 +7,15 @@ import us.ihmc.etherCAT.master.SyncManager;
 
 public class ElmoTwitterTCB extends ElmoTwitter
 {
-   private final RPDO_1606 rpdo_1606 = new RPDO_1606();
-   private final RPDO_160B rpdo_160B = new RPDO_160B();
+   protected final RPDO_1606 rpdo_1606 = new RPDO_1606();
+   protected final RPDO_160B rpdo_160B = new RPDO_160B();
+   
+   protected final TPDO_1a03 tpdo_1a03 = new TPDO_1a03();
+   protected final TPDO_1a13 tpdo_1a13 = new TPDO_1a13();
+   protected final TPDO_1a18 tpdo_1a18 = new TPDO_1a18();
+   protected final TPDO_1a1e tpdo_1a1e = new TPDO_1a1e();
+   protected final TPDO_1a22 tpdo_1a22 = new TPDO_1a22();
 
-   private final TPDO_1a03 tpdo_1a03 = new TPDO_1a03();
-   private final TPDO_1a13 tpdo_1a13 = new TPDO_1a13();
-   private final TPDO_1a18 tpdo_1a18 = new TPDO_1a18();
-   private final TPDO_1a1e tpdo_1a1e = new TPDO_1a1e();
-   private final TPDO_1a22 tpdo_1a22 = new TPDO_1a22();
-
-   //SDO data
-   //   private final SDO analogInput2;
-   //   private final SDO twitterTemperature;
-   //   private final SDO errorCode;
-   private int analogInput2Value;
-   private int twitterTemperatureValue;
-   private int errorCodeValue;
 
    //Digital Outputs
    private long digitalOutputBitString = 0l;
@@ -48,6 +41,11 @@ public class ElmoTwitterTCB extends ElmoTwitter
          registerSyncManager(new SyncManager(i, true));
       }
 
+      registerPDOs();
+   }
+
+   protected void registerPDOs()
+   {
       sm(2).registerPDO(rpdo_1606);
       sm(2).registerPDO(rpdo_160B);
       sm(3).registerPDO(tpdo_1a03);
@@ -177,11 +175,6 @@ public class ElmoTwitterTCB extends ElmoTwitter
       return tpdo_1a22.elmoStatusRegister.get();
    }
 
-   public int getElmoErrorCode()
-   {
-      return errorCodeValue;
-   }
-
    public void setVelocityOffset(int integerValue)
    {
       rpdo_1606.velocityOffset.set(integerValue);
@@ -191,17 +184,6 @@ public class ElmoTwitterTCB extends ElmoTwitter
    {
       rpdo_1606.torqueOffset.set((short)integerValue);
    }
-
-   public int getSlowTwitterTemperature()
-   {
-      return twitterTemperatureValue;
-   }
-
-   public int getSlowAnalogInput2()
-   {
-      return analogInput2Value;
-   }
-
    
    public long getDCLinkVoltageMilliVolts()
    {

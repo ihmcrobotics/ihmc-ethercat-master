@@ -12,9 +12,9 @@ public abstract class ElmoTwitter extends DSP402Slave
    static final int productCode = 0x00030924;
 
    
-   protected class RPDO_1605 extends RxPDO
+   public class RPDO_1605 extends RxPDO
    {
-      protected RPDO_1605()
+      public RPDO_1605()
       {
          super(0x1605);
       }
@@ -29,9 +29,9 @@ public abstract class ElmoTwitter extends DSP402Slave
    }
    
 
-   protected class RPDO_1606 extends RxPDO
+   public class RPDO_1606 extends RxPDO
    {
-      protected RPDO_1606()
+      public RPDO_1606()
       {
          super(0x1606);
       }
@@ -44,9 +44,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Unsigned16 controlWord = new Unsigned16();
    }
    
-   protected class RPDO_160B extends RxPDO
+   public class RPDO_160B extends RxPDO
    {
-      protected RPDO_160B()
+      public RPDO_160B()
       {
          super(0x160B);
       }
@@ -54,9 +54,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Signed8 modeOfOperation = new Signed8();
       Unsigned8 dummy = new Unsigned8();
    }
-   protected class RPDO_161D extends RxPDO
+   public class RPDO_161D extends RxPDO
    {
-      protected RPDO_161D()
+      public RPDO_161D()
       {
          super(0x161D);
       }
@@ -64,9 +64,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Unsigned32 digitalOutputs = new Unsigned32();
    }
    
-   protected class TPDO_1a03 extends TxPDO
+   public class TPDO_1a03 extends TxPDO
    {
-      protected TPDO_1a03()
+      public TPDO_1a03()
       {
          super(0x1a03);
       }
@@ -79,18 +79,18 @@ public abstract class ElmoTwitter extends DSP402Slave
 
    }
 
-   protected class TPDO_1a12 extends TxPDO
+   public class TPDO_1a12 extends TxPDO
    {
-      protected TPDO_1a12()
+      public TPDO_1a12()
       {
          super(0x1a12);
       }
       Signed16 torqueDemand = new Signed16();
 
    }
-   protected class TPDO_1a13 extends TxPDO
+   public class TPDO_1a13 extends TxPDO
    {
-      protected TPDO_1a13()
+      public TPDO_1a13()
       {
          super(0x1a13);
       }
@@ -98,9 +98,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Signed16 torqueActualValue = new Signed16();
    }
    
-   protected class TPDO_1a19 extends TxPDO
+   public class TPDO_1a19 extends TxPDO
    {
-      protected TPDO_1a19()
+      public TPDO_1a19()
       {
          super(0x1a19);
       }
@@ -108,9 +108,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Signed32 positionFollowingError = new Signed32();
    }
    
-   protected class TPDO_1a1d extends TxPDO
+   public class TPDO_1a1d extends TxPDO
    {
-      protected TPDO_1a1d()
+      public TPDO_1a1d()
       {
          super(0x1a1d);
       }
@@ -118,9 +118,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Signed16 analogInput = new Signed16();
 
    }
-   protected class TPDO_1a1e extends TxPDO
+   public class TPDO_1a1e extends TxPDO
    {
-      protected TPDO_1a1e()
+      public TPDO_1a1e()
       {
          super(0x1a1e);
       }
@@ -129,9 +129,9 @@ public abstract class ElmoTwitter extends DSP402Slave
    }
    
    
-   protected class TPDO_1a22 extends TxPDO
+   public class TPDO_1a22 extends TxPDO
    {
-      protected TPDO_1a22()
+      public TPDO_1a22()
       {
          super(0x1a22);
       }
@@ -139,9 +139,9 @@ public abstract class ElmoTwitter extends DSP402Slave
       Unsigned32 elmoStatusRegister = new Unsigned32();
    }
    
-   protected class TPDO_1a18 extends TxPDO
+   public class TPDO_1a18 extends TxPDO
    {
-      protected TPDO_1a18()
+      public TPDO_1a18()
       {
          super(0x1a18);
       }
