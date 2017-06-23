@@ -5,6 +5,14 @@ import us.ihmc.etherCAT.master.RxPDO;
 import us.ihmc.etherCAT.master.TxPDO;
 import us.ihmc.etherCAT.slaves.DSP402Slave;
 
+/**
+ * Elmo twitter slave code.
+ * 
+ * Requires firmware version 1.1.12.b01 or above
+ * 
+ * @author jesper
+ *
+ */
 public abstract class ElmoTwitter extends DSP402Slave
 {
 
@@ -75,7 +83,6 @@ public abstract class ElmoTwitter extends DSP402Slave
       Unsigned32 digitalInputs = new Unsigned32();
       Signed32 velocityActualValue = new Signed32();
       Unsigned16 statusWord = new Unsigned16();
-      Unsigned8 dummyByte0 = new Unsigned8();
 
    }
 
