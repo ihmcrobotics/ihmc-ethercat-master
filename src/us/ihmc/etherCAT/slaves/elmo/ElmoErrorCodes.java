@@ -149,6 +149,16 @@ public class ElmoErrorCodes
       EC[237] = "Safety switch";
       EC[241] = "Short protection";
       EC[243] = "Over temperature protection";
+      
+      
+      // Set undefined error codes to "Unknown error code [i]"
+      for(int i = 0; i < EC.length; i++)
+      {
+         if(EC[i] == null)
+         {
+            EC[i] = "Unknown error code: " + i;
+         }
+      }
    }
    
    
