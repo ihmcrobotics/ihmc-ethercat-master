@@ -31,7 +31,7 @@ repositories {
 }
 	
 dependencies {
-	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10'
+	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10.2'
 }
 ```
 
@@ -82,7 +82,12 @@ This library is split up in two parts, the C library with SWIG wrapper and the a
 
 ### Compiling SOEM
 
-Get SOEM
+Clone SOEM from https://github.com/OpenEtherCATsociety/SOEM
+- git clone https://github.com/OpenEtherCATsociety/SOEM.git
+
+Optionally, use switch to the same version as used to compile the maven libraries
+- cd SOEM
+- git checkout 43e4493
 
 Note that in order to build a shared library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
 
@@ -95,16 +100,19 @@ Note that in order to build a shared library, you have to enable position indepe
 
 ### Compiling C library and SWIG wrapper
 
-- cd ihmc-soem-wrapper
+(A gradle wrapper is provided, optionally you can use your system gradle)
+
+
+- cd ihmc-ethercat-master
 - mkdir build
 - cd build
 - cmake -DCMAKE_BUILD_TYPE=Release ..
 - make
-- gradle publishToMavenLocal -Ptarget=JAVA
-- gradle publishToMavenLocal -Ptarget=PLATFORM
+- ./gradlew publishToMavenLocal -Ptarget=JAVA
+- ./gradlew publishToMavenLocal -Ptarget=PLATFORM
 
 Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
 
 ### Compiling Java library
 - cd ihmc-soem-wrapper
-- gradle jar
+- ./gradlew jar
