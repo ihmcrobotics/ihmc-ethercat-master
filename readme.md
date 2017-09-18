@@ -100,7 +100,12 @@ Note that in order to build a shared library, you have to enable position indepe
 
 ### Compiling C library and SWIG wrapper
 
-(A gradle wrapper is provided, optionally you can use your system gradle)
+#### Requirements
+- CMake
+- OpenJDK 8
+- Swig 3.0.8 or higher.
+
+A gradle wrapper is provided, optionally you can use your system gradle by replacing "./gradlew" with gradle.
 
 
 - cd ihmc-ethercat-master
@@ -108,11 +113,29 @@ Note that in order to build a shared library, you have to enable position indepe
 - cd build
 - cmake -DCMAKE_BUILD_TYPE=Release ..
 - make
-- ./gradlew publishToMavenLocal -Ptarget=JAVA
-- ./gradlew publishToMavenLocal -Ptarget=PLATFORM
+- ../gradlew publishToMavenLocal -Ptarget=JAVA
+- ../gradlew publishToMavenLocal -Ptarget=PLATFORM
 
 Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
+
+#### Notes for Ubuntu 14.04
+
+Ubuntu 14.04 requires some extra packages that do not ship with it by default, including Java 8 and Swig 3.0.8. To install
+
+- sudo add-apt-repository ppa:openjdk-r/ppa
+- sudo apt-get update
+- sudo apt-get install openjdk-8-jdk
+- sudo update-alternatives --config java
+- sudo update-alternatives --config javac
+
+Swig 3.0.8 can be installed using the 16.04 package. It can be downloaded from https://packages.ubuntu.com/xenial/amd64/swig3.0/download
+
+
+
+
 
 ### Compiling Java library
 - cd ihmc-soem-wrapper
 - ./gradlew jar
+
+
