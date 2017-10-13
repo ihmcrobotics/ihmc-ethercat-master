@@ -87,7 +87,7 @@ Clone SOEM from https://github.com/OpenEtherCATsociety/SOEM
 
 Optionally, use switch to the same version as used to compile the maven libraries
 - cd SOEM
-- git checkout 43e4493
+- git checkout 1903d1f
 
 Note that in order to build a shared library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
 

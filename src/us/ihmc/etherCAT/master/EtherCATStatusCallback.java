@@ -215,7 +215,22 @@ public class EtherCATStatusCallback
    {
       if(TRACE)
       {
-         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog to " + pdoWatchdogTimeout + " ns. Divisor " + watchdogDiv + ", setting to raw " + watchdogPDORaw);
+         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog for " + slave.getName() + " to " + pdoWatchdogTimeout + " ns. Divisor " + watchdogDiv + ", setting to raw " + watchdogPDORaw);
+      }
+   }
+   
+   public void notifySlaveBuffer(Slave slave, int inputOffset, int inputSize, int inputBitoffset, int outputOffset, int outputSize, int outputBitOffset)
+   {
+      if(TRACE)
+      {
+         System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.getName() + ". Input size: " + inputSize + " bits");
+         if(inputSize > 0) 
+            System.out.print(" offset " + inputOffset + "byte : " + inputBitoffset + " bit");
+         System.out.print(". Output size: " + outputSize + " bits");
+         if(outputSize > 0)
+            System.out.print(" offset " + outputOffset + " byte : " + outputBitOffset + " bit");
+         
+         System.out.println(".");
       }
    }
 

@@ -710,6 +710,7 @@ public class Slave
 
       try
       {
+         master.getEtherCATStatusCallback().notifySlaveBuffer(this, soem.ecx_inputoffset(ec_slave, ioMap), ec_slave.getIbits(), ec_slave.getIstartbit(), soem.ecx_outputoffset(ec_slave, ioMap), ec_slave.getObits(), ec_slave.getOstartbit());
          BufferOffsetHolder inputOffset = new BufferOffsetHolder(soem.ecx_inputoffset(ec_slave, ioMap), ec_slave.getIstartbit(), ec_slave.getIbits());
          
          for (int i = 0; i < syncManagers.length; i++)
