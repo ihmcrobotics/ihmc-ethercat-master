@@ -31,7 +31,7 @@ repositories {
 }
 	
 dependencies {
-	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10.2'
+	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10.4'
 }
 ```
 
