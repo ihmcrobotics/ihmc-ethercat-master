@@ -555,6 +555,17 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    protected abstract void datagramLost();
 
+   /**
+    * Set the timeout to wait for a datagram on receive
+    * 
+    * @param timeout
+    */
+   @Override
+   public void setEtherCATReceiveTimeout(int timeout)
+   {
+      master.setEtherCATReceiveTimeout(timeout);
+   }
+
 
 
 }

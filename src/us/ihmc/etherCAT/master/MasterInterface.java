@@ -20,4 +20,6 @@ public interface MasterInterface
    public void registerSDO(SDO sdo);
 
    public List<Slave> getSlaves();
+
+   void setEtherCATReceiveTimeout(int timeout);
 }
