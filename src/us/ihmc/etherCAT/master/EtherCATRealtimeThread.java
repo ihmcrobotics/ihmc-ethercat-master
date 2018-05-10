@@ -154,7 +154,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       }
       else
       {
-         return getCurrentMonotonicClockTime();
+         return getCycleStartTimeFromLocalMonotonicClock();
       }
    }
    
@@ -566,6 +566,15 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       master.setEtherCATReceiveTimeout(timeout);
    }
 
+   /**
+    * Get the time this cycle woke up, as measured by the monotonic clock on this computer 
+    * 
+    * @return  cycle start time in nanoseconds
+    */
+   public long getCycleStartTimeFromLocalMonotonicClock()
+   {
+      return cycleStartTime;
+   }
 
 
 }
