@@ -15,8 +15,8 @@ Extra functionality built on top of SOEM includes
 
 The IHMC EtherCAT master has a native component that is currently compiled for Linux only.
 
-- Tested on Ubuntu 14.04, Ubuntu 16.04 and Ubuntu 16.10
-- Requires OpenJDK JRE 7 or higher (Compatible JRE's should work).
+- Tested on Ubuntu 16.04 and Ubuntu 18.04
+- Requires OpenJDK JRE 8 or higher (Compatible JRE's should work).
 - Native library is compiled statically, should work on most distributions
 
 
@@ -31,7 +31,7 @@ repositories {
 }
 	
 dependencies {
-	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.10.4'
+	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.11.0'
 }
 ```
 
@@ -80,14 +80,24 @@ limitations under the License.
 
 This library is split up in two parts, the C library with SWIG wrapper and the actual Java library. They need to be compiled independently. SOEM needs to be compiled with position independent code enabled, otherwise a shared JNI library cannot be build.
 
-### Compiling SOEM
+### Installing SOEM
+
+The Halodi Robotics PPA has a debian package of SOEM that is compatible with this library. Install it using
+
+```
+sudo add-apt-repository ppa:halodirobotics/ppa
+sudo apt update
+sudo apt install soem
+```
+
+#### (Optional, not recommended) Compiling SOEM
 
 Clone SOEM from https://github.com/OpenEtherCATsociety/SOEM
 - git clone https://github.com/OpenEtherCATsociety/SOEM.git
 
 Optionally, use switch to the same version as used to compile the maven libraries
 - cd SOEM
-- git checkout 1903d1f
+- git checkout 5b2c51b 
 
 Note that in order to build a shared library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
 
@@ -119,6 +129,8 @@ A gradle wrapper is provided, optionally you can use your system gradle by repla
 Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
 
 #### Notes for Ubuntu 14.04
+
+The compiled library support Ubuntu 16.04 and higher. If you want to compile for Ubuntu 14.04, these instructions might help.
 
 Ubuntu 14.04 requires some extra packages that do not ship with it by default, including Java 8 and Swig 3.0.8. To install
 
