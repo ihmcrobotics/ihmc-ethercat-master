@@ -285,6 +285,7 @@ uint8 ecx_setup_socket_fast_irq(char *iface)
 {
 #ifdef __linux__
 	struct ethtool_coalesce ecoal;
+    struct ethtool_drvinfo drvinfo;	
 	int err;
 	
 	struct ifreq ifr;
@@ -299,6 +300,16 @@ uint8 ecx_setup_socket_fast_irq(char *iface)
 		return 70;
 	}
 	
+    drvinfo.cmd = ETHTOOL_GDRVINFO;
+    ifr.ifr_data = (char*)&drvinfo;
+    err = ioctl(fd,SIOCETHTOOL, &ifr);
+    if(err)
+    {
+        return 73;
+    }
+	
+	
+	
 	ecoal.cmd = ETHTOOL_GCOALESCE;
 	ifr.ifr_data = (char*)&ecoal;
 	err = ioctl(fd, SIOCETHTOOL, &ifr);
@@ -306,10 +317,26 @@ uint8 ecx_setup_socket_fast_irq(char *iface)
 		return 76;
 	}
 
-	ecoal.rx_coalesce_usecs = 0;
-	ecoal.rx_max_coalesced_frames = 1;
-	ecoal.tx_coalesce_usecs = 0;
-	ecoal.tx_max_coalesced_frames = 1;
+    if(strcmp(drvinfo.driver, "igb") == 0)
+    {
+        ecoal.rx_coalesce_usecs = 0;
+        ecoal.tx_coalesce_usecs = 0;
+    }
+    else if(strcmp(drvinfo.driver, "tg3") == 0)
+    {
+        ecoal.rx_coalesce_usecs = 1;
+        ecoal.rx_max_coalesced_frames = 1;
+        ecoal.tx_coalesce_usecs = 1;
+        ecoal.tx_max_coalesced_frames = 1;
+    }
+    else
+    {
+        ecoal.rx_coalesce_usecs = 0;
+        ecoal.rx_max_coalesced_frames = 1;
+        ecoal.tx_coalesce_usecs = 0;
+        ecoal.tx_max_coalesced_frames = 1;
+    }
+
 	
 	ecoal.cmd = ETHTOOL_SCOALESCE;
 	ifr.ifr_data = (char*)&ecoal;

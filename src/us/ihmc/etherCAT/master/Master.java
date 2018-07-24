@@ -427,12 +427,35 @@ public class Master implements MasterInterface
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
    }
    
+   
+   private void showCoalesceWarning(String warning)
+   {
+      System.err.println("*******************************************************************************");
+      System.err.println("*");
+      System.err.println("*                             !! WARNING !!");
+      System.err.println("*");
+      System.err.println("* " + warning);
+      System.err.println("*");
+      System.err.println("*");
+      System.err.println("* Expect larger than usual amounts of jitter on the EtherCAT transaction.");
+      System.err.println("*");
+      System.err.println("*******************************************************************************");
+   }
+   
    /**
     * Internal function to speed up the EtherCAT send/receive time.  
     * 
-    * Calls the equivalent of 
+    * For most network cars, it calls the equivalent of 
     * 
     * ethtool -C iface rx-usecs 0 rx-frames 1 tx-usecs 0 tx-frames 1
+    * 
+    * For network cards using the igb driver, it calls the equivalent of
+    * 
+    * ethtool -C iface rx-usecs 0 tx-usecs 0
+    * 
+    * and for network cards using the tg3 driver, it calls the equivalent of
+    * 
+    * ethtool -C iface rx-usecs 1 rx-frames 1 tx-usecs 1 tx-frames 1
     * 
     * This drastically reduces the time to complete a send/receive cycle. Tests show a decrease from 200us to 50us.
     * 
@@ -446,15 +469,18 @@ public class Master implements MasterInterface
       switch(ret)
       {
       case 10:
-         System.err.println("Cannot setup fast IRQ settings on network card. OS is not Linux");
+         showCoalesceWarning("Cannot setup fast IRQ settings on network card. OS is not Linux");
          break;
       case 70:
          throw new IOException("Cannot open control socket to setup network card. Make sure you are root.");
+      case 73:
+         showCoalesceWarning("Cannot read driver info from network card. Not setting coalesce properties.");
+         break;
       case 76:
-         System.err.println("Cannot read current coalesce options from network card");
+         showCoalesceWarning("Cannot read current coalesce options from network card. Not setting coalesce properties.");
          break;
       case 81:
-         System.err.println("Cannot write desired coalesce options to network card");
+         showCoalesceWarning("Cannot write desired coalesce options to network card.");
          break;
       case 1:
          //sucess
