@@ -4,6 +4,7 @@
 #include "ethercatbase.h"
 #include "ethercatmain.h"
 #include "ethercatcoe.h"
+#include "ethercatfoe.h"
 #include "ethercathelper.h"
 
 #include <stdlib.h>
@@ -279,7 +280,20 @@ int ecx_reconfig_slave_to_safeop(ecx_contextt *context, uint16 slave, int timeou
       }
 }
 
+int32_t ecx_FOEread_java_helper(ecx_contextt *context, uint16 slave, char *filename, uint32 password, int size, void *p, int timeout)
+{
+	int psize = size;
 
+	int res = ecx_FOEread(context, slave, filename, password, &psize, p, timeout);
+	if(res > 0)
+	{
+		return psize;
+	}
+	else
+	{
+	 	return res;
+	}
+}
 
 uint8 ecx_setup_socket_fast_irq(char *iface)
 {
