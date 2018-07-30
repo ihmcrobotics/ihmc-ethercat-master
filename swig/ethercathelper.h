@@ -28,6 +28,8 @@ char* ecx_odlist_name(ec_ODlistt* ODlist, int32 index);
 
 int32_t ecx_FOEread_java_helper(ecx_contextt *context, uint16 slave, char *filename, uint32 password, int size, void *p, int timeout);
 
+void ecx_writembxconfig(ecx_contextt *context, ec_slavet* ec_slave);
+
 
 uint8 ecx_setup_socket_fast_irq(char *iface);
 

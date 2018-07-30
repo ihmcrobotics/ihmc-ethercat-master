@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 
-import us.ihmc.soem.generated.ec_err;
+import us.ihmc.etherCAT.master.Mailbox.MailboxConfiguration;
 import us.ihmc.soem.generated.ec_err_type;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
@@ -61,10 +61,25 @@ public class FoEBootstrap
 
    private final ec_slavet[] slaves;
    private final HashMap<SlaveConfig, Integer> slaveMap = new HashMap<>();
+   private final boolean printInfo;
 
-   public FoEBootstrap(String iface) throws IOException
+   private void info(String info)
    {
+      if (printInfo)
+      {
+         System.out.println("[FoE] " + info);
+      }
+   }
 
+   private void info(int alias, int position, ec_slavet slave, String info)
+   {
+      info("[(" + alias + ", " + position + ") " + slave.getName() + "] " + info);
+   }
+
+   public FoEBootstrap(String iface, boolean printInfo) throws IOException
+   {
+      this.printInfo = printInfo;
+      
       context = soem.ecx_create_context();
 
       if (soem.ecx_init(context, iface) == 0)
@@ -78,7 +93,14 @@ public class FoEBootstrap
       }
 
       int slavecount = soem.ecx_slavecount(context);
-      System.out.println("Found " + slavecount + " slaves");
+      if (slavecount == 1)
+      {
+         info("Found " + slavecount + " slave.");
+      }
+      else
+      {
+         info("Found " + slavecount + " slaves.");
+      }
       slaves = new ec_slavet[slavecount + 1];
 
       int previousAlias = 0;
@@ -134,7 +156,23 @@ public class FoEBootstrap
       int slaveIndex = getSlaveIndex(alias, position);
       ec_slavet ec_slave = slaves[slaveIndex];
 
-      System.out.println("Requesting boot state for slave (" + alias + ", " + position + ") " + ec_slave.getName());
+      info(alias, position, ec_slave, "Switching to INIT");
+      ec_slave.setState(ec_state.EC_STATE_INIT.swigValue());
+      soem.ecx_writestate(context, slaveIndex);
+
+      if (soem.ecx_statecheck(context, slaveIndex, ec_state.EC_STATE_INIT.swigValue(), soemConstants.EC_TIMEOUTSTATE) != ec_state.EC_STATE_INIT.swigValue())
+      {
+         throw new IOException("Cannot switch slave to INIT state");
+      }
+
+      info(alias, position, ec_slave, "Configuring BOOT mailbox");
+      Mailbox.setup(context, slaveIndex, MailboxConfiguration.BOOT);
+      if(printInfo)
+      {
+         Mailbox.printConfiguration(ec_slave);
+      }
+
+      info(alias, position, ec_slave, "Switching to BOOT");
       ec_slave.setState(ec_state.EC_STATE_BOOT.swigValue());
       soem.ecx_writestate(context, slaveIndex);
 
@@ -160,19 +198,32 @@ public class FoEBootstrap
       int slaveIndex = getSlaveIndex(alias, position);
       ec_slavet ec_slave = slaves[slaveIndex];
 
+      info(alias, position, ec_slave, "Configuring default mailbox");
+      Mailbox.setup(context, slaveIndex, MailboxConfiguration.DEFAULT);
+      if(printInfo)
+      {
+         Mailbox.printConfiguration(ec_slave);
+      }
+
+      info(alias, position, ec_slave, "Switching to INIT");
       ec_slave.setState(ec_state.EC_STATE_INIT.swigValue());
       soem.ecx_writestate(context, slaveIndex);
-      soem.ecx_statecheck(context, slaveIndex, ec_state.EC_STATE_INIT.swigValue(), soemConstants.EC_TIMEOUTSTATE * 10);
+      if (soem.ecx_statecheck(context, slaveIndex, ec_state.EC_STATE_INIT.swigValue(),
+                              soemConstants.EC_TIMEOUTSTATE * 10) != ec_state.EC_STATE_INIT.swigValue())
+      {
+         throw new IOException("Cannot restore slave to INIT state");
+      }
 
    }
 
    public void writeDataToSlave(int alias, int position, String filename, long password, ByteBuffer data) throws IOException
    {
       int slaveIndex = getSlaveInBootMode(alias, position);
-      
-      System.out.println("Writing " + data.remaining() + " bytes to " + filename + " on slave");
+
+      ec_slavet ec_slave = slaves[slaveIndex];
+      info(alias, position, ec_slave, "Writing " + data.remaining() + " bytes to " + filename);
       int result = soem.ecx_FOEwrite(context, slaveIndex, filename, password, data.remaining(), data, soemConstants.EC_TIMEOUTSTATE);
-      if(result > 0)
+      if (result > 0)
       {
          setSlaveToInit(alias, position);
       }
@@ -180,14 +231,16 @@ public class FoEBootstrap
       {
          throw new IOException("Cannot read write data to slave. Error code: " + ec_err_type.swigToEnum(-result));
       }
-      
+
    }
 
    public ByteBuffer readDataFromSlave(int alias, int position, String filename, long password, int maxSize) throws IOException
    {
       int slaveIndex = getSlaveInBootMode(alias, position);
 
-      System.out.println("Reading " + filename + " from slave.");
+      ec_slavet ec_slave = slaves[slaveIndex];
+      info(alias, position, ec_slave, "Reading " + filename);
+
       ByteBuffer data = ByteBuffer.allocateDirect(maxSize);
       data.order(ByteOrder.LITTLE_ENDIAN);
       int result = soem.ecx_FOEread_java_helper(context, slaveIndex, filename, password, maxSize, data, soemConstants.EC_TIMEOUTSTATE);
@@ -195,14 +248,14 @@ public class FoEBootstrap
       if (result > 0)
       {
          data.limit(result);
-
+         info(alias,position, ec_slave, "Read " + data.limit() + " bytes");
          setSlaveToInit(alias, position);
          return data;
       }
       else
       {
          throw new IOException("Cannot read data from slave. Error code: " + ec_err_type.swigToEnum(-result));
-         
+
       }
    }
 

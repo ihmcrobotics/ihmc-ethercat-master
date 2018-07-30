@@ -31,7 +31,7 @@ repositories {
 }
 	
 dependencies {
-	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.11.0'
+	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.11.1'
 }
 ```
 
@@ -92,21 +92,31 @@ sudo apt install soem
 
 #### (Optional, not recommended) Compiling SOEM
 
-Clone SOEM from https://github.com/OpenEtherCATsociety/SOEM
-- git clone https://github.com/OpenEtherCATsociety/SOEM.git
+~Clone SOEM from https://github.com/OpenEtherCATsociety/SOEM~
+- ~git clone https://github.com/OpenEtherCATsociety/SOEM.git~
 
-Optionally, use switch to the same version as used to compile the maven libraries
+~Optionally, use switch to the same version as used to compile the maven libraries~
+- ~cd SOEM~
+- ~git checkout 5b2c51b~
+
+A forked version of SOEM is used to enable some new features for Bootloader support. We're working on merging it in upstream.
+
+```
+- git clone https://github.com/Halodi/SOEM.git
 - cd SOEM
-- git checkout 5b2c51b 
+- git checkout feature/config_init_in_state
+```
 
-Note that in order to build a shared library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
+Note that in order to build a shared JNI library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
 
-- cd SOEM
-- mkdir build
-- cd build
-- cmake -DHOST_INSTALL="" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POSITION_INDEPENDENT_CODE=true -DCMAKE_BUILD_TYPE=Release ..
-- make
-- make install
+```
+cd SOEM
+mkdir build
+cd build
+cmake -DHOST_INSTALL="" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POSITION_INDEPENDENT_CODE=true -DCMAKE_BUILD_TYPE=Release ..
+make
+make install
+```
 
 ### Compiling C library and SWIG wrapper
 

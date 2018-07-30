@@ -363,3 +363,13 @@ uint8 ecx_setup_socket_fast_irq(char *iface)
 	return 10;
 #endif
 }
+
+
+void ecx_writembxconfig(ecx_contextt *context, ec_slavet* ec_slave)
+{
+		/* program SM0 mailbox in for slave */
+	ecx_FPWR (context->port, ec_slave->configadr, ECT_REG_SM0, sizeof(ec_smt), &ec_slave->SM[0], EC_TIMEOUTRET);
+	/* program SM1 mailbox out for slave */
+	ecx_FPWR (context->port, ec_slave->configadr, ECT_REG_SM1, sizeof(ec_smt), &ec_slave->SM[1], EC_TIMEOUTRET);
+}
+
