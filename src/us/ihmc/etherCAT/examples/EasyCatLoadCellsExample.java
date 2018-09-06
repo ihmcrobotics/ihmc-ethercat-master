@@ -41,7 +41,7 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread {
 
 	private final EasyCATLoadCellSlave loadCellSlave = new EasyCATLoadCellSlave(0, 0);
 
-	private static String networkCard = "enp6s0";
+	private static String networkCard = "enp4s0";
 
 	public EasyCatLoadCellsExample() throws IOException {
 		super(networkCard, new PriorityParameters(PriorityParameters.getMaximumPriority()),
