@@ -8,13 +8,15 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
 {
 
    private int[] frameData = new int[32];
-   private int currentPositionInMeters = 0;
+   private double currentPositionInMeters = 0;
    private boolean lowerLimitSwitch = false;
    private boolean upperLimitSwitch = false;
    private boolean manualUpButton = false;
    private boolean manualDownButton = false;
    private double desiredPositionInMeters = 0;
+   private int dataFlipBit = 0;
 
+   //TODO : Left and right vertical positioner slaves need to be flashed with correct aliases!
    public EasyCATVerticalPositionerSlave(int alias, int ringPosition) throws IOException
    {
       super(alias, ringPosition);
@@ -25,7 +27,7 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
 
       getTransmitBytes(frameData, 0, 31);
 
-      currentPositionInMeters = frameData[5];
+      currentPositionInMeters = (frameData[5]/100.0);
 
       if (frameData[6] == 0)
       {
@@ -53,7 +55,7 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
       {
          manualDownButton = true;
       }
-      
+
       if (frameData[9] == 0)
       {
          manualUpButton = false;
@@ -62,41 +64,48 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
       {
          manualUpButton = true;
       }
+      
+      dataFlipBit = frameData[10];
    }
-   
+
    public void processOutputCommands()
    {
-      frameData[1] = (int)(desiredPositionInMeters * 100.0);
+      frameData[1] = (int) (desiredPositionInMeters * 100.0);
       setReceiveBytes(frameData);
    }
-   
+
    public void setDesiredPositionInMeters(double desiredPositionInMeters)
    {
       this.desiredPositionInMeters = desiredPositionInMeters;
    }
-   
+
    public double getCurrentPositionInMeters()
    {
       return currentPositionInMeters;
    }
-   
+
    public boolean isLowerLimitSwitchPressed()
    {
       return lowerLimitSwitch;
    }
-   
+
    public boolean isUpperLimitSwitchPressed()
    {
       return upperLimitSwitch;
    }
-   
+
    public boolean isManualDownButtonPressed()
    {
       return manualDownButton;
    }
-   
+
    public boolean isManualUpButtonPressed()
    {
       return manualUpButton;
+   }
+   
+   public int getDataFlipBit()
+   {
+      return dataFlipBit;
    }
 }

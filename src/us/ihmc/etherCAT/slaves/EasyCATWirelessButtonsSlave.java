@@ -9,6 +9,7 @@ public class EasyCATWirelessButtonsSlave extends EasyCATSlave
 
    private int[] frameData = new int[32];
    private boolean[] buttonStates = new boolean[4];
+   private int dataFlipBit = 0;
 
    public EasyCATWirelessButtonsSlave(int alias, int ringPosition) throws IOException
    {
@@ -56,6 +57,8 @@ public class EasyCATWirelessButtonsSlave extends EasyCATSlave
       {
          buttonStates[3] = false;
       }
+      
+      dataFlipBit = frameData[5];
    }
 
    public boolean isButton1Pressed()
@@ -81,5 +84,10 @@ public class EasyCATWirelessButtonsSlave extends EasyCATSlave
    public boolean[] getButtonStates()
    {
       return buttonStates;
+   }
+   
+   public int getDataFlipBit()
+   {
+      return dataFlipBit;
    }
 }
