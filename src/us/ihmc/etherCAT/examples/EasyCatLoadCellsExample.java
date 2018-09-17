@@ -2,8 +2,6 @@ package us.ihmc.etherCAT.examples;
 
 import static java.lang.System.out;
 
-import java.awt.Color;
-import java.awt.FlowLayout;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -11,13 +9,10 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.Enumeration;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
 import us.ihmc.etherCAT.slaves.EasyCATLoadCellSlave;
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
+import us.ihmc.etherCAT.slaves.EasyCATVerticalPositionerSlave;
+import us.ihmc.etherCAT.slaves.EasyCATWirelessButtonsSlave;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 
@@ -37,84 +32,106 @@ import us.ihmc.realtime.PriorityParameters;
  * @author dduran
  *
  */
-public class EasyCatLoadCellsExample extends EtherCATRealtimeThread {
+public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
+{
 
-	private final EasyCATLoadCellSlave loadCellSlave = new EasyCATLoadCellSlave(0, 0);
+   private final EasyCATLoadCellSlave loadCellSlave1 = new EasyCATLoadCellSlave(151, 0);
+   private final EasyCATLoadCellSlave loadCellSlave2 = new EasyCATLoadCellSlave(152, 0);
+   private final EasyCATVerticalPositionerSlave verticalPositoner = new EasyCATVerticalPositionerSlave(0, 0);
+   private final EasyCATWirelessButtonsSlave wirelessButtonSlave = new EasyCATWirelessButtonsSlave(0, 0);
 
-	private static String networkCard = "enp4s0";
+   private static String networkCard = "enp4s0";
 
-	public EasyCatLoadCellsExample() throws IOException {
-		super(networkCard, new PriorityParameters(PriorityParameters.getMaximumPriority()),
-				new MonotonicTime(0, 1000000), true, 100000);
+   public EasyCatLoadCellsExample() throws IOException
+   {
+      super(networkCard, new PriorityParameters(PriorityParameters.getMaximumPriority()), new MonotonicTime(0, 1000000), true, 100000);
 
-		System.out.println("Starting EtherCAT");
-		System.out.println("Registering Slave...");
+      System.out.println("Starting EtherCAT");
+      System.out.println("Registering Slave...");
 
-		registerSlave(loadCellSlave);
-	}
+      //		registerSlave(loadCellSlave1);
+      //		registerSlave(loadCellSlave2);
+      //      registerSlave(verticalPositoner);
+      registerSlave(wirelessButtonSlave);
+   }
 
-	@Override
-	protected void workingCounterMismatch(int expected, int actual) {
+   @Override
+   protected void workingCounterMismatch(int expected, int actual)
+   {
 
-		System.out.println("Working counter mismatch!!!");
+      System.out.println("Working counter mismatch!!!");
+      System.out.println("Expected: " + expected);
+      System.out.println("Actual: " + actual);
+   }
 
-	}
+   int counter = 0;
 
-	int counter = 0;
+   @Override
+   protected void deadlineMissed()
+   {
 
-	@Override
-	protected void deadlineMissed() {
+      System.out.println("Deadlines missed so far: " + counter);
+      counter++;
 
-		System.out.println("Deadlines missed so far: " + counter);
-		counter++;
+   }
 
-	}
+   @Override
+   protected void doControl()
+   {
 
-	@Override
-	protected void doControl() {
+      // extract frame data from each slave
+      int[] frameData = new int[32];
+      //      verticalPositoner.processDataFromVerticalPositioner();
+      //
+      //		System.out.println(verticalPositoner.getCurrentPositionInMeters());
+      //		
+      //      verticalPositoner.setDesiredPositionInMeters(0.5);
+      //      verticalPositoner.processOutputCommands();
 
-		// extract frame data from each slave
-		int[] frameData = new int[32];
-		loadCellSlave.processLoadCellData();
-		
-		System.out.println(loadCellSlave.getLoadCell1RawValue() + ", " + loadCellSlave.getLoadCell2RawValue() + ", " + loadCellSlave.getLoadCell3RawValue() + ", " + loadCellSlave.getLoadCell4RawValue());
-	}
+      wirelessButtonSlave.processData();
+      System.out.println(wirelessButtonSlave.getButtonStates()[0] + "    " + wirelessButtonSlave.getButtonStates()[1] + "    "
+            + wirelessButtonSlave.getButtonStates()[2] + "    " + wirelessButtonSlave.getButtonStates()[3]);
+   }
 
-	@Override
-	protected void doReporting() {
-		// TODO Auto-generated method stub
+   @Override
+   protected void doReporting()
+   {
+      // TODO Auto-generated method stub
 
-	}
+   }
 
-	@Override
-	protected void datagramLost() {
-		System.out.println("DATAGRAM Lost!!");
+   @Override
+   protected void datagramLost()
+   {
+      System.out.println("DATAGRAM Lost!!");
 
-	}
+   }
 
-	public static void main(String args[]) throws IOException {
-		/*
-		 * Enumeration<NetworkInterface> nets; try { nets =
-		 * NetworkInterface.getNetworkInterfaces(); for (NetworkInterface netint :
-		 * Collections.list(nets)) displayInterfaceInformation(netint);
-		 * 
-		 * } catch (SocketException e) { // TODO Auto-generated catch block
-		 * e.printStackTrace(); }
-		 */
-		EasyCatLoadCellsExample easyCat = new EasyCatLoadCellsExample();
-		easyCat.start();
-		easyCat.join();
+   public static void main(String args[]) throws IOException
+   {
+      /*
+       * Enumeration<NetworkInterface> nets; try { nets =
+       * NetworkInterface.getNetworkInterfaces(); for (NetworkInterface netint :
+       * Collections.list(nets)) displayInterfaceInformation(netint); } catch
+       * (SocketException e) { // TODO Auto-generated catch block
+       * e.printStackTrace(); }
+       */
+      EasyCatLoadCellsExample easyCat = new EasyCatLoadCellsExample();
+      easyCat.start();
+      easyCat.join();
 
-	}
+   }
 
-	static void displayInterfaceInformation(NetworkInterface netint) throws SocketException {
-		out.printf("Display name: %s\n", netint.getDisplayName());
-		out.printf("Name: %s\n", netint.getName());
-		Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
-		for (InetAddress inetAddress : Collections.list(inetAddresses)) {
-			out.printf("InetAddress: %s\n", inetAddress);
-		}
-		out.printf("\n");
-	}
+   static void displayInterfaceInformation(NetworkInterface netint) throws SocketException
+   {
+      out.printf("Display name: %s\n", netint.getDisplayName());
+      out.printf("Name: %s\n", netint.getName());
+      Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+      for (InetAddress inetAddress : Collections.list(inetAddresses))
+      {
+         out.printf("InetAddress: %s\n", inetAddress);
+      }
+      out.printf("\n");
+   }
 
 }
