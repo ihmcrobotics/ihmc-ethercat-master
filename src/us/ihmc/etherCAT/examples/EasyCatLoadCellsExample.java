@@ -39,9 +39,9 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
    private final EasyCATLoadCellSlave loadCellSlave1 = new EasyCATLoadCellSlave(151, 0);
    private final EasyCATLoadCellSlave loadCellSlave2 = new EasyCATLoadCellSlave(152, 0);
    private final EasyCATVerticalPositionerSlaveWithButtons verticalPositonerWithButtons = new EasyCATVerticalPositionerSlaveWithButtons(0, 0);
-   private final EasyCATVerticalPositionerSlave verticalPositoner = new EasyCATVerticalPositionerSlave(0, 0);
+   private final EasyCATVerticalPositionerSlave verticalPositoner = new EasyCATVerticalPositionerSlave(0, 1);
 
-   private final EasyCATWirelessButtonsSlave wirelessButtonSlave = new EasyCATWirelessButtonsSlave(0, 0);
+//   private final EasyCATWirelessButtonsSlave wirelessButtonSlave = new EasyCATWirelessButtonsSlave(0, 0);
 
    private static String networkCard = "enp4s0";
 
@@ -55,7 +55,7 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
       //		registerSlave(loadCellSlave1);
       //		registerSlave(loadCellSlave2);
       registerSlave(verticalPositonerWithButtons);
-      //      registerSlave(verticalPositoner);
+      registerSlave(verticalPositoner);
 
       //      registerSlave(wirelessButtonSlave);
    }
@@ -86,19 +86,19 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
 
       // extract frame data from each slave
 
-      verticalPositonerWithButtons.processDataFromVerticalPositioner();
-      System.out.println("Position: " + verticalPositonerWithButtons.getCurrentPositionInMeters() + "   Ld: "
-            + verticalPositonerWithButtons.isLowerLimitSwitchPressed() + "   Lu: " + verticalPositonerWithButtons.isUpperLimitSwitchPressed() + "   Md: "
-            + verticalPositonerWithButtons.isManualDownButtonPressed() + "   Mu: " + verticalPositonerWithButtons.isManualUpButtonPressed());
-
-      verticalPositonerWithButtons.setDesiredPositionInMeters(0.80);
-      verticalPositonerWithButtons.processOutputCommands();
+      //      verticalPositonerWithButtons.processDataFromVerticalPositioner();
+      //      System.out.println("Position: " + verticalPositonerWithButtons.getCurrentPositionInMeters() + "   Ld: "
+      //            + verticalPositonerWithButtons.isLowerLimitSwitchPressed() + "   Lu: " + verticalPositonerWithButtons.isUpperLimitSwitchPressed() + "   Md: "
+      //            + verticalPositonerWithButtons.isManualDownButtonPressed() + "   Mu: " + verticalPositonerWithButtons.isManualUpButtonPressed());
+      //
+      //      verticalPositonerWithButtons.setDesiredPositionInMeters(0.80);
+      //      verticalPositonerWithButtons.processOutputCommands();
 
       //          System.out.println("Position: " + verticalPositoner.getCurrentPositionInMeters() + "   Ld: " + verticalPositoner.isLowerLimitSwitchPressed() + "   Lu: "
       //                + verticalPositoner.isUpperLimitSwitchPressed());
       //            
 
-      //      verticalPositonerWithButtons.processDataFromVerticalPositioner();
+      //      verticalPositoner.processDataFromVerticalPositioner();
 
       //      verticalPositoner.setDesiredPositionInMeters(0.80);
       //      verticalPositoner.processOutputCommands();
@@ -106,6 +106,16 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
       //      wirelessButtonSlave.processData();
       //      System.out.println(wirelessButtonSlave.getButtonStates()[0] + "    " + wirelessButtonSlave.getButtonStates()[1] + "    "
       //            + wirelessButtonSlave.getButtonStates()[2] + "    " + wirelessButtonSlave.getButtonStates()[3]);
+
+      verticalPositonerWithButtons.processDataFromVerticalPositioner();
+      verticalPositonerWithButtons.setDesiredPositionInMeters(0.80);
+      verticalPositonerWithButtons.processOutputCommands();
+
+      verticalPositoner.processDataFromVerticalPositioner();
+      verticalPositoner.setDesiredPositionInMeters(0.80);
+      verticalPositoner.processOutputCommands();
+
+      System.out.println(verticalPositonerWithButtons.getCurrentPositionInMeters() + "   " + verticalPositoner.getCurrentPositionInMeters());
    }
 
    @Override
