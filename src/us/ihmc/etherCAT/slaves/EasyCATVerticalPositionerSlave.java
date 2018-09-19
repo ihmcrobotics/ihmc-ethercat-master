@@ -7,14 +7,12 @@ import java.io.IOException;
 public class EasyCATVerticalPositionerSlave extends EasyCATSlave
 {
 
-   private int[] frameData = new int[32];
-   private double currentPositionInMeters = 0;
-   private boolean lowerLimitSwitch = false;
-   private boolean upperLimitSwitch = false;
-   private boolean manualUpButton = false;
-   private boolean manualDownButton = false;
-   private double desiredPositionInMeters = 0;
-   private int dataFlipBit = 0;
+   protected int[] frameData = new int[32];
+   protected double currentPositionInMeters = 0;
+   protected boolean lowerLimitSwitch = false;
+   protected boolean upperLimitSwitch = false;
+   protected double desiredPositionInMeters = 0;
+   protected int dataFlipBit = 0;
 
    //TODO : Left and right vertical positioner slaves need to be flashed with correct aliases!
    public EasyCATVerticalPositionerSlave(int alias, int ringPosition) throws IOException
@@ -27,8 +25,14 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
 
       getTransmitBytes(frameData, 0, 31);
 
-      currentPositionInMeters = (frameData[5]/100.0);
+      processPositionEncoder();
+      processLimitSwitches();
 
+      dataFlipBit = frameData[10];
+   }
+
+   protected void processLimitSwitches()
+   {
       if (frameData[6] == 0)
       {
          lowerLimitSwitch = false;
@@ -46,26 +50,11 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
       {
          upperLimitSwitch = true;
       }
+   }
 
-      if (frameData[8] == 0)
-      {
-         manualDownButton = false;
-      }
-      else
-      {
-         manualDownButton = true;
-      }
-
-      if (frameData[9] == 0)
-      {
-         manualUpButton = false;
-      }
-      else
-      {
-         manualUpButton = true;
-      }
-      
-      dataFlipBit = frameData[10];
+   protected void processPositionEncoder()
+   {
+      currentPositionInMeters = (frameData[5] / 100.0);
    }
 
    public void processOutputCommands()
@@ -94,16 +83,6 @@ public class EasyCATVerticalPositionerSlave extends EasyCATSlave
       return upperLimitSwitch;
    }
 
-   public boolean isManualDownButtonPressed()
-   {
-      return manualDownButton;
-   }
-
-   public boolean isManualUpButtonPressed()
-   {
-      return manualUpButton;
-   }
-   
    public int getDataFlipBit()
    {
       return dataFlipBit;
