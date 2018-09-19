@@ -76,6 +76,32 @@ remotes {
    }
 }
 
+task deployLocal(dependsOn: ['jar']) {
+	def directory = 'EthercatLocalTest'
+	
+	doLast {
+		def dest = new File(System.properties['user.home'], directory)
+		def lib = new File(dest, 'lib')
+		
+		lib.deleteDir()
+		lib.mkdirs()
+		
+		configurations.runtime.each {
+		    def src = file(it)
+			copy {
+				from src 
+				into lib
+			}
+		}
+		
+		copy {
+			from jar.archivePath
+			into dest
+			rename { fileName -> "EtherCATTest.jar" }
+		}
+	}
+}
+
 task deployTestBed(dependsOn: ['jar']) {
    def projectDir = project.buildscript.sourceFile.parent
    def directory = 'ethercat'
