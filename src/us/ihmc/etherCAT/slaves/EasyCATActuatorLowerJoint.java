@@ -6,7 +6,6 @@ import java.io.IOException;
 
 public class EasyCATActuatorLowerJoint extends EasyCATSlave
 {
-
    protected int[] frameData = new int[32];
    protected int currentRotationRaw1 = 0;
    protected int currentRotationRaw2 = 0;
@@ -32,6 +31,7 @@ public class EasyCATActuatorLowerJoint extends EasyCATSlave
       dataFlipBit = frameData[10];
    }
 
+   // TODO: convert raw encoder value to degrees
    protected void processEncoders()
    {
       currentRotationRaw1 = (short) (((frameData[0] & 0xFF) << 8 | (frameData[1] & 0xFF)));
