@@ -20,7 +20,7 @@ public class EasyCATActuatorLowerJoint extends EasyCATSlave
       super(alias, ringPosition);
    }
 
-   protected void processDataFromLowerJoint()
+   public void processDataFromLowerJoint()
    {
 
       getTransmitBytes(frameData, 0, 31);

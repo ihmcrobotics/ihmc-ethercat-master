@@ -13,7 +13,7 @@ public class EasyCATActuatorLowerJointWithButtons extends EasyCATActuatorLowerJo
    }
 
    @Override
-   protected void processDataFromLowerJoint()
+   public void processDataFromLowerJoint()
    {
       super.processDataFromLowerJoint();
       processWirelessButtons();

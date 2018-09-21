@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
+import us.ihmc.etherCAT.slaves.EasyCATActuatorLowerJointWithButtons;
 import us.ihmc.etherCAT.slaves.EasyCATLoadCellSlave;
 import us.ihmc.etherCAT.slaves.EasyCATVerticalPositionerSlave;
 import us.ihmc.etherCAT.slaves.EasyCATVerticalPositionerSlaveWithButtons;
@@ -40,8 +41,7 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
    private final EasyCATLoadCellSlave loadCellSlave2 = new EasyCATLoadCellSlave(152, 0);
    private final EasyCATVerticalPositionerSlaveWithButtons verticalPositonerWithButtons = new EasyCATVerticalPositionerSlaveWithButtons(0, 0);
    private final EasyCATVerticalPositionerSlave verticalPositoner = new EasyCATVerticalPositionerSlave(0, 1);
-
-//   private final EasyCATWirelessButtonsSlave wirelessButtonSlave = new EasyCATWirelessButtonsSlave(0, 0);
+   private final EasyCATActuatorLowerJointWithButtons lowerJointWithButtons = new EasyCATActuatorLowerJointWithButtons(0, 0);
 
    private static String networkCard = "enp4s0";
 
@@ -54,10 +54,10 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
 
       //		registerSlave(loadCellSlave1);
       //		registerSlave(loadCellSlave2);
-      registerSlave(verticalPositonerWithButtons);
-      registerSlave(verticalPositoner);
+      //      registerSlave(verticalPositonerWithButtons);
+      //      registerSlave(verticalPositoner);
 
-      //      registerSlave(wirelessButtonSlave);
+      registerSlave(lowerJointWithButtons);
    }
 
    @Override
@@ -107,15 +107,20 @@ public class EasyCatLoadCellsExample extends EtherCATRealtimeThread
       //      System.out.println(wirelessButtonSlave.getButtonStates()[0] + "    " + wirelessButtonSlave.getButtonStates()[1] + "    "
       //            + wirelessButtonSlave.getButtonStates()[2] + "    " + wirelessButtonSlave.getButtonStates()[3]);
 
-      verticalPositonerWithButtons.processDataFromVerticalPositioner();
-      verticalPositonerWithButtons.setDesiredPositionInMeters(0.80);
-      verticalPositonerWithButtons.processOutputCommands();
+      //      verticalPositonerWithButtons.processDataFromVerticalPositioner();
+      //      verticalPositonerWithButtons.setDesiredPositionInMeters(0.80);
+      //      verticalPositonerWithButtons.processOutputCommands();
+      //
+      //      verticalPositoner.processDataFromVerticalPositioner();
+      //      verticalPositoner.setDesiredPositionInMeters(0.80);
+      //      verticalPositoner.processOutputCommands();
+      //
+      //      System.out.println(verticalPositonerWithButtons.getCurrentPositionInMeters() + "   " + verticalPositoner.getCurrentPositionInMeters());
 
-      verticalPositoner.processDataFromVerticalPositioner();
-      verticalPositoner.setDesiredPositionInMeters(0.80);
-      verticalPositoner.processOutputCommands();
+      lowerJointWithButtons.processDataFromLowerJoint();
 
-      System.out.println(verticalPositonerWithButtons.getCurrentPositionInMeters() + "   " + verticalPositoner.getCurrentPositionInMeters());
+//      System.out.println(lowerJointWithButtons.getRawRotation1());
+      System.out.println(lowerJointWithButtons.getButtonStates()[0]);
    }
 
    @Override
