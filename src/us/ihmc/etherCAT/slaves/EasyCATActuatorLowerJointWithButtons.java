@@ -65,21 +65,21 @@ public class EasyCATActuatorLowerJointWithButtons extends EasyCATActuatorLowerJo
 
    public boolean getLoadButtonState()
    {
-      return buttonStates[0];
+      return buttonStates[2];
    }
 
    public boolean getUnloadButtonState()
    {
-      return buttonStates[1];
+      return buttonStates[3];
    }
 
    public boolean getIncrementWeightButtonState()
    {
-      return buttonStates[2];
+      return buttonStates[0];
    }
 
    public boolean getDecrementWeightButtonState()
    {
-      return buttonStates[3];
+      return buttonStates[1];
    }
 }
