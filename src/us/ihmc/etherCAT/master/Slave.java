@@ -40,8 +40,8 @@ public class Slave
 
    private final int aliasAddress;
    private final int position;
-   private final int vendor;
-   private final int productCode;
+   private final long vendor;
+   private final long productCode;
    private final ByteBuffer sdoBuffer = ByteBuffer.allocateDirect(128);
 
    private final SyncManager[] syncManagers = new SyncManager[4];
@@ -82,7 +82,7 @@ public class Slave
     * @param aliasAddress The address of the slave.
     * @param position Position relative to aliasAddress
     */
-   public Slave(int vendor, int productCode, int aliasAddress, int position)
+   public Slave(long vendor, long productCode, int aliasAddress, int position)
    {
       this.vendor = vendor;
       this.productCode = productCode;
@@ -93,12 +93,12 @@ public class Slave
       dcDiff.order(ByteOrder.LITTLE_ENDIAN);
    }
 
-   final int getVendor()
+   final long getVendor()
    {
       return vendor;
    }
 
-   final int getProductCode()
+   final long getProductCode()
    {
       return productCode;
    }
