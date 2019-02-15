@@ -19,11 +19,16 @@ import us.ihmc.soem.generated.soem;
  * 
  * It also takes care of taring down EtherCAT slaves properly on shutdown.
  * 
+ * Should the connection with the EtherCAT network fail, datagramLost() is called cyclically. 
+ * It is up to the implementation to call stopController() to stop the EtherCAT transaction.
+ * 
+ * 
  * @author Jesper Smith
  *
  */
 public abstract class EtherCATRealtimeThread implements MasterInterface
 {
+   private static final long DEFAULT_SHUTDOWN_TIMEOUT_NS = 5000000000L;
    
    private final RealtimeThread realtimeThread;
    private final Master master;
@@ -44,6 +49,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    private long dcOffsetError = 0;
    
    private long cycleStartTime = 0;
+   
+   private long shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT_NS;
    
    private long dcTime = 0;
    
@@ -247,6 +254,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          
       }
       
+      long startShutdownTime = getCurrentMonotonicClockTime();
       boolean allSlavesShutdown = false;
       while(!allSlavesShutdown)
       {
@@ -254,9 +262,10 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          {
             allSlavesShutdown = master.shutdownSlaves();
          }
-         else
+         
+         if((getCurrentMonotonicClockTime() - startShutdownTime) > shutdownTimeout)
          {
-            deadlineMissed();
+            break;
          }
       }
       
@@ -551,14 +560,15 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     * The receive function of the master timed out and no packet was received.
     * 
     * This means a packet got corrupted or dropped on the slave network and is generally bad news.
+    *  
     * 
     */
    protected abstract void datagramLost();
 
    /**
-    * Set the timeout to wait for a datagram on receive
+    * Set the timeout to wait for a datagram on receive 
     * 
-    * @param timeout
+    * @param timeout in microseconds
     */
    @Override
    public void setEtherCATReceiveTimeout(int timeout)
@@ -576,5 +586,17 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       return cycleStartTime;
    }
 
+   
+   /**
+    * Set the timeout for waiting for the slaves to shutdown. 
+    *
+    * Default: 5seconds (5000000000 nanoseconds)
+    * 
+    * @param timeoutNS timeout in nanoseconds
+    */
+   public void setShutdownTimeout(long timeoutNS)
+   {
+      this.shutdownTimeout = timeoutNS;
+   }
 
 }

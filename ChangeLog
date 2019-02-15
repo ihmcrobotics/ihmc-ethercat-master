@@ -1,3 +1,6 @@
+IHMC EtherCAT Master 0.11.2
+ * Added timeout to shutdown loop.
+
 IHMC EtherCAT Master 0.9.9
  * Do not call workingCounterMismatch if the master is not operational yet.
 
