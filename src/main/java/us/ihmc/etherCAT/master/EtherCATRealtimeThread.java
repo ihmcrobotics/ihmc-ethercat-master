@@ -265,7 +265,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          
          if((getCurrentMonotonicClockTime() - startShutdownTime) > shutdownTimeout)
          {
-            break;
+            return;
          }
       }
       

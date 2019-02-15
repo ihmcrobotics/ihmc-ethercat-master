@@ -31,7 +31,7 @@ repositories {
 }
 	
 dependencies {
-	compile group: 'us.ihmc', name: 'IHMCEtherCATMaster', version: '0.11.1'
+	compile group: 'us.ihmc', name: 'ihmc-ethercat-master', version: '0.11.2'
 }
 ```
 
