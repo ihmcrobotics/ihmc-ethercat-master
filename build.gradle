@@ -22,8 +22,7 @@ mainDependencies {
     compile group: 'us.ihmc', name: 'SOEM', version: '1.3.3-ihmc2'
     compile group: 'us.ihmc', name: 'SOEM-platform-linux', version: '1.3.3-ihmc2'
     //compile group: 'us.ihmc', name: 'SOEM-platform-windows', version: '1.3.1-ihmc3'
-    compile group: 'us.ihmc', name: 'IHMCNativeLibraryLoader', version: '1.0'
-	compile group: 'us.ihmc', name: 'ihmc-realtime', version: '1.2.2'
+    compile group: 'us.ihmc', name: 'ihmc-realtime', version: '1.2.2'
     compile "com.neuronrobotics:nrjavaserial:3.10.2"
 }
 
