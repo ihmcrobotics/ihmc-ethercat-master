@@ -15,17 +15,16 @@
  */
 package us.ihmc.etherCAT.master;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PDOTest
 {
-
    private static final class BitPDO extends PDO
    {
       Bool a = new Bool();
@@ -48,7 +47,6 @@ public class PDOTest
       }
 
       Signed32 uint = new Signed32();
-      
    }
 
    @Test
@@ -97,8 +95,5 @@ public class PDOTest
       assertTrue(e.b.get());
       assertFalse(e.c.get());
       assertTrue(e.d.get());
-    
-      
    }
-   
 }

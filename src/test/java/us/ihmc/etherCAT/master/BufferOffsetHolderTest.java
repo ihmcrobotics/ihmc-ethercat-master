@@ -15,13 +15,12 @@
  */
 package us.ihmc.etherCAT.master;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BufferOffsetHolderTest
 {
-
    @Test
    public void test()
    {
@@ -83,5 +82,4 @@ public class BufferOffsetHolderTest
       assertEquals(2, holder.getByteOffset());
       assertEquals(0, holder.getBitOffset());
    }
-
 }
