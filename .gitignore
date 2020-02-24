@@ -14,7 +14,7 @@
 */bin
 */out
 */target
-*/build
+**/build
 */build-*
 */pit-reports
 */install
