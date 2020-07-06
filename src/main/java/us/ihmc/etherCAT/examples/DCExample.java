@@ -31,7 +31,6 @@ public class DCExample extends EtherCATRealtimeThread
    private final EL4134 el4134 = new EL4134(601, 0); // Analog output
 
    private int counter = 0;
-   private final SerialPortRTSPulseGenerator pulseGenerator = new SerialPortRTSPulseGenerator("/dev/ttyS7");
 
    private boolean signal = false;
    
@@ -55,7 +54,6 @@ public class DCExample extends EtherCATRealtimeThread
       if (SWITCH_SIGNAL_EVERY_TICK)
       {
          signal = !signal;
-         pulseGenerator.setRTS(signal);
          el4134.setOut1(signal ? Short.MAX_VALUE : Short.MIN_VALUE);
       }
       else
@@ -63,12 +61,10 @@ public class DCExample extends EtherCATRealtimeThread
          // Generate a signal on both the serial RTS line of the computer and the analog output of the EL4134
          if (counter++ % 100 == 0)
          {
-            pulseGenerator.setRTS(true);
             el4134.setOut1(Short.MAX_VALUE);
          }
          else
          {
-            pulseGenerator.setRTS(false);
             el4134.setOut1(Short.MIN_VALUE);
          }
       }
@@ -76,7 +72,6 @@ public class DCExample extends EtherCATRealtimeThread
 
    public void close()
    {
-      pulseGenerator.close();
    }
    
    public static void main(String[] args) throws IOException
