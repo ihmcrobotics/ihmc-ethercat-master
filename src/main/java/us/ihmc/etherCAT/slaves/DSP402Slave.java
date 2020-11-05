@@ -12,7 +12,7 @@ import us.ihmc.etherCAT.master.Slave;
 public abstract class DSP402Slave extends Slave
 {
    
-   private static final int STATUSWORD_MASK = 0x8F; 
+   private static final int STATUSWORD_MASK = 0xEF; 
    private static final int CONTROLWORD_MFG_BITS_MASK = 0xFF70;
 
    private static final int noAction = Integer.parseInt("000", 2);
