@@ -7,7 +7,7 @@ plugins {
 
 ihmc {
    group = "us.ihmc"
-   version = "0.11.4"
+   version = "0.11.5"
    vcsUrl = "https://github.com/ihmcrobotics/ihmc-ethercat-master"
    openSource = true
 

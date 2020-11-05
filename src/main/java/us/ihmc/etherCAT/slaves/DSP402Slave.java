@@ -11,6 +11,9 @@ import us.ihmc.etherCAT.master.Slave;
  */
 public abstract class DSP402Slave extends Slave
 {
+   
+   private static final int STATUSWORD_MASK = 0x8F; 
+   private static final int CONTROLWORD_MFG_BITS_MASK = 0xFF70;
 
    private static final int noAction = Integer.parseInt("000", 2);
    private static final int shutdown = Integer.parseInt("110", 2);
@@ -89,13 +92,16 @@ public abstract class DSP402Slave extends Slave
          throw new RuntimeException("Invalid command");
       }
    
-      getControlWordPDOEntry().set(cmd);
+      Unsigned16 controlWord = getControlWordPDOEntry();
+      
+      int mfgBits = controlWord.get() & CONTROLWORD_MFG_BITS_MASK;
+      controlWord.set(cmd | mfgBits);
    
    }
    
    public StatusWord getStatus()
    {
-      int statusWord = getStatusWordPDOEntry().get();
+      int statusWord = getStatusWordPDOEntry().get() & STATUSWORD_MASK;
       
       StatusWord state = StatusWord.NOTREADYTOSWITCHON;   
       

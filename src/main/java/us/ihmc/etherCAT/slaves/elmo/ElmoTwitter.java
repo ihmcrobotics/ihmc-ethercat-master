@@ -287,7 +287,7 @@ public abstract class ElmoTwitter extends DSP402Slave
       {
          int error = readSDOInt(0x306A, 0x1);
          int temperature = readSDOUnsignedShort(0x22A3, 0x1);
-         System.out.println(toString() + " Last elmo error code: " + error + ": " + ElmoErrorCodes.errorCodeToString(error) + ". Drive temperature: " + temperature + "°C");
+         System.out.println(toString() + " Last elmo error code: " + error + ": " + ElmoErrorCodes.errorCodeToString(error) + ". Drive temperature: " + temperature + "deg C");
          return true;
       }
       return false;
