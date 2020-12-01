@@ -23,6 +23,6 @@ mainDependencies {
    api("us.ihmc:SOEM-platform-linux:1.3.3-ihmc2")
    //api group: 'us.ihmc', name: 'SOEM-platform-windows', version: '1.3.1-ihmc3'
    api("us.ihmc:ihmc-native-library-loader:1.2.1")
-   api("us.ihmc:ihmc-realtime:1.2.2")
+   api("us.ihmc:ihmc-realtime:1.3.0")
 }
 
