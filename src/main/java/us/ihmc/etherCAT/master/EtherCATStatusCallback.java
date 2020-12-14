@@ -27,6 +27,7 @@ public class EtherCATStatusCallback
       CLEANUP_SLAVES("Cleanup slaves"),
       SWITCH_TO_INIT("Switching slaves to INIT state"),
       CONFIGURE_DC("Configuring DC settings"),
+      WAIT_FOR_PREOP("Wait for preop"),
       CLEAR_PDOS("Clearing PDO configuration"),
       WRITE_PDOS("Writing PDO entries"),
       WRITE_PDO_SIZE("Writing Number of PDO entries"),
