@@ -310,7 +310,7 @@ public class Master implements MasterInterface
       
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_PRE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
-         throw new IOException("Cannot transfer to SAFE_PREOP state");
+         throw new IOException("Cannot transfer to PREOP state");
       }
       
       slaveMap = new Slave[slavecount];
