@@ -7,7 +7,7 @@ extern "C"
 {
 #endif
 
-ecx_contextt* ecx_create_context();
+ecx_contextt* ecx_create_context(int manualStateChange);
 void ecx_destroy_context(ecx_contextt* context);
 ec_slavet* ecx_slave(ecx_contextt* context, uint32 slave);
 int ecx_slavecount(ecx_contextt* context);

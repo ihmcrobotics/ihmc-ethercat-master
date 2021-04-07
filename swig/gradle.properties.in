@@ -1,0 +1,14 @@
+kebabCasedName = soem
+pascalCasedName = SOEM
+extraSourceSets = []
+publishUrl = local
+
+# When building from this directory, set how many directories
+# to go up and do a search for more builds to include.
+compositeSearchHeight = 0
+
+# When another build is searching for builds to include,
+# tell it to leave you out.
+excludeFromCompositeBuild = true
+
+target = UNSET

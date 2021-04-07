@@ -47,6 +47,7 @@ ecx_portt               ihmc_ecx_port;
 ecx_redportt            ihmc_ecx_redport;
 
 ecx_contextt  ihmc_ecx_context = {
+
     &ihmc_ecx_port,       // .port          =
     &ihmc_ecslave[0],    // .slavelist     =
     &ihmc_ecslavecount,  // .slavecount    =
@@ -67,11 +68,13 @@ ecx_contextt  ihmc_ecx_context = {
     &ihmc_ecPDOdesc,     // .PDOdesc       =
     &ihmc_ecSM,          // .eepSM         =
     &ihmc_ecFMMU,        // .eepFMMU       =
-    NULL             // .FOEhook()
+    NULL,             // .FOEhook()
+    NULL,              // .EOEhook()
+    0                   // manualStateChange
 };
 
 
-ecx_contextt* ecx_create_context()
+ecx_contextt* ecx_create_context(int manualStateChange)
 {  
 /*
     ecx_contextt* ihmc_ecx_context = (ecx_contextt*) malloc(sizeof(ecx_contextt));
@@ -121,6 +124,7 @@ ecx_contextt* ecx_create_context()
    ihmc_ecx_context->eepFMMU = ihmc_ecFMMU;
    ihmc_ecx_context->FOEhook = NULL;
     */
+    ihmc_ecx_context.manualstatechange = manualStateChange;
     return &ihmc_ecx_context;
 }
 

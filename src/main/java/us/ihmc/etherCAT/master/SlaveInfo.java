@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
@@ -44,7 +44,7 @@ public class SlaveInfo
 
    /** Read PDO assign structure 
     * @param type */
-   private static void printSDOAssignment(ecx_contextt context, int slaveIndex, int PDOassign, int type)
+   private static void printSDOAssignment(ecx_context context, int slaveIndex, int PDOassign, int type)
    {
       ByteBuffer buffer = ByteBuffer.allocateDirect(8);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -144,7 +144,7 @@ public class SlaveInfo
          }
       }
 
-      ecx_contextt context = soem.ecx_create_context();
+      ecx_context context = soem.ecx_create_context(1);
 
       if (soem.ecx_init(context, iface) == 0)
       {

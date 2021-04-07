@@ -2,7 +2,7 @@ package us.ihmc.etherCAT.master;
 
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 
@@ -24,7 +24,7 @@ public class Mailbox
       return (int) ((l) >> 16l); 
    }
 
-   static void setup(ecx_contextt context, int slaveIndex, MailboxConfiguration config)
+   static void setup(ecx_context context, int slaveIndex, MailboxConfiguration config)
    {
       long data;
       

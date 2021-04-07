@@ -11,7 +11,7 @@ import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ec_state;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
@@ -46,7 +46,7 @@ public class Master implements MasterInterface
    private final ArrayList<Slave> registeredSlaves = new ArrayList<>();
    private final String iface;
    
-   private ecx_contextt context = null;
+   private ecx_context context = null;
    private Slave[] slaveMap;
    
    private ByteBuffer ioMap;
@@ -251,7 +251,7 @@ public class Master implements MasterInterface
       setupFastIRQ(iface);
 
       getEtherCATStatusCallback().trace(TRACE_EVENT.CREATE_CONTEXT);
-      context = soem.ecx_create_context();
+      context = soem.ecx_create_context(0);
       
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.OPEN_INTERFACE);
@@ -696,7 +696,7 @@ public class Master implements MasterInterface
     * 
     * @return master context
     */
-   ecx_contextt getContext()
+   ecx_context getContext()
    {
       return context;
    }

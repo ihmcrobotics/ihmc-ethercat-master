@@ -9,7 +9,7 @@ import us.ihmc.etherCAT.master.Mailbox.MailboxConfiguration;
 import us.ihmc.soem.generated.ec_err_type;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
@@ -57,7 +57,7 @@ public class FoEBootstrap
       }
    }
 
-   private ecx_contextt context;
+   private ecx_context context;
 
    private final ec_slavet[] slaves;
    private final HashMap<SlaveConfig, Integer> slaveMap = new HashMap<>();
@@ -80,14 +80,14 @@ public class FoEBootstrap
    {
       this.printInfo = printInfo;
       
-      context = soem.ecx_create_context();
+      context = soem.ecx_create_context(1);
 
       if (soem.ecx_init(context, iface) == 0)
       {
          throw new IOException("Cannot open interface " + iface + ". Make sure to run as root.");
       }
 
-      if (soem.ecx_config_init_to_state(context, (short) 0, ec_state.EC_STATE_INIT.swigValue()) == 0)
+      if (soem.ecx_config_init(context, (short) 0) == 0)
       {
          throw new IOException("Cannot initialize slaves");
       }

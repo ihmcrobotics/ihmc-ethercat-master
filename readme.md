@@ -15,9 +15,9 @@ Extra functionality built on top of SOEM includes
 
 The IHMC EtherCAT master has a native component that is currently compiled for Linux only.
 
-- Tested on Ubuntu 16.04 and Ubuntu 18.04
+- Tested on Ubuntu 16.04, 18.04 and Ubuntu 18.04
 - Requires OpenJDK JRE 8 or higher (Compatible JRE's should work).
-- Native library is compiled statically, should work on most distributions
+- Native library is compiled statically on Ubuntu 16.04, should work on most distributions
 
 
 ### Gradle
@@ -60,7 +60,7 @@ To show the slaves available on the bus the provided class us.ihmc.etherCAT.mast
 
 ## License
 
-Copyright 2016 Florida Institute for Human and Machine Cognition (IHMC)
+Copyright 2021 Florida Institute for Human and Machine Cognition (IHMC)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -97,15 +97,7 @@ sudo apt install soem
 
 ~Optionally, use switch to the same version as used to compile the maven libraries~
 - ~cd SOEM~
-- ~git checkout 5b2c51b~
-
-A forked version of SOEM is used to enable some new features for Bootloader support. We're working on merging it in upstream.
-
-```
-- git clone https://github.com/Halodi/SOEM.git
-- cd SOEM
-- git checkout feature/config_init_in_state
-```
+- ~git checkout v1.4.0~
 
 Note that in order to build a shared JNI library, you have to enable position independent code for SOEM. Use the following commands to build and install the SOEM library
 
@@ -157,7 +149,7 @@ Swig 3.0.8 can be installed using the 16.04 package. It can be downloaded from h
 
 
 ### Compiling Java library
-- cd ihmc-soem-wrapper
-- ./gradlew jar
+- cd ihmc-ethercat-master
+- ./gradlew publishToMavenLocal
 
 
