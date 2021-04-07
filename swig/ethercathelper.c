@@ -331,7 +331,7 @@ uint8 ecx_setup_socket_fast_irq(char *iface)
 		return 76;
 	}
 
-    if(strcmp(drvinfo.driver, "igb") == 0)
+    if(strcmp(drvinfo.driver, "igb") == 0 || strcmp(drvinfo.driver, "igc") == 0)
     {
         ecoal.rx_coalesce_usecs = 0;
         ecoal.tx_coalesce_usecs = 0;
