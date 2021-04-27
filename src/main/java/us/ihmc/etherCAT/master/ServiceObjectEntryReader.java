@@ -3,7 +3,7 @@ package us.ihmc.etherCAT.master;
 import us.ihmc.soem.generated.ec_ODlistt;
 import us.ihmc.soem.generated.ec_OElistt;
 import us.ihmc.soem.generated.ec_datatype;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 
 /**
@@ -15,7 +15,7 @@ import us.ihmc.soem.generated.soem;
 public class ServiceObjectEntryReader
 {
 
-   private final ecx_contextt context;
+   private final ecx_context context;
    private final ec_ODlistt odList = new ec_ODlistt();
    private final ec_OElistt oeList = new ec_OElistt();
 
@@ -36,7 +36,7 @@ public class ServiceObjectEntryReader
     * 
     * @param context
     */
-   ServiceObjectEntryReader(ecx_contextt context)
+   ServiceObjectEntryReader(ecx_context context)
    {
       this.context = context;
    }

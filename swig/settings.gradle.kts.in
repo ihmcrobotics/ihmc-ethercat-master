@@ -1,0 +1,61 @@
+import org.gradle.internal.os.OperatingSystem;
+
+pluginManagement {
+   plugins {
+      id("us.ihmc.ihmc-build") version "0.23.7"
+   }
+}
+
+buildscript {
+   repositories {
+      maven { url = uri("https://plugins.gradle.org/m2/") }
+      mavenLocal()
+   }
+   dependencies {
+      classpath("us.ihmc:ihmc-build:0.23.7")
+   }
+}
+
+val ihmcSettingsConfigurator = us.ihmc.build.IHMCSettingsConfigurator(settings, logger, extra)
+ihmcSettingsConfigurator.checkRequiredPropertiesAreSet()
+ihmcSettingsConfigurator.configureExtraSourceSets()
+ihmcSettingsConfigurator.findAndIncludeCompositeBuilds()
+
+
+val target : String by settings
+
+
+if((target != "JAVA" && target != "PLATFORM"))
+{
+    throw GradleException("No target given. Please use gradle [task] -Ptarget=[JAVA|PLATFORM].\nUse JAVA to publish the generated java code, PLATFORM to publish the platform specific library")
+
+}
+
+else
+{
+ if(target == "JAVA")
+ {
+    rootProject.name="soem"
+ }
+ else
+ {
+
+    if(OperatingSystem.current().isWindows())
+    {
+            rootProject.name="soem-platform-windows"
+    }
+    else if (OperatingSystem.current().isLinux())
+    {
+            rootProject.name="soem-platform-linux"
+    }
+    else if (OperatingSystem.current().isMacOsX())
+    {
+            rootProject.name="soem-platform-mac"
+    }
+    else
+    {
+            throw GradleException("Current platform is not supported")
+    }
+
+ }
+}

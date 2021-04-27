@@ -1,0 +1,58 @@
+plugins {
+   id("us.ihmc.ihmc-build")
+   id("us.ihmc.log-tools-plugin") version "0.6.1"
+   id("us.ihmc.ihmc-ci") version "7.4"
+   id("us.ihmc.ihmc-cd") version "1.17"
+}
+
+ihmc {
+   group = "us.ihmc"
+   version = "1.4.0-ihmc1"
+   vcsUrl = "https://github.com/ihmcrobotics/ihmc-ethercat-master"
+   openSource = true
+
+   configureDependencyResolution()
+
+   configurePublications()
+}
+
+
+val target : String by project
+
+if(target == "JAVA")
+{
+        buildDir = file("build-java")
+}
+else
+{
+        buildDir = file("build-platform")
+}
+
+
+
+sourceSets {
+
+        if(target == "JAVA")
+        {
+                main {
+                        java {
+                            srcDir("swig/")
+                        }
+                }
+        }
+        else
+        {
+                main {
+                        resources{
+                            srcDir("swig/")
+                            include("**/libsoemJava.so")
+                            exclude("**/CMakeFiles")
+                        }
+                }
+        }
+}
+
+
+
+mainDependencies {
+}

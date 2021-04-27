@@ -9,7 +9,7 @@ import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.etherCAT.master.SyncManager.MailbusDirection;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
-import us.ihmc.soem.generated.ecx_contextt;
+import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 
@@ -47,7 +47,7 @@ public class Slave
    private final SyncManager[] syncManagers = new SyncManager[4];
 
    private Master master;
-   private ecx_contextt context;
+   private ecx_context context;
    private ec_slavet ec_slave;
    private int slaveIndex;
    private final ByteBuffer dcDiff = ByteBuffer.allocateDirect(4);
@@ -123,7 +123,7 @@ public class Slave
     * @param slaveIndex
     */
    
-   void configure(Master master, ecx_contextt context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
+   void configure(Master master, ecx_context context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
    {
       this.master = master;
       this.context = context;

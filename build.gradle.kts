@@ -7,7 +7,7 @@ plugins {
 
 ihmc {
    group = "us.ihmc"
-   version = "0.11.5"
+   version = "0.12.0"
    vcsUrl = "https://github.com/ihmcrobotics/ihmc-ethercat-master"
    openSource = true
 
@@ -19,9 +19,8 @@ ihmc {
 app.entrypoint("SlaveInfo", "us.ihmc.etherCAT.master.SlaveInfo")
 
 mainDependencies {
-   api("us.ihmc:SOEM:1.3.3-ihmc2")
-   api("us.ihmc:SOEM-platform-linux:1.3.3-ihmc2")
-   //api group: 'us.ihmc', name: 'SOEM-platform-windows', version: '1.3.1-ihmc3'
+   api("us.ihmc:soem:1.4.0-ihmc1")
+   api("us.ihmc:soem-platform-linux:1.4.0-ihmc1")
    api("us.ihmc:ihmc-native-library-loader:1.2.1")
    api("us.ihmc:ihmc-realtime:1.3.0")
 }
