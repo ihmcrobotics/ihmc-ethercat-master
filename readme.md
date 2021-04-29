@@ -120,6 +120,12 @@ make install
 A gradle wrapper is provided, optionally you can use your system gradle by replacing "./gradlew" with gradle.
 
 
+The gradle build files for the SOEM wrapper and native libraries are created by cmake, based on the input files in swig/build.gradle.kts.in and swig/settings.gradle.kts.in. After running cmake and make, the gradle build is exectud from the build directory. This is done to split the GPL+linking exception licenced SOEM from the Apache 2.0 licensed IHMC-ethercat-master. 
+
+
+To build and publish run the following commands. Note that the gradle commands are ran from within the build directory.
+
+
 - cd ihmc-ethercat-master
 - mkdir build
 - cd build
@@ -129,23 +135,6 @@ A gradle wrapper is provided, optionally you can use your system gradle by repla
 - ../gradlew publishToMavenLocal -Ptarget=PLATFORM
 
 Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
-
-#### Notes for Ubuntu 14.04
-
-The compiled library support Ubuntu 16.04 and higher. If you want to compile for Ubuntu 14.04, these instructions might help.
-
-Ubuntu 14.04 requires some extra packages that do not ship with it by default, including Java 8 and Swig 3.0.8. To install
-
-- sudo add-apt-repository ppa:openjdk-r/ppa
-- sudo apt-get update
-- sudo apt-get install openjdk-8-jdk
-- sudo update-alternatives --config java
-- sudo update-alternatives --config javac
-
-Swig 3.0.8 can be installed using the 16.04 package. It can be downloaded from https://packages.ubuntu.com/xenial/amd64/swig3.0/download
-
-
-
 
 
 ### Compiling Java library
