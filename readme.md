@@ -141,4 +141,18 @@ Note that if you want to publish multiple platform libraries you only have to ru
 - cd ihmc-ethercat-master
 - ./gradlew publishToMavenLocal
 
+### Compiling with Docker
 
+Run `./buildWithDocker.sh`
+
+The Docker image is hosted at [https://hub.docker.com/r/ihmcrobotics/ethercat-master]().
+
+If changes to the Dockerfile are needed, build it with the following command, incrementing the version.
+Then, increment the version in the buildWithDocker.sh file before running.
+
+```
+# docker build --tag ihmcrobotics/ethercat-master:0.X .
+# docker rm ethercat-master
+```
+
+For more about IHMC Robotics's usage of Docker, see [https://github.com/ihmcrobotics/ihmc-open-robotics-software/tree/develop/docker]().

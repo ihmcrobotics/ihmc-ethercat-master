@@ -1,5 +1,6 @@
 # Top level directories to ignore
 /build
+/buildDocker
 /classes
 /bin
 /out
