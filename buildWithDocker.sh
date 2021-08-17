@@ -11,7 +11,7 @@ fi
 mkdir -p buildDocker
 
 if [ ! "$(sudo -u root docker ps -a | grep ethercat-master)" ]; then
-    echo "multisense not found. Running new container."
+    echo "ethercat-master not found. Running new container."
     sudo -u root docker run \
         --tty \
         --interactive \
