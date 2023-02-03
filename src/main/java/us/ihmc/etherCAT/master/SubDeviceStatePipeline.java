@@ -10,6 +10,7 @@ import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineTransition;
 
 public class SubDeviceStatePipeline
 {
+   private final Master mainDevice;
    private final Slave subDevice;
    
    
@@ -20,6 +21,7 @@ public class SubDeviceStatePipeline
    
    public SubDeviceStatePipeline(Master mainDevice, Slave subDevice)
    {
+      this.mainDevice = mainDevice;
       this.subDevice = subDevice;
       
       
@@ -116,6 +118,16 @@ public class SubDeviceStatePipeline
    private class DoSDOTransfers extends LightWeightPipelineTask
    {
       
+      /**
+       * Skip SDO transfer if the wkc is wrong
+       */
+      public boolean runNextImmediatly()
+      {
+         return mainDevice.getActualWorkingCounter() != mainDevice.getExpectedWorkingCounter();
+      }
+      
+      
+      
       int currentSDO = 0;
 
       @Override
@@ -127,9 +139,13 @@ public class SubDeviceStatePipeline
          {
             
             // Loop trough all SDO's till a transaction is made
-            for(;currentSDO < sdos.size(); currentSDO++)
+            
+            while(currentSDO < sdos.size())
             {
-               if(sdos.get(currentSDO).update())
+               int sdoToUpdate = currentSDO;
+               currentSDO++;
+               
+               if(sdos.get(sdoToUpdate).update())
                {
                   break;
                }

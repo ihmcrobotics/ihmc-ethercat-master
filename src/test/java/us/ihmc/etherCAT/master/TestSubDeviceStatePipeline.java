@@ -1,9 +1,13 @@
 package us.ihmc.etherCAT.master;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.nio.ByteBuffer;
 
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper.OPTION;
 import org.junit.jupiter.api.Test;
 
+import us.ihmc.etherCAT.master.Slave.State;
 import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineExecutor;
 
 public class TestSubDeviceStatePipeline
@@ -26,6 +30,12 @@ public class TestSubDeviceStatePipeline
          {
             return subDevice.state.ordinal();
          }
+         
+         @Override
+         public int getExpectedWorkingCounter()
+         {
+            return State.OP.ordinal();
+         }
       };
       
       master.setReadRXErrorStatistics(true);
@@ -45,15 +55,23 @@ public class TestSubDeviceStatePipeline
 
          executor.execute(runtime);
          
+         if(i == 89)
+         {
+            subDevice.state  = State.SAFE_OPERR;
+         }
          
          
-         System.out.println(subDevice.state);
+         
+         System.out.println(subDevice.getHouseholderState());
       }
+      
+      assertEquals(subDevice.state, State.OP);
    }
 
    private class TestSubdevice extends Slave
    {
       private State state = State.OFFLINE;
+      private State retState = State.OFFLINE;
 
       public TestSubdevice()
       {
@@ -65,13 +83,14 @@ public class TestSubDeviceStatePipeline
       {
          if(state != State.OP)
          {
-            state = state.values()[state.ordinal() + 1];
+            state = State.values()[state.ordinal() + 1];
          }
       }
       
       @Override
       boolean updateEtherCATState()
       {
+         retState = state;
          return true;
       }
       
@@ -84,7 +103,7 @@ public class TestSubDeviceStatePipeline
       @Override
       State getHouseholderState()
       {
-         return state;
+         return retState;
       }
 
       @Override
