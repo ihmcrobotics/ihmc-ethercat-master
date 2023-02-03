@@ -1180,9 +1180,8 @@ public class Slave
    }
    
    /**
-    * Register a SDO with the Master. 
+    * Register a SDO object before cyclic operation. The SDO object can request data without blocking from the control thread.
     * 
-    *  This is purely a convenience function for when master.registerSDO is not available (like inside a Slave definition).
     * 
     * @param sdo SDO to register
     */
@@ -1190,6 +1189,14 @@ public class Slave
    {
       if(sdo.getSlave() == this)
       {
+         for(int i = 0; i < SDOs.size(); i++)
+         {
+            if(SDOs.get(i).equals(sdo))
+            {
+               throw new RuntimeException("Cannot register " + sdo + " twice.");
+            }
+         }
+         
          SDOs.add(sdo);         
       }
       else

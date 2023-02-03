@@ -69,7 +69,6 @@ public class Master implements MasterInterface
    
    private int ethercatReceiveTimeout = soemConstants.EC_TIMEOUTRET;
    
-   private final ArrayList<SDO> sdos = new ArrayList<>();
    
    
    private boolean requireAllSlaves = true;
@@ -161,18 +160,15 @@ public class Master implements MasterInterface
    /**
     * Register a SDO object before cyclic operation. The SDO object can request data without blocking from the control thread.
     * 
+    * This just calls sdo.getSlave().registerSDO() and is here for backwards compatibility
+    * 
     * @param sdo
     */
+   @Deprecated
    public void registerSDO(SDO sdo)
    {
-      for(int i = 0; i < sdos.size(); i++)
-      {
-         if(sdos.get(i).equals(sdo))
-         {
-            throw new RuntimeException("Cannot register " + sdo + " twice.");
-         }
-      }
-      sdos.add(sdo);
+      sdo.getSlave().registerSDO(sdo);
+      
    }
    
    /**
@@ -751,11 +747,6 @@ public class Master implements MasterInterface
    public void disableRecovery()
    {
       disableRecovery = true;
-   }
-
-   ArrayList<SDO> getSDOs()
-   {
-      return sdos;
    }
 
    /**
