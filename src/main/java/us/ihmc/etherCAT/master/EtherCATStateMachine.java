@@ -18,6 +18,8 @@ import us.ihmc.soem.generated.soem;
 class EtherCATStateMachine
 {
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
+   
+   public static boolean DEBUG = false;
 
    private final Master master;
    private Slave[] slaves;
@@ -58,6 +60,10 @@ class EtherCATStateMachine
       currentState = readState;
    }
    
+   private void info(String msg)
+   {
+      System.out.println("[EtherCATStateMachine] " + msg);
+   }
    
    void disableRecovery()
    {
@@ -71,6 +77,12 @@ class EtherCATStateMachine
          startTime = System.nanoTime();
       }
       runTime = System.nanoTime() - startTime;
+      
+      if(DEBUG)
+      {
+         info(" - " + currentState.getClass().getSimpleName());
+      }
+      
       currentState = currentState.next();
    }
    

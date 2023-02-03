@@ -30,12 +30,12 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 # Install Gradle
-ARG gradleVersion=6.9
-RUN curl -sL https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip -o gradle.zip
-RUN unzip -q gradle.zip -d gradle
-RUN mv gradle/gradle-$gradleVersion/ /opt/.
-RUN ln -s /opt/gradle-$gradleVersion/ /opt/gradle
-RUN ln -s /opt/gradle/bin/gradle /usr/bin/gradle
+#ARG gradleVersion=7.3.3
+#RUN curl -sL https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip -o gradle.zip
+#RUN unzip -q gradle.zip -d gradle
+#RUN mv gradle/gradle-$gradleVersion/ /opt/.
+#RUN ln -s /opt/gradle-$gradleVersion/ /opt/gradle
+#RUN ln -s /opt/gradle/bin/gradle /usr/bin/gradle
 
 RUN apt-add-repository --yes ppa:halodirobotics/ppa  \
  && apt-get --quiet 2 --yes update \
