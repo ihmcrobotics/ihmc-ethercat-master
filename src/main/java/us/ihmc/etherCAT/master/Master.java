@@ -12,6 +12,7 @@ import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_context;
+import us.ihmc.soem.generated.ecx_portt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
@@ -47,6 +48,7 @@ public class Master implements MasterInterface
    private final String iface;
    
    private ecx_context context = null;
+   private ecx_portt port = null;
    private Slave[] slaveMap;
    
    private ByteBuffer ioMap;
@@ -71,6 +73,8 @@ public class Master implements MasterInterface
    
    
    private boolean requireAllSlaves = true;
+   private boolean readRXErrorStatistics = false;
+   private boolean disableRecovery = false;
    
    /**
     * Create new EtherCAT master.
@@ -267,6 +271,8 @@ public class Master implements MasterInterface
          throw new IOException("Cannot initialize registeredSlaves");
       }
       
+      port = context.getPort();
+      
       if(enableDC)
       {
          boolean dcCapable = soem.ecx_configdc(context) == (short)1;
@@ -337,7 +343,7 @@ public class Master implements MasterInterface
                throw new IOException("Invalid slave configuration for slave " + slave.getAliasAddress() + ":" + slave.getPosition() + ". Invalid vendor and/or product code");
             }
             
-            slave.configure(this, context, ec_slave, i + 1, enableDC, cycleTimeInNs);
+            slave.configure(this, context, port, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
          }
          else
@@ -349,7 +355,7 @@ public class Master implements MasterInterface
             else
             {
                slave = new UnconfiguredSlave(ec_slave.getName(), (int)ec_slave.getEep_man(), (int)ec_slave.getEep_id(), alias, position);
-               slave.configure(this, getContext(), ec_slave, i + 1, false, cycleTimeInNs);
+               slave.configure(this, getContext(), port, ec_slave, i + 1, false, cycleTimeInNs);
                slaveMap[i] = slave;
                etherCATStatusCallback.notifyUnconfiguredSlave(slaveMap[i]);
             }
@@ -580,6 +586,13 @@ public class Master implements MasterInterface
          }
          
          this.actualWorkingCounter = wkc;
+         
+
+         for(int i = 0; i < slaveMap.length; i++)
+         {
+            slaveMap[i].updateStateVariables();
+         }
+         
          return wkc;
       }
    }
@@ -608,7 +621,7 @@ public class Master implements MasterInterface
    /**
     * Internal function. Get the actual working counter
     */
-   int getActualWorkingCounter()
+   public int getActualWorkingCounter()
    {
       return actualWorkingCounter;
    }
@@ -733,11 +746,11 @@ public class Master implements MasterInterface
    /**
     * Disable recovery for offline or faulted states. 
     * 
-    * Recommended for control systems where a loss of a state probaly has catastrophic consequences (for example, walking robots)
+    * Recommended for control systems where a loss of a state probably has catastrophic consequences (for example, walking robots)
     */
    public void disableRecovery()
    {
-      etherCATStateMachine.disableRecovery();
+      disableRecovery = true;
    }
 
    ArrayList<SDO> getSDOs()
@@ -755,5 +768,19 @@ public class Master implements MasterInterface
       return Collections.unmodifiableList(registeredSlaves);
    }
 
+   public boolean isReadRXErrorStatistics()
+   {
+      return readRXErrorStatistics;
+   }
+
+   public void setReadRXErrorStatistics(boolean readRXErrorStatistics)
+   {
+      this.readRXErrorStatistics = readRXErrorStatistics;
+   }
+
+   public boolean isRecoveryDisabled()
+   {
+      return disableRecovery;
+   }
    
 }

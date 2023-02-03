@@ -5,11 +5,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
+import javax.swing.text.StyledEditorKit.ForegroundAction;
+
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.etherCAT.master.SyncManager.MailbusDirection;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_context;
+import us.ihmc.soem.generated.ecx_portt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 
@@ -25,7 +28,7 @@ public class Slave
    public static final int MAX_DC_OFFSET_SAMLES = 10;
 
    public static final int ECT_SMT_SIZE = 8;
-   public static final int ECT_REG_WATCHDOG_DIV = 0x0400;
+   public static final int ECT_REG_WATCHDOG_DIV =  0x0400;
    public static final int ECT_REG_WATCHDOG_PDO_TIMEOUT = 0x0420;
    
    /**
@@ -48,6 +51,7 @@ public class Slave
 
    private Master master;
    private ecx_context context;
+   private ecx_portt port;
    private ec_slavet ec_slave;
    private int slaveIndex;
    private final ByteBuffer dcDiff = ByteBuffer.allocateDirect(4);
@@ -56,7 +60,12 @@ public class Slave
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
 
-   private volatile State state = State.OFFLINE; 
+   
+   private State houseHolderState = State.OFFLINE;
+   private State state = State.OFFLINE; 
+   
+   private int houseHolderAlStatusCode = 0;
+   private int alStatusCode = 0;
    
    private long cycleTimeInNs;
    
@@ -66,6 +75,15 @@ public class Slave
    private int pdoWatchdogTimeout = 0;
    
    private boolean dcClockStable = false;
+   
+   
+   private final ByteBuffer alStateBuffer = ByteBuffer.allocateDirect(3 * Short.BYTES);
+   private final ByteBuffer rxErrorBuffer = ByteBuffer.allocateDirect(20 * Short.BYTES);
+   
+   
+   private int[] rxFrameErrorCounter = new int[4];
+   private int[] rxPhysicalLayerErrorCounter = new int[4];
+   private int[] lostLinkCounter = new int[4];
    
    /**
     * Create a new slave and set the address 
@@ -91,6 +109,7 @@ public class Slave
 
       sdoBuffer.order(ByteOrder.LITTLE_ENDIAN); // EtherCAT is a LITTLE ENDIAN protocol
       dcDiff.order(ByteOrder.LITTLE_ENDIAN);
+      alStateBuffer.order(ByteOrder.LITTLE_ENDIAN);
    }
 
    final long getVendor()
@@ -123,10 +142,11 @@ public class Slave
     * @param slaveIndex
     */
    
-   void configure(Master master, ecx_context context, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
+   void configure(Master master, ecx_context context, ecx_portt port, ec_slavet slave, int slaveIndex, boolean enableDC, long cycleTimeInNs)
    {
       this.master = master;
       this.context = context;
+      this.port = port;
       this.ec_slave = slave;
       this.slaveIndex = slaveIndex;
       this.cycleTimeInNs = cycleTimeInNs;
@@ -151,7 +171,7 @@ public class Slave
          pdoWatchdogBuffer.order(ByteOrder.LITTLE_ENDIAN);
          
          master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.READ_WATCHDOG_DIV);
-         int wc = soem.ecx_FPRD(context.getPort(), ec_slave.getConfigadr(), ECT_REG_WATCHDOG_DIV, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
+         int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), ECT_REG_WATCHDOG_DIV, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
          if(wc > 0)
          {
             int watchdogDivRaw = pdoWatchdogBuffer.getInt(0);
@@ -160,7 +180,7 @@ public class Slave
             int watchdogPDORaw = pdoWatchdogTimeout / watchdogDiv;
             pdoWatchdogBuffer.putInt(watchdogPDORaw);
             master.getEtherCATStatusCallback().notifyWatchdogConfiguration(this, pdoWatchdogTimeout, watchdogDiv, watchdogPDORaw);
-            wc = soem.ecx_FPWR(context.getPort(), ec_slave.getConfigadr(), ECT_REG_WATCHDOG_PDO_TIMEOUT, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
+            wc = soem.ecx_FPWR(port, ec_slave.getConfigadr(), ECT_REG_WATCHDOG_PDO_TIMEOUT, 4, pdoWatchdogBuffer, soemConstants.EC_TIMEOUTRET);
             if(wc == 0)
             {
                master.getEtherCATStatusCallback().notifyWatchdogConfigurationError(this);
@@ -753,14 +773,7 @@ public class Slave
     */
    public int getALStatusCode()
    {
-      if(ec_slave != null)
-      {
-         return ec_slave.getALstatuscode();
-      }
-      else
-      {
-         return 0x0000;
-      }
+      return alStatusCode;
    }
 
    /**
@@ -822,9 +835,8 @@ public class Slave
       return state;
    }
 
-   private State getStateFromEcSlave()
+   private State getStateFromEcSlave(int state)
    {
-      int state = ec_slave.getState();
       if (state == ec_state.EC_STATE_BOOT.swigValue())
       {
          return State.BOOT;
@@ -882,7 +894,7 @@ public class Slave
     */
    public boolean writeRegister(int register, ByteBuffer value)
    {
-      int wkc = soem.ecx_FPWR(context.getPort(), ec_slave.getConfigadr(), register, value.remaining(), value, soemConstants.EC_TIMEOUTRET);
+      int wkc = soem.ecx_FPWR(port, ec_slave.getConfigadr(), register, value.remaining(), value, soemConstants.EC_TIMEOUTRET);
       if(wkc == soemConstants.EC_NOFRAME)
       {
          return false;
@@ -899,7 +911,7 @@ public class Slave
    private int getDCSyncOffset()
    {
 
-      int wkc = soem.ecx_FPRD(context.getPort(), ec_slave.getConfigadr(), soemConstants.ECT_REG_DCSYSDIFF, 4, dcDiff, soemConstants.EC_TIMEOUTRET);
+      int wkc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soemConstants.ECT_REG_DCSYSDIFF, 4, dcDiff, soemConstants.EC_TIMEOUTRET);
       if (wkc == soemConstants.EC_NOFRAME)
       {
          System.err.println("Cannot query DC Offset");
@@ -913,14 +925,45 @@ public class Slave
     * Internal function. Update slave state from householding thread.
     */
    
-   void updateEtherCATState()
+   boolean updateEtherCATState()
    {
-      State previousState = this.state;
-      this.state = getStateFromEcSlave();
       
-      if(previousState != this.state)
+      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_ALSTAT, 3, alStateBuffer, soemConstants.EC_TIMEOUTRET);
+      
+      if(wc > 0)
       {
-         master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
+         State previousState = this.houseHolderState;
+         this.houseHolderState = getStateFromEcSlave(alStateBuffer.getShort(0));
+         this.houseHolderAlStatusCode = alStateBuffer.getShort(2);
+         if(previousState != this.houseHolderState)
+         {
+            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
+         }
+         return true;
+      }
+      else
+      {
+         master.getEtherCATStatusCallback().notifyGetSlaveStateError(this);
+         return false;
+      }
+   }
+   
+   /**
+    * Internal function. Update RX Erros and link errors from householder thread
+    * @return
+    */
+   boolean updateRXTXStats()
+   {
+      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_RXERR, 20, rxErrorBuffer, soemConstants.EC_TIMEOUTRET);
+      
+      if(wc > 0)
+      {
+         return true;
+      }
+      else
+      {
+         master.getEtherCATStatusCallback().notifyGetSlaveRXError(this);
+         return false;
       }
    }
    
@@ -1153,5 +1196,32 @@ public class Slave
       {
          throw new RuntimeException("Cannot register " + sdo + " to " + toString());
       }
+   }
+
+   /**
+    * Update state variables read in the householder thread
+    */
+   public void updateStateVariables()
+   {
+      this.state = this.houseHolderState;
+      this.alStatusCode = this.houseHolderAlStatusCode;
+      
+      for(int i = 0; i < 4; i++)
+      {
+         rxFrameErrorCounter[i] = rxErrorBuffer.get(0x0 + 2 * i);
+         rxPhysicalLayerErrorCounter[i] = rxErrorBuffer.get(0x1 + 2 * i);
+         lostLinkCounter[i] = rxErrorBuffer.get(0x10 + i);
+      }
+   }
+   
+   
+   State getHouseholderState()
+   {
+      return this.houseHolderState;
+   }
+
+   public ArrayList<SDO> getSDOs()
+   {
+      return SDOs;
    }
 }

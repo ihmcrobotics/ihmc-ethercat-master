@@ -211,11 +211,21 @@ public class EtherCATStatusCallback
       System.err.println("[" + System.nanoTime() + "] Cannot configure PDO watchdog timeout.");
    }
 
+   public void notifyGetSlaveStateError(Slave slave)
+   {
+      System.err.println("[" + System.nanoTime() + "] Cannot read state from slave ." + slave.toString());
+   }
+   
+   public void notifyGetSlaveRXError(Slave slave)
+   {
+      System.err.println("[" + System.nanoTime() + "] Cannot read RX error stats from slave ." + slave.toString());
+   }
+   
    public void notifyWatchdogConfiguration(Slave slave, int pdoWatchdogTimeout, int watchdogDiv, int watchdogPDORaw)
    {
       if(TRACE)
       {
-         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog for " + slave.getName() + " to " + pdoWatchdogTimeout + " ns. Divisor " + watchdogDiv + ", setting to raw " + watchdogPDORaw);
+         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog for " + slave.toString() + " to " + pdoWatchdogTimeout + " ns. Divisor " + watchdogDiv + ", setting to raw " + watchdogPDORaw);
       }
    }
    
@@ -223,7 +233,7 @@ public class EtherCATStatusCallback
    {
       if(TRACE)
       {
-         System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.getName() + ". Input size: " + inputSize + " bits");
+         System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.toString() + ". Input size: " + inputSize + " bits");
          if(inputSize > 0) 
             System.out.print(" offset " + inputOffset + "byte : " + inputBitoffset + " bit");
          System.out.print(". Output size: " + outputSize + " bits");
