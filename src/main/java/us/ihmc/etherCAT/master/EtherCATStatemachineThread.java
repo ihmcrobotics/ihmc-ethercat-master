@@ -89,7 +89,9 @@ class EtherCATStatemachineThread
 
    private void executeStatemachine()
    {
+      long startTime = System.nanoTime();
       master.doEtherCATStateControl();
+      durationInThread = System.nanoTime() - startTime;
    }
 
    public void run()
