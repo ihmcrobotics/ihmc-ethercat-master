@@ -515,7 +515,7 @@ public class Master implements MasterInterface
    /**
     * Stop the EtherCAT master
     * 
-    * This function will stop the house holder thread and bring all registeredSlaves to the INIT state.
+    * This function will bring all registeredSlaves to the INIT state. Call from the householder thread
     * 
     * Note: Calling the slave shutdown sequence is the responsibility of the caller. This function will only shutdown the master.
     * 

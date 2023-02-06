@@ -1231,4 +1231,19 @@ public class Slave
    {
       return SDOs;
    }
+   
+   /**
+    * Return the number of ports for this device.
+    * 
+    * This will return 4 by default, as that is the maximum ports an EtherCAT device can have.
+    * Can be overloaded to return the actual number of ports.
+    * 
+    * This could be useful for visualizing RX errors, and only showing the active ports instead of 4.
+    * 
+    * @return Number of ports for this device.
+    */
+   public int getNumberOfPorts()
+   {
+      return 4;
+   }
 }
