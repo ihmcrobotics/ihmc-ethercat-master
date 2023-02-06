@@ -31,6 +31,8 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    private static final long DEFAULT_SHUTDOWN_TIMEOUT_NS = 5000000000L;
    
    private final RealtimeThread realtimeThread;
+   private final EtherCATStatemachineThread statemachineThread;
+   
    private final Master master;
    private boolean enableDC;
    
@@ -42,7 +44,6 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    
    private long currentCycleTimestamp = 0;
    private long etherCATTransactionTime = 0;
-   private long etherCATStateMachineTime = 0;
    private long lastCycleDuration = 0;
    private long idleTime = 0;
    private long startTimeFreeRun = 0;
@@ -94,6 +95,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
             EtherCATRealtimeThread.this.run();
          }
       });
+      
 
 
       this.cycleTimeInNs = period.asNanoseconds();
@@ -106,6 +108,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          master.disableRecovery();// Disable recovery mode because it doesn't work under DC at the moment
       }
       
+      this.statemachineThread = new EtherCATStatemachineThread(priorityParameters, master);
 
       Runtime.getRuntime().addShutdownHook(new Thread()
       {
@@ -236,22 +239,25 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       
       while(running)
       {
-         if(waitForNextPeriodAndDoTransfer() && inOP)
-         {            
-            currentCycleTimestamp = calculateCurrentCycleTimestamp();  
-            doControl();
-         }
-         else if (!inOP)
-         {
-            if(master.getState() == State.OP)
+         if(waitForNextPeriodAndDoTransfer())
+         {      
+            if(inOP)
             {
-               inOP = true;
+               currentCycleTimestamp = calculateCurrentCycleTimestamp();  
+               doControl();
             }
+            else if (!inOP)
+            {
+               if(master.getState() == State.OP)
+               {
+                  inOP = true;
+               }
+            }
+            
+            statemachineThread.releaseCyclicAndStartStateControl();
          }
          
          doReporting();
-         
-         
       }
       
       long startShutdownTime = getCurrentMonotonicClockTime();
@@ -284,33 +290,39 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
       long currentTime = getCurrentMonotonicClockTime();
       lastCycleDuration =  currentTime - cycleStartTime;
       cycleStartTime = currentTime;
-      
+                  
       if(idleTime > 0)
       {
-         long startTime = getCurrentMonotonicClockTime();
-         master.send();
-         int wkc = master.receive();
-         
-         if(wkc == soem.EC_NOFRAME)
+         if(statemachineThread.tryLockCyclic())
          {
-            datagramLost();
-            etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
+         
+            long startTime = getCurrentMonotonicClockTime();
+            master.send();
+            int wkc = master.receive();
+            
+            if(wkc == soem.EC_NOFRAME)
+            {
+               datagramLost();
+               etherCATTransactionTime = getCurrentMonotonicClockTime() - startTime;
+               return false;
+            }
+            
+            dcTime = master.getDCTime();
+            if(inOP && wkc != master.getExpectedWorkingCounter())
+            {
+               workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
+            }
+            
+   	      long endTime = getCurrentMonotonicClockTime();
+            etherCATTransactionTime = endTime - startTime;
+            
+            return true;
+         }
+         else
+         {
+            statemachineDeadlineMissed();
             return false;
          }
-         
-         dcTime = master.getDCTime();
-         if(inOP && wkc != master.getExpectedWorkingCounter())
-         {
-            workingCounterMismatch(master.getExpectedWorkingCounter(), wkc);
-         }
-         
-	      long ethercatStateMachineStartTime = getCurrentMonotonicClockTime();
-         master.doEtherCATStateControl();
-	      long endTime = getCurrentMonotonicClockTime();
-         etherCATTransactionTime = endTime - startTime;
-         etherCATStateMachineTime = endTime - ethercatStateMachineStartTime;
-         
-         return true;
       }
       else
       {
@@ -500,10 +512,13 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     */
    public long getEtherCATStateMachineTime()
    {
-      return etherCATStateMachineTime;
+      return statemachineThread.getDuration();
    }
 
    /**
+    * Set affinity for the cyclic thread. 
+    * 
+    * No affinity is set for the EtherCAT statemachine thread
     * 
     * @see us.ihmc.realtime.RealtimeThread#setAffinity(Processor...)
     */
@@ -511,7 +526,15 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       realtimeThread.setAffinity(processors);
    }
-
+   
+   /**
+    * Set the affinity of the EtherCAT statemachine thread
+    * @param processors
+    */
+   public void setEthercatStatemachineThreadAffinity(Processor... processors )
+   {
+      statemachineThread.setAffinity(processors);
+   }
 
    /**
     * Returns a new unmoddifiable list with all slaves registered with the master.
@@ -541,6 +564,16 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
     * Callback to notify controller of missed deadline
     */
    protected abstract void deadlineMissed();
+   
+   /**
+    * Callback to notify controller of a missed deadline due to the statemachine thread still running
+    * 
+    * Defaults to call deadlineMissed
+    */
+   protected void statemachineDeadlineMissed()
+   {
+      deadlineMissed();
+   }
    
    /**
     * Callback called cyclically to do the control loop. 

@@ -3,6 +3,7 @@ package us.ihmc.etherCAT.master;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import us.ihmc.affinity.Processor;
 import us.ihmc.realtime.PriorityParameters;
 import us.ihmc.realtime.RealtimeThread;
 
@@ -33,6 +34,9 @@ class EtherCATStatemachineThread
    private Thread javaThread = null;
 
    private final Master master;
+
+   private long durationInThread = 0;
+   private long durationInCyclic = 0;
 
    public EtherCATStatemachineThread(PriorityParameters priorityParameters, Master master)
    {
@@ -71,6 +75,9 @@ class EtherCATStatemachineThread
       // Set the state to CYCLIC_DONE. If the state is not CYCLIC_RUNNING, crash
       if (state.compareAndSet(CYCLIC_RUNNING, CYCLIC_DONE))
       {
+         // Copy the duration variable here, as nothing will access it.
+         durationInCyclic = durationInThread;
+
          LockSupport.unpark(javaThread);
       }
       else
@@ -124,6 +131,15 @@ class EtherCATStatemachineThread
       }
 
       master.shutdown();
+   }
 
+   public void setAffinity(Processor... processors)
+   {
+      thread.setAffinity(processors);
+   }
+
+   public long getDuration()
+   {
+      return durationInCyclic;
    }
 }
