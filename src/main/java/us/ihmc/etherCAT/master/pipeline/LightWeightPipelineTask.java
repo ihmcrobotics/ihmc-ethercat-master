@@ -1,18 +1,13 @@
 package us.ihmc.etherCAT.master.pipeline;
 
-public abstract class LightWeightPipelineTask
-{
-   private LightWeightPipelineTask nextTask;
-   
+public interface LightWeightPipelineTask
+{   
    /**
-    * If true, do not run execute but run the next task immediatly
+    * If true, do not run execute but run the next task immediately
     * 
     * @return
     */
-   public boolean runNextImmediatly()
-   {
-      return false;
-   }
+   public boolean skipTask();
    
    
    /**
@@ -20,21 +15,5 @@ public abstract class LightWeightPipelineTask
     * @param runtime TODO
     * @return True if the task is finished
     */
-   public abstract boolean execute(long runtime);
-   
-   
-   public void setNextTask(LightWeightPipelineTask nextTask)
-   {
-      this.nextTask = nextTask;
-   }
-   
-   
-   /**
-    * Return the next task
-    * @return
-    */
-   LightWeightPipelineTask next()
-   {
-      return nextTask;
-   }
+   public boolean execute(long runtime);
 }

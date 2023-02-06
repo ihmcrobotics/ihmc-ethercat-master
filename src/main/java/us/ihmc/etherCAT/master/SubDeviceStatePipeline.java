@@ -1,12 +1,11 @@
 package us.ihmc.etherCAT.master;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import us.ihmc.etherCAT.master.Slave.State;
-import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineFallTrough;
-import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineBin;
+import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineExecutor;
 import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineTask;
-import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineTransition;
 
 public class SubDeviceStatePipeline
 {
@@ -17,7 +16,9 @@ public class SubDeviceStatePipeline
    private boolean hasReachedOp = false;
    private int previousWkc = -1;
    
-   private final LightWeightPipelineBin pipelineBin;
+   
+   private final List<LightWeightPipelineTask> tasks = new ArrayList<>();
+   
    
    public SubDeviceStatePipeline(Master mainDevice, Slave subDevice)
    {
@@ -27,60 +28,24 @@ public class SubDeviceStatePipeline
       
       ReadDeviceState readDeviceState = new ReadDeviceState();
       ReadRXTXErrors readRXTXErrors = new ReadRXTXErrors();
-      DoSDOTransfers doSDOTransfers = new DoSDOTransfers();
       DoEtherCATStateControl doEtherCATStateControl = new DoEtherCATStateControl();
-      LightWeightPipelineFallTrough finalState = new LightWeightPipelineFallTrough();
-      
-      LightWeightPipelineTransition stateControlTransition = new LightWeightPipelineTransition(() ->
-      {
-         if(subDevice.getHouseholderState() == State.OP)
-         {
-            hasReachedOp = true;
-            return doSDOTransfers;
-         }
-         else if (mainDevice.isRecoveryDisabled() && hasReachedOp)
-         {
-            return finalState;
-         }
-         else
-         {
-            return doEtherCATStateControl;
-         }
-      });
+      DoSDOTransfers doSDOTransfers = new DoSDOTransfers();
       
       
-            
-      LightWeightPipelineTransition checkWorkingCounter = new LightWeightPipelineTransition(() ->
-      {
-            if(mainDevice.getActualWorkingCounter() != previousWkc)
-            {
-               previousWkc = mainDevice.getActualWorkingCounter();
-               return readDeviceState;
-            }
-            else if(mainDevice.isReadRXErrorStatistics())
-            {
-               return readRXTXErrors;
-            }
-            else
-            {
-               return stateControlTransition;
-            }
-      });
       
-      readDeviceState.setNextTask(readRXTXErrors);
-      readRXTXErrors.setNextTask(stateControlTransition);
-      doEtherCATStateControl.setNextTask(finalState);
-      
-      pipelineBin = new LightWeightPipelineBin(checkWorkingCounter, finalState);
-      
+      tasks.add(readDeviceState);
+      tasks.add(readRXTXErrors);
+      tasks.add(doEtherCATStateControl);
+      tasks.add(doSDOTransfers);
    }
    
-   public LightWeightPipelineBin getPipelineBin()
+   public void addToExecutor(LightWeightPipelineExecutor executor)
    {
-      return pipelineBin;
+      executor.addTasks(tasks);
    }
 
-   private class ReadDeviceState extends LightWeightPipelineTask
+
+   private class ReadDeviceState implements LightWeightPipelineTask
    {
 
       @Override
@@ -89,9 +54,27 @@ public class SubDeviceStatePipeline
          subDevice.updateEtherCATState();
          return true;
       }
+
+      /**
+       * Skip this task when the working counter matches the previous working counter
+       */
+      @Override
+      public boolean skipTask()
+      {
+         if(mainDevice.getActualWorkingCounter() == previousWkc)
+         {
+            return true;
+         }
+         else
+         {
+            previousWkc = mainDevice.getActualWorkingCounter();
+            return false;
+         }
+
+      }
    }
    
-   private class ReadRXTXErrors extends LightWeightPipelineTask
+   private class ReadRXTXErrors implements LightWeightPipelineTask
    {
 
       @Override
@@ -100,10 +83,19 @@ public class SubDeviceStatePipeline
          subDevice.updateRXTXStats();
          return true;
       }
+
+      /**
+       * Skip if reading rx error statistics is disabled
+       */
+      @Override
+      public boolean skipTask()
+      {
+         return !mainDevice.isReadRXErrorStatistics();
+      }
       
    }
    
-   private class DoEtherCATStateControl extends LightWeightPipelineTask
+   private class DoEtherCATStateControl implements LightWeightPipelineTask
    {
 
       @Override
@@ -112,18 +104,51 @@ public class SubDeviceStatePipeline
          subDevice.doEtherCATStateControl(runtime);
          return true;
       }
+
+      /**
+       * Skip this task if the slave is in OP, or has reached OP and recover has been disabled
+       */
+      @Override
+      public boolean skipTask()
+      {
+         if(subDevice.getHouseholderState() == State.OP)
+         {
+            hasReachedOp = true;
+            return true;
+         }
+         else if (mainDevice.isRecoveryDisabled() && hasReachedOp)
+         {
+            return true;
+         }
+         else
+         {
+            return false;
+         }
+
+      }
       
    }
    
-   private class DoSDOTransfers extends LightWeightPipelineTask
+   private class DoSDOTransfers implements LightWeightPipelineTask
    {
       
       /**
        * Skip SDO transfer if the wkc is wrong
        */
-      public boolean runNextImmediatly()
+      public boolean skipTask()
       {
-         return mainDevice.getActualWorkingCounter() != mainDevice.getExpectedWorkingCounter();
+         if( mainDevice.getActualWorkingCounter() != mainDevice.getExpectedWorkingCounter() )
+         {           
+            return true;
+         }
+         else if (subDevice.getHouseholderState() != State.OP)
+         {
+            return true;
+         }
+         else
+         {
+            return false;
+         }
       }
       
       

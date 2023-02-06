@@ -4,13 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.ByteBuffer;
 
-import org.apache.commons.lang3.text.translate.NumericEntityUnescaper.OPTION;
 import org.junit.jupiter.api.Test;
 
 import us.ihmc.etherCAT.master.Slave.State;
-import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineExecutor;
 
-public class TestSubDeviceStatePipeline
+public class TestEtherCATStateMachine
 {
    @Test
    public void testSubDevicePipeline()
@@ -25,6 +23,8 @@ public class TestSubDeviceStatePipeline
       
       Master master = new Master("/dev/null")
       {
+         long samples = EtherCATStateMachine.MINIMUM_JITTER_SAMPLES - 3;
+         
          @Override
          public int getActualWorkingCounter()
          {
@@ -36,37 +36,50 @@ public class TestSubDeviceStatePipeline
          {
             return State.OP.ordinal();
          }
+         
+         @Override
+         public long getJitterEstimate()
+         {
+            return 1000;
+         }
+         
+         @Override
+         public long getJitterSamples()
+         {
+            return samples++;
+         }
       };
       
       master.setReadRXErrorStatistics(true);
+      master.enableDC(1000000);
+      
 
-      SubDeviceStatePipeline pipeline = new SubDeviceStatePipeline(master, subDevice);
-
-      LightWeightPipelineExecutor executor = new LightWeightPipelineExecutor(pipeline.getPipelineBin());
-
-      long startTime = System.nanoTime();
+      
+      EtherCATStateMachine stateMachine = new EtherCATStateMachine(master);
+      stateMachine.setSubdevices(new Slave[] { subDevice });
 
       for (int i = 0; i < 100; i++)
       {
-         long runtime = System.nanoTime() - startTime;
+         System.out.println("----");
          
          readSdo.requestNewData();
          writeSdo.write(10.0);
 
-         executor.execute(runtime);
+         stateMachine.runOnce();
          
-         if(i == 89)
+         if(i == 92)
          {
             subDevice.state  = State.SAFE_OPERR;
          }
          
-         
+         System.out.println(stateMachine.getExecutor().getLastExecutedTaskIndex() + ": " + stateMachine.getExecutor().getLastExectutedTaskName());
          
          System.out.println(subDevice.getHouseholderState());
       }
       
       assertEquals(subDevice.state, State.OP);
    }
+   
 
    private class TestSubdevice extends Slave
    {

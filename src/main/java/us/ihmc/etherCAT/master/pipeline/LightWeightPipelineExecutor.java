@@ -1,51 +1,66 @@
 package us.ihmc.etherCAT.master.pipeline;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LightWeightPipelineExecutor
 {
-   private final LightWeightPipelineTask initialTask;
+   private final List<LightWeightPipelineTask> tasks = new ArrayList<>();
+   private int currentTaskIndex = 0;
+   
+   private int lastExecutedTaskIndex = 0;
 
-   private LightWeightPipelineTask currentTask;
-
-   public LightWeightPipelineExecutor(LightWeightPipelineTask initialTask)
+   public LightWeightPipelineExecutor()
    {
-      this.initialTask = initialTask;
-      this.currentTask = initialTask;
+   }
+
+   private LightWeightPipelineTask currentTask()
+   {
+
+      return tasks.get(currentTaskIndex);
+   }
+   
+   public void addTask(LightWeightPipelineTask task)
+   {
+      tasks.add(task);
+   }
+   
+   public void addTasks(List<LightWeightPipelineTask> tasks)
+   {
+      this.tasks.addAll(tasks);
    }
 
    public void execute(long runtime)
    {
-      System.out.println("--");
-      System.out.println(currentTask);
-
-
-      while (currentTask.runNextImmediatly())
+      while (currentTask().skipTask())
       {
-         debug("Falling trough ", currentTask);
-         moveToNextTask(currentTask.next());
+         moveToNextTask();
       }
 
-      debug("Running ", currentTask);
-      if (currentTask.execute(runtime))
+      lastExecutedTaskIndex = currentTaskIndex;
+      if (currentTask().execute(runtime))
       {
-         moveToNextTask(currentTask.next());
+         moveToNextTask();
       }
 
    }
-
-   private void moveToNextTask(LightWeightPipelineTask next)
+   
+   public int getLastExecutedTaskIndex()
    {
-      currentTask = next;
-      
-      if (currentTask == null)
+      return lastExecutedTaskIndex;
+   }
+   
+   public String getLastExectutedTaskName()
+   {
+      return tasks.get(lastExecutedTaskIndex).getClass().getSimpleName();
+   }
+
+   private void moveToNextTask()
+   {
+      currentTaskIndex++;
+      if (currentTaskIndex >= tasks.size())
       {
-         System.out.println("Wrapping around, running initial task");
-         currentTask = initialTask;
+         currentTaskIndex = 0;
       }
    }
-
-   private void debug(String msg, LightWeightPipelineTask task)
-   {
-      System.out.println(msg + " " + task.getClass().getSimpleName());
-   }
-
 }

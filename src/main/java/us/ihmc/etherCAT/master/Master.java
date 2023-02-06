@@ -423,7 +423,7 @@ public class Master implements MasterInterface
       {
          startTime = getDCTime();
       }
-      etherCATStateMachine.setSlaves(slaveMap);
+      etherCATStateMachine.setSubdevices(slaveMap);
       
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
@@ -713,11 +713,11 @@ public class Master implements MasterInterface
    /**
     * Call this function cyclically, either in a separate thread or after receive().
     * 
-    * Make sure not to call this function concurrently with receive()
+    * Make sure not to call this function concurrently with send()/receive()
     */
    public void doEtherCATStateControl()
    {
-      etherCATStateMachine.doStateControl();
+      etherCATStateMachine.runOnce();
    }
    
    

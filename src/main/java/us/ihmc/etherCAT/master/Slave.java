@@ -5,8 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import javax.swing.text.StyledEditorKit.ForegroundAction;
-
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
 import us.ihmc.etherCAT.master.SyncManager.MailbusDirection;
 import us.ihmc.soem.generated.ec_slavet;
@@ -933,7 +931,9 @@ public class Slave
       if(wc > 0)
       {
          State previousState = this.houseHolderState;
-         this.houseHolderState = getStateFromEcSlave(alStateBuffer.getShort(0));
+         short newState = alStateBuffer.getShort(0);
+         this.ec_slave.setState(newState);
+         this.houseHolderState = getStateFromEcSlave(newState);
          this.houseHolderAlStatusCode = alStateBuffer.getShort(2);
          if(previousState != this.houseHolderState)
          {
