@@ -126,6 +126,11 @@ class EtherCATStatemachineThread
             {
                if (!state.compareAndSet(STATE_CONTROL_RUNNING, STATE_CONTROL_DONE))
                {
+                  if(currentState == SHUTDOWN)
+                  {
+                     break;
+                  }
+                  
                   throw new RuntimeException("Illegal state " + state.get());
                }
             }
@@ -143,5 +148,10 @@ class EtherCATStatemachineThread
    public long getDuration()
    {
       return durationInCyclic;
+   }
+
+   public void shutdown()
+   {
+      state.set(SHUTDOWN);
    }
 }

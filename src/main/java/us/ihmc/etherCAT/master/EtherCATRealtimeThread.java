@@ -275,7 +275,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
          }
       }
       
-      master.shutdown();
+      statemachineThread.shutdown();
    }
 
    
