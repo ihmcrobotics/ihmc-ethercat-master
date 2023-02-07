@@ -269,6 +269,12 @@ public class Master implements MasterInterface
       
       port = context.getPort();
       
+      int currentState = soem.ecx_statecheck(context, 0, ec_state.EC_STATE_PRE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE);
+      if (currentState != ec_state.EC_STATE_PRE_OP.swigValue())
+      {
+         throw new IOException("Did not transfer to PREOP. Current State: " + ec_state.swigToEnum(currentState));
+      }
+
       if(enableDC)
       {
          boolean dcCapable = soem.ecx_configdc(context) == (short)1;
@@ -396,10 +402,11 @@ public class Master implements MasterInterface
          throw new IOException("Allocated insufficient memory for etherCAT I/O. Allocated " + processDataSize + ", required " + ioBufferSize + ". Set Master.IOMAP_SIZE to a large enough value.");
       }      
 
-
-      if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
+      
+      currentState = soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE);
+      if (currentState != ec_state.EC_STATE_SAFE_OP.swigValue())
       {
-         throw new IOException("Cannot transfer to SAFE_OP state");
+         throw new IOException("Did not transfer to SAFEOP. Current State: " + ec_state.swigToEnum(currentState));
       }      
        
       getEtherCATStatusCallback().trace(TRACE_EVENT.LINK_BUFFERS);
