@@ -3,6 +3,8 @@ package us.ihmc.etherCAT.master;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
+import us.ihmc.soem.generated.soem;
+
 public class EtherCATStatusCallback
 {
    private final boolean TRACE;
@@ -35,7 +37,6 @@ public class EtherCATStatusCallback
       RECOVER_SLAVE("Slave lost. Recovering slave"),
       RECOVERED_SLAVE("Sucessfully recovered slave"),
       SLAVE_FOUND("Slave found"),
-      SLAVE_LOST("Slave lost"),
       READ_WATCHDOG_DIV("Reading watchdog division time"),
       WRITE_WATCHDOG_TIMEOUT("Writing watchdog timeout"), IS_MASTER_DC("Is master DC");
 
@@ -81,7 +82,7 @@ public class EtherCATStatusCallback
       }
    }
 
-   public void notifyStateChange(Slave slave, Slave.State previousState, Slave.State currentState)
+   public void notifyStateChange(Slave slave, Slave.State previousState, Slave.State currentState, int alStatus)
    {
       if (TRACE)
       {
@@ -97,12 +98,12 @@ public class EtherCATStatusCallback
       case PRE_OP:
          break;
       case PRE_OPERR:
-         System.err.println(slave + " in PREOP+ERR. " + slave.getALStatusMessage());
+         System.err.println(slave + " in PREOP+ERR. " + soem.ec_ALstatuscode2string(alStatus));
          break;
       case SAFE_OP:
          break;
       case SAFE_OPERR:
-         System.err.println(slave + " in SAFEOP+ERR. " + slave.getALStatusMessage());
+         System.err.println(slave + " in SAFEOP+ERR. " + soem.ec_ALstatuscode2string(alStatus));
          break;
       case OP:
          break;
@@ -210,16 +211,7 @@ public class EtherCATStatusCallback
    {
       System.err.println("[" + System.nanoTime() + "] Cannot configure PDO watchdog timeout.");
    }
-
-   public void notifyGetSlaveStateError(Slave slave)
-   {
-      System.err.println("[" + System.nanoTime() + "] Cannot read state from slave " + slave.toString());
-   }
-   
-   public void notifyGetSlaveRXError(Slave slave)
-   {
-      System.err.println("[" + System.nanoTime() + "] Cannot read RX error stats from slave " + slave.toString());
-   }
+  
    
    public void notifyClearSlaveRXErrorFailure(Slave slave)
    {

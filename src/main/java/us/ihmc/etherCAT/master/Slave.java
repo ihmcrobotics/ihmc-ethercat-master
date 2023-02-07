@@ -919,25 +919,34 @@ public class Slave
    
    boolean updateEtherCATState()
    {
+      // Clear alStateBuffer
+      alStateBuffer.putShort(0, (short) 0);
+      alStateBuffer.putShort(2, (short) 0);
       
       int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_ALSTAT, 3, alStateBuffer, soemConstants.EC_TIMEOUTRET);
       
+      State previousState = this.houseHolderState;
       if(wc > 0)
       {
-         State previousState = this.houseHolderState;
-         short newState = alStateBuffer.getShort(0);
+         int newState = alStateBuffer.getShort(0) & 0xFFFF;
          this.ec_slave.setState(newState);
          this.houseHolderState = getStateFromEcSlave(newState);
-         this.houseHolderAlStatusCode = alStateBuffer.getShort(2);
+         this.houseHolderAlStatusCode = alStateBuffer.getShort(2) & 0xFFFF;
          if(previousState != this.houseHolderState)
          {
-            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState);
+            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState, this.alStatusCode);
          }
          return true;
       }
       else
       {
-         master.getEtherCATStatusCallback().notifyGetSlaveStateError(this);
+         this.houseHolderState = State.OFFLINE;
+         this.ec_slave.setState(ec_state.EC_STATE_NONE.swigValue());
+         
+         if(previousState != this.houseHolderState)
+         {
+            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState, 0);
+         }
          return false;
       }
    }
@@ -956,7 +965,6 @@ public class Slave
       }
       else
       {
-         master.getEtherCATStatusCallback().notifyGetSlaveRXError(this);
          return false;
       }
    }
@@ -1060,36 +1068,8 @@ public class Slave
       case OP:
          break;
       case OFFLINE:         
-         if(ec_slave.getIslost() == 0)
-         {
-            soem.ecx_statecheck(context, slaveIndex, ec_state.EC_STATE_OPERATIONAL.swigValue(), soemConstants.EC_TIMEOUTRET);
-            if(ec_slave.getState() == 0)
-            {
-               ec_slave.setIslost((short)1);
-               master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.SLAVE_LOST);
-            }
-         }
          break;
       }
-      
-      if(!dcEnabled && ec_slave.getIslost() > 0)
-      {
-         if(ec_slave.getState() == 0)
-         {
-            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECOVER_SLAVE);
-            if(soem.ecx_recover_slave(context, slaveIndex, soemConstants.EC_TIMEOUTRET3) > 0)
-            {
-               ec_slave.setIslost((short)0);
-               master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.RECOVERED_SLAVE);
-            }
-         }
-         else
-         {
-            ec_slave.setIslost((short)0);
-            master.getEtherCATStatusCallback().trace(this, TRACE_EVENT.SLAVE_FOUND);
-         }
-      }
-
    }
    
    
@@ -1230,9 +1210,9 @@ public class Slave
             
       for(int i = 0; i < 4; i++)
       {
-         rxFrameErrorCounter[i] = rxErrorBuffer.get(0x0 + 2 * i);
-         rxPhysicalLayerErrorCounter[i] = rxErrorBuffer.get(0x1 + 2 * i);
-         lostLinkCounter[i] = rxErrorBuffer.get(0x10 + i);
+         rxFrameErrorCounter[i] = rxErrorBuffer.get(0x0 + 2 * i) & 0xFF;
+         rxPhysicalLayerErrorCounter[i] = rxErrorBuffer.get(0x1 + 2 * i) & 0xFF;
+         lostLinkCounter[i] = rxErrorBuffer.get(0x10 + i) & 0xFF;
       }
       
       for(int i = 0; i < SDOs.size(); i++)

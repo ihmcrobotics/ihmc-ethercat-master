@@ -54,7 +54,14 @@ public class SubDeviceStatePipeline
       @Override
       public boolean execute(long runtime)
       {
-         subDevice.updateEtherCATState();
+         if(subDevice.updateEtherCATState())
+         {
+            refreshState = false;
+         }
+         else
+         {
+            refreshState = true;
+         }
          return true;
       }
 
@@ -65,6 +72,10 @@ public class SubDeviceStatePipeline
       public boolean skipTask()
       {
          if(refreshState)
+         {
+            return false;
+         }
+         else if  (subDevice.getState() == State.OFFLINE)
          {
             return false;
          }
