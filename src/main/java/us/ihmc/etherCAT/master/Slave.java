@@ -149,13 +149,7 @@ public class Slave
       this.slaveIndex = slaveIndex;
       this.cycleTimeInNs = cycleTimeInNs;
       
-      for(int i = 0; i < SDOs.size(); i++)
-      {
-         master.registerSDO(SDOs.get(i));
-      }
-
       configureImpl(master, slave, enableDC, cycleTimeInNs);
-
    }
 
    private void configureImpl(Master master, ec_slavet slave, boolean enableDC, long cycleTimeInNs)

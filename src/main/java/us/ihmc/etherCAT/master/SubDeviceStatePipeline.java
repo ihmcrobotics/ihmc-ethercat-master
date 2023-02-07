@@ -14,8 +14,7 @@ public class SubDeviceStatePipeline
    private final List<SDO> sdos;
    
    private boolean hasReachedOp = false;
-   private int previousWkc = -1;
-   
+   private boolean refreshState = false;
    
    private final List<LightWeightPipelineTask> tasks = new ArrayList<>();
    
@@ -48,6 +47,7 @@ public class SubDeviceStatePipeline
 
    private class ReadDeviceState implements LightWeightPipelineTask
    {
+      private int previousWkc = -1;
 
       @Override
       public boolean execute(long runtime)
@@ -62,9 +62,13 @@ public class SubDeviceStatePipeline
       @Override
       public boolean skipTask()
       {
-         if(mainDevice.getActualWorkingCounter() == previousWkc)
+         if(refreshState)
          {
             return false;
+         }
+         else if(mainDevice.getActualWorkingCounter() == previousWkc)
+         {
+            return true;
          }
          else
          {
@@ -103,6 +107,7 @@ public class SubDeviceStatePipeline
       public boolean execute(long runtime)
       {
          subDevice.doEtherCATStateControl(runtime);
+         refreshState = true;
          return true;
       }
 

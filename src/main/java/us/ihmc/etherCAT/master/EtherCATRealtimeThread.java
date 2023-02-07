@@ -451,11 +451,21 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       master.enableTrace();
    }
+   
+   /**
+    * @see us.ihmc.etherCAT.master.Master#setReadRXErrorStatistics(boolean)
+    * @param readRXErrorStatistics
+    */
+   public void setReadRXErrorStatistics(boolean readRXErrorStatistics)
+   {
+      master.setReadRXErrorStatistics(readRXErrorStatistics);
+   }
 
    /**
     * @see us.ihmc.etherCAT.master.Master#registerSDO(us.ihmc.etherCAT.master.SDO)
     */
    @Override
+   @Deprecated
    public void registerSDO(SDO sdo)
    {
       master.registerSDO(sdo);
