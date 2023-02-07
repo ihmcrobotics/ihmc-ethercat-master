@@ -32,9 +32,17 @@ public class LightWeightPipelineExecutor
 
    public void execute(long runtime)
    {
+      
+      int startTaskIndex = currentTaskIndex;
       while (currentTask().skipTask())
       {
          moveToNextTask();
+         
+         if(startTaskIndex == currentTaskIndex)
+         {
+            // No tasks need to be ran. Return.
+            return;
+         }
       }
 
       lastExecutedTaskIndex = currentTaskIndex;
