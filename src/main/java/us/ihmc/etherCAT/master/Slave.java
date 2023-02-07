@@ -76,7 +76,7 @@ public class Slave
    
    
    private final ByteBuffer alStateBuffer = ByteBuffer.allocateDirect(3 * Short.BYTES);
-   private final ByteBuffer rxErrorBuffer = ByteBuffer.allocateDirect(20 * Short.BYTES);
+   private final ByteBuffer rxErrorBuffer = ByteBuffer.allocateDirect(19 * Short.BYTES);
    
    
    private int[] rxFrameErrorCounter = new int[4];
@@ -948,7 +948,7 @@ public class Slave
     */
    boolean updateRXTXStats()
    {
-      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_RXERR, 20, rxErrorBuffer, soemConstants.EC_TIMEOUTRET);
+      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_RXERR, rxErrorBuffer.capacity(), rxErrorBuffer, soemConstants.EC_TIMEOUTRET);
       
       if(wc > 0)
       {
@@ -961,6 +961,27 @@ public class Slave
       }
    }
    
+
+   public boolean clearRXErrors()
+   {
+      for(int i = 0; i < rxErrorBuffer.capacity(); i++)
+      {
+         rxErrorBuffer.put(i, (byte) -1);
+      }
+      
+      int wc = soem.ecx_FPWR(port, ec_slave.getConfigadr(), soem.ECT_REG_RXERR, rxErrorBuffer.capacity(), rxErrorBuffer, soemConstants.EC_TIMEOUTRET);
+      
+      if(wc > 0)
+      {
+         master.getEtherCATStatusCallback().notifyClearSlaveRXErrorSuccess(this);
+         return true;
+      }
+      else
+      {
+         master.getEtherCATStatusCallback().notifyClearSlaveRXErrorFailure(this);
+         return false;
+      }
+   }
    
    /**
     * Internal function. Householding functionality. Gets called cyclically by the householding thread.
@@ -1260,4 +1281,5 @@ public class Slave
    {
       return lostLinkCounter[port];
    }
+
 }

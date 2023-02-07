@@ -27,14 +27,16 @@ public class SubDeviceStatePipeline
       
       
       ReadDeviceState readDeviceState = new ReadDeviceState();
-      ReadRXTXErrors readRXTXErrors = new ReadRXTXErrors();
+      ClearRXErrors clearRXErrors = new ClearRXErrors();
+      ReadRXErrors readRXErrors = new ReadRXErrors();
       DoEtherCATStateControl doEtherCATStateControl = new DoEtherCATStateControl();
       DoSDOTransfers doSDOTransfers = new DoSDOTransfers();
       
       
       
       tasks.add(readDeviceState);
-      tasks.add(readRXTXErrors);
+      tasks.add(clearRXErrors);
+      tasks.add(readRXErrors);
       tasks.add(doEtherCATStateControl);
       tasks.add(doSDOTransfers);
    }
@@ -79,7 +81,35 @@ public class SubDeviceStatePipeline
       }
    }
    
-   private class ReadRXTXErrors implements LightWeightPipelineTask
+   private class ClearRXErrors implements LightWeightPipelineTask
+   {
+      public boolean cleared = false;
+      
+      @Override
+      public boolean execute(long runtime)
+      {
+         if(subDevice.clearRXErrors())
+         {
+            cleared = true;
+            return true;
+         }
+         else
+         {
+            return false;
+         }
+      }
+
+      /**
+       * Skip if the RX errors are already cleared
+       */
+      @Override
+      public boolean skipTask()
+      {
+         return cleared;
+      }
+   }
+   
+   private class ReadRXErrors implements LightWeightPipelineTask
    {
 
       @Override

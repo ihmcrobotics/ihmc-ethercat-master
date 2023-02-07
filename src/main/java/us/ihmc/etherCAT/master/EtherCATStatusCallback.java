@@ -213,12 +213,25 @@ public class EtherCATStatusCallback
 
    public void notifyGetSlaveStateError(Slave slave)
    {
-      System.err.println("[" + System.nanoTime() + "] Cannot read state from slave ." + slave.toString());
+      System.err.println("[" + System.nanoTime() + "] Cannot read state from slave " + slave.toString());
    }
    
    public void notifyGetSlaveRXError(Slave slave)
    {
-      System.err.println("[" + System.nanoTime() + "] Cannot read RX error stats from slave ." + slave.toString());
+      System.err.println("[" + System.nanoTime() + "] Cannot read RX error stats from slave " + slave.toString());
+   }
+   
+   public void notifyClearSlaveRXErrorFailure(Slave slave)
+   {
+      System.err.println("[" + System.nanoTime() + "] Cannot clear RX error stats from slave " + slave.toString());
+   }
+   
+   public void notifyClearSlaveRXErrorSuccess(Slave slave)
+   {
+      if(TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] Cleared RX error statistics on slave " + slave.toString());   
+      }
    }
    
    public void notifyWatchdogConfiguration(Slave slave, int pdoWatchdogTimeout, int watchdogDiv, int watchdogPDORaw)
@@ -235,10 +248,10 @@ public class EtherCATStatusCallback
       {
          System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.toString() + ". Input size: " + inputSize + " bits");
          if(inputSize > 0) 
-            System.out.print(" offset " + inputOffset + "byte : " + inputBitoffset + " bit");
+            System.out.print("; offset " + inputOffset + "byte:" + inputBitoffset + "bit");
          System.out.print(". Output size: " + outputSize + " bits");
          if(outputSize > 0)
-            System.out.print(" offset " + outputOffset + " byte : " + outputBitOffset + " bit");
+            System.out.print("; offset " + outputOffset + "byte:" + outputBitOffset + "bit");
          
          System.out.println(".");
       }
