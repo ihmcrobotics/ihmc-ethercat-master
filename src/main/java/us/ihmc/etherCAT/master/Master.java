@@ -773,5 +773,5 @@ public class Master implements MasterInterface
    {
       return disableRecovery;
    }
-   
+
 }

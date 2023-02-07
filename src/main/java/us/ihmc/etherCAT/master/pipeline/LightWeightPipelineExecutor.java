@@ -42,7 +42,7 @@ public class LightWeightPipelineExecutor
       {
          moveToNextTask();
       }
-
+      System.out.println(getLastExectutedTaskName());
    }
    
    public int getLastExecutedTaskIndex()

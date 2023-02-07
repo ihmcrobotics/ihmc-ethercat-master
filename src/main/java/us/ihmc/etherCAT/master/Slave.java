@@ -937,7 +937,7 @@ public class Slave
          this.houseHolderAlStatusCode = alStateBuffer.getShort(2);
          if(previousState != this.houseHolderState)
          {
-            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.state);
+            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState);
          }
          return true;
       }
@@ -976,7 +976,7 @@ public class Slave
     */
    void doEtherCATStateControl(long runTime)
    {
-      switch (this.state)
+      switch (this.houseHolderState)
       {
       case BOOT:
       case INIT:
@@ -1212,12 +1212,17 @@ public class Slave
    {
       this.state = this.houseHolderState;
       this.alStatusCode = this.houseHolderAlStatusCode;
-      
+            
       for(int i = 0; i < 4; i++)
       {
          rxFrameErrorCounter[i] = rxErrorBuffer.get(0x0 + 2 * i);
          rxPhysicalLayerErrorCounter[i] = rxErrorBuffer.get(0x1 + 2 * i);
          lostLinkCounter[i] = rxErrorBuffer.get(0x10 + i);
+      }
+      
+      for(int i = 0; i < SDOs.size(); i++)
+      {
+         SDOs.get(i).syncDataWithStatemachineThread();
       }
    }
    
@@ -1245,5 +1250,20 @@ public class Slave
    public int getNumberOfPorts()
    {
       return 4;
+   }
+   
+   public int getRxFrameErrorCounter(int port)
+   {
+      return rxFrameErrorCounter[port];
+   }
+   
+   public int getRxPhysicalLayerErrorCounter(int port)
+   {
+      return rxPhysicalLayerErrorCounter[port];
+   }
+   
+   public int getLostLinkCounter(int port)
+   {
+      return lostLinkCounter[port];
    }
 }

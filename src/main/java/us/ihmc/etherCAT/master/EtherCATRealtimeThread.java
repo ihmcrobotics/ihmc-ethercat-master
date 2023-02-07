@@ -126,6 +126,7 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    public void start()
    {
       realtimeThread.start();
+      statemachineThread.start();
    }
    
    /** 
@@ -631,5 +632,5 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       this.shutdownTimeout = timeoutNS;
    }
-
+   
 }

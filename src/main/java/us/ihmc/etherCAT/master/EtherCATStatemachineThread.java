@@ -40,12 +40,15 @@ class EtherCATStatemachineThread
 
    public EtherCATStatemachineThread(PriorityParameters priorityParameters, Master master)
    {
-      this.thread = new RealtimeThread(priorityParameters, this::run, getClass().getSimpleName());
-      this.thread.start();
+      this.thread = new RealtimeThread(priorityParameters, this::runStatemachineThread, getClass().getSimpleName());
 
       this.master = master;
-
       state.set(STARTING);
+   }
+   
+   public void start()
+   {
+      this.thread.start();      
    }
 
    public boolean tryLockCyclic()
@@ -94,7 +97,7 @@ class EtherCATStatemachineThread
       durationInThread = System.nanoTime() - startTime;
    }
 
-   public void run()
+   private void runStatemachineThread()
    {
       // Store the java thread and switch to idle state
       javaThread = Thread.currentThread();
@@ -114,7 +117,7 @@ class EtherCATStatemachineThread
          {
             break;
          }
-
+         
          // If the state is CYCLIC_DONE, start the statemachine
          if (state.compareAndSet(CYCLIC_DONE, STATE_CONTROL_RUNNING))
          {
@@ -154,4 +157,5 @@ class EtherCATStatemachineThread
    {
       state.set(SHUTDOWN);
    }
+
 }

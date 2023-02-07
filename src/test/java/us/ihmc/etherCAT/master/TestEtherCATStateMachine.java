@@ -64,13 +64,26 @@ public class TestEtherCATStateMachine
          
          readSdo.requestNewData();
          writeSdo.write(10.0);
+         
+         subDevice.updateStateVariables();
+
+         if(readSdo.isValid())
+         {
+            System.out.println("Read SDO Is valid");
+         }
+         
+         if(writeSdo.isValid())
+         {
+            System.out.println("Write SDO Is valid");
+         }
+         
 
          stateMachine.runOnce();
-         
          if(i == 92)
          {
             subDevice.state  = State.SAFE_OPERR;
          }
+         
          
          System.out.println(stateMachine.getExecutor().getLastExecutedTaskIndex() + ": " + stateMachine.getExecutor().getLastExectutedTaskName());
          
@@ -122,12 +135,14 @@ public class TestEtherCATStateMachine
       @Override
       public int readSDOToBuffer(int index, int subIndex, int size, ByteBuffer sdoBuffer)
       {
+         System.out.println("SDO Read command executed");
          return 1;
       }
 
       @Override
       public int writeSDO(int index, int subindex, ByteBuffer buffer)
       {
+         System.out.println("SDO Write command executed");
          return 1;
       }
    }

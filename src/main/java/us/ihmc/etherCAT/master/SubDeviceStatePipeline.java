@@ -11,7 +11,7 @@ public class SubDeviceStatePipeline
 {
    private final Master mainDevice;
    private final Slave subDevice;
-   
+   private final List<SDO> sdos;
    
    private boolean hasReachedOp = false;
    private int previousWkc = -1;
@@ -24,6 +24,7 @@ public class SubDeviceStatePipeline
    {
       this.mainDevice = mainDevice;
       this.subDevice = subDevice;
+      this.sdos = subDevice.getSDOs();
       
       
       ReadDeviceState readDeviceState = new ReadDeviceState();
@@ -63,7 +64,7 @@ public class SubDeviceStatePipeline
       {
          if(mainDevice.getActualWorkingCounter() == previousWkc)
          {
-            return true;
+            return false;
          }
          else
          {
@@ -145,9 +146,21 @@ public class SubDeviceStatePipeline
          {
             return true;
          }
+         else if (sdos.isEmpty())
+         {
+            return true;
+         }
          else
          {
-            return false;
+            for(int i = 0; i < sdos.size(); i++)
+            {
+               if(sdos.get(i).isTransferPending())
+               {
+                  return false;
+               }
+            }
+            
+            return true;
          }
       }
       
@@ -170,7 +183,7 @@ public class SubDeviceStatePipeline
                int sdoToUpdate = currentSDO;
                currentSDO++;
                
-               if(sdos.get(sdoToUpdate).update())
+               if(sdos.get(sdoToUpdate).updateFromStatemachineThread())
                {
                   break;
                }
