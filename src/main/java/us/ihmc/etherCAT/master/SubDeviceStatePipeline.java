@@ -13,8 +13,6 @@ public class SubDeviceStatePipeline
    private final Slave subDevice;
    private final List<SDO> sdos;
    
-   private boolean hasReachedOp = false;
-   private boolean refreshState = false;
    
    private final List<LightWeightPipelineTask> tasks = new ArrayList<>();
    
@@ -45,49 +43,33 @@ public class SubDeviceStatePipeline
    {
       executor.addTasks(tasks);
    }
+   
+   /**
+    * Check if the master working counter is the expected working counter and the device is in OP state
+    * @return true if wkc is expected and slave is in OP
+    */
+   private boolean inNormalOperation()
+   {
+      return subDevice.getState() == State.OP && mainDevice.getActualWorkingCounter() == mainDevice.getExpectedWorkingCounter();
+   }
 
 
    private class ReadDeviceState implements LightWeightPipelineTask
    {
-      private int previousWkc = -1;
-
       @Override
       public boolean execute(long runtime)
       {
-         if(subDevice.updateEtherCATState())
-         {
-            refreshState = false;
-         }
-         else
-         {
-            refreshState = true;
-         }
+         subDevice.updateEtherCATState();
          return true;
       }
 
       /**
-       * Skip this task when the working counter matches the previous working counter
+       * Skip this task when the working counter matches the previous working counter and the device is in OP mode
        */
       @Override
       public boolean skipTask()
       {
-         if(refreshState)
-         {
-            return false;
-         }
-         else if  (subDevice.getState() == State.OFFLINE)
-         {
-            return false;
-         }
-         else if(mainDevice.getActualWorkingCounter() == previousWkc)
-         {
-            return true;
-         }
-         else
-         {
-            previousWkc = mainDevice.getActualWorkingCounter();
-            return false;
-         }
+         return inNormalOperation();
 
       }
    }
@@ -136,19 +118,32 @@ public class SubDeviceStatePipeline
       @Override
       public boolean skipTask()
       {
-         return !mainDevice.isReadRXErrorStatistics();
+         if(!mainDevice.isReadRXErrorStatistics())
+         {
+            // Reading RX Errors statistics is disabled
+            return true;
+         }
+         else if (subDevice.getHouseholderState() == State.OFFLINE)
+         {
+            // Don't try to read these statistics when the subdevice is offline
+            return true;
+         }
+         else
+         {
+            return false;
+         }
       }
       
    }
    
    private class DoEtherCATStateControl implements LightWeightPipelineTask
    {
+      private boolean hasReachedOp = false;
 
       @Override
       public boolean execute(long runtime)
       {
          subDevice.doEtherCATStateControl(runtime);
-         refreshState = true;
          return true;
       }
 
@@ -160,11 +155,13 @@ public class SubDeviceStatePipeline
       {
          if(subDevice.getHouseholderState() == State.OP)
          {
+            // No need to state control if the state is OP
             hasReachedOp = true;
             return true;
          }
          else if (mainDevice.isRecoveryDisabled() && hasReachedOp)
          {
+            // Recovery is disabled and the state has been in OP. Do not retry to enable the slave
             return true;
          }
          else
@@ -184,16 +181,14 @@ public class SubDeviceStatePipeline
        */
       public boolean skipTask()
       {
-         if( mainDevice.getActualWorkingCounter() != mainDevice.getExpectedWorkingCounter() )
+         if( !inNormalOperation() )
          {           
-            return true;
-         }
-         else if (subDevice.getHouseholderState() != State.OP)
-         {
+            // Slave is not in OP, or there is something wrong with the ethercat chain. Skip SDO transmission
             return true;
          }
          else if (sdos.isEmpty())
          {
+            // No SDOs defined
             return true;
          }
          else
@@ -202,6 +197,7 @@ public class SubDeviceStatePipeline
             {
                if(sdos.get(i).isTransferPending())
                {
+                  // An SDO needs data transfer
                   return false;
                }
             }

@@ -923,7 +923,7 @@ public class Slave
       alStateBuffer.putShort(0, (short) 0);
       alStateBuffer.putShort(4, (short) 0);
       
-      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_ALSTAT, 3, alStateBuffer, soemConstants.EC_TIMEOUTRET);
+      int wc = soem.ecx_FPRD(port, ec_slave.getConfigadr(), soem.ECT_REG_ALSTAT, alStateBuffer.capacity(), alStateBuffer, soemConstants.EC_TIMEOUTRET);
       
       State previousState = this.houseHolderState;
       if(wc > 0)
@@ -934,7 +934,7 @@ public class Slave
          this.houseHolderAlStatusCode = alStateBuffer.getShort(4) & 0xFFFF;
          if(previousState != this.houseHolderState)
          {
-            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState, this.alStatusCode);
+            master.getEtherCATStatusCallback().notifyStateChange(this, previousState, this.houseHolderState, this.houseHolderAlStatusCode);
          }
          return true;
       }
