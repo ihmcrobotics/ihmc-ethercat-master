@@ -108,6 +108,7 @@ public class EtherCATStatusCallback
       case OP:
          break;
       case OFFLINE:
+         System.err.println(slave + " is OFFLINE");
          break;
 
       }
