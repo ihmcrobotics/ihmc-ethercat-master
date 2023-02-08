@@ -57,7 +57,6 @@ public class Slave
    private int maximumDCOffset = MAX_DC_OFFSET_DEFAULT;
    private int dcOffsetSamples = 0;
    private boolean dcEnabled;
-
    
    private State houseHolderState = State.OFFLINE;
    private State state = State.OFFLINE; 
@@ -74,10 +73,8 @@ public class Slave
    
    private boolean dcClockStable = false;
    
-   
    private final ByteBuffer alStateBuffer = ByteBuffer.allocateDirect(3 * Short.BYTES);
    private final ByteBuffer rxErrorBuffer = ByteBuffer.allocateDirect(19 * Short.BYTES);
-   
    
    private int[] rxFrameErrorCounter = new int[4];
    private int[] rxPhysicalLayerErrorCounter = new int[4];

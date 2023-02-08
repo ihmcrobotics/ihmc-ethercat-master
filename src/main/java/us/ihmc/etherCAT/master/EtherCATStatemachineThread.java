@@ -45,10 +45,10 @@ class EtherCATStatemachineThread
       this.master = master;
       state.set(STARTING);
    }
-   
+
    public void start()
    {
-      this.thread.start();      
+      this.thread.start();
    }
 
    public boolean tryLockCyclic()
@@ -117,7 +117,7 @@ class EtherCATStatemachineThread
          {
             break;
          }
-         
+
          // If the state is CYCLIC_DONE, start the statemachine
          if (state.compareAndSet(CYCLIC_DONE, STATE_CONTROL_RUNNING))
          {
@@ -129,11 +129,11 @@ class EtherCATStatemachineThread
             {
                if (!state.compareAndSet(STATE_CONTROL_RUNNING, STATE_CONTROL_DONE))
                {
-                  if(currentState == SHUTDOWN)
+                  if (currentState == SHUTDOWN)
                   {
                      break;
                   }
-                  
+
                   throw new RuntimeException("Illegal state " + state.get());
                }
             }

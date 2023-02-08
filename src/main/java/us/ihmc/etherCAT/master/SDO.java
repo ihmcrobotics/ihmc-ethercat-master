@@ -15,31 +15,26 @@ public abstract class SDO
 {
    private enum CyclicState
    {
-      WAITING_FOR_USER_DATA,
-      QUEUED,
-      WAITING_FOR_TRANSFER
+      WAITING_FOR_USER_DATA, QUEUED, WAITING_FOR_TRANSFER
    }
-   
+
    private enum StatemachineState
    {
-      IDLE,
-      DO_TRANSFER,
-      TRANSFER_DONE,
-      TRANSFER_FAILED
+      IDLE, DO_TRANSFER, TRANSFER_DONE, TRANSFER_FAILED
    }
 
    protected final Slave slave;
    protected final int index;
    protected final int subindex;
    protected final int size;
-   
+
    protected final ByteBuffer buffer;
-   
+
    protected CyclicState cyclicState = CyclicState.WAITING_FOR_USER_DATA;
    protected StatemachineState statemachineState = StatemachineState.IDLE;
-   
+
    private boolean valid = false;
-   
+
    protected SDO(Slave slave, int index, int subindex, int size)
    {
       this.slave = slave;
@@ -49,7 +44,7 @@ public abstract class SDO
 
       buffer = ByteBuffer.allocateDirect(size);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
-   
+
    }
 
    /**
@@ -60,7 +55,7 @@ public abstract class SDO
    {
       return cyclicState == CyclicState.WAITING_FOR_USER_DATA;
    }
-   
+
    /**
     * Queue a new transaction
     * 
@@ -68,7 +63,7 @@ public abstract class SDO
     */
    protected boolean queue()
    {
-      if(canSend())
+      if (canSend())
       {
          cyclicState = CyclicState.QUEUED;
          valid = false;
@@ -77,10 +72,11 @@ public abstract class SDO
       {
          return false;
       }
-      
+
       return true;
-      
+
    }
+
    /**
     * The last queued SDO transaction was succesful and no new transaction has been queued
     * 
@@ -90,21 +86,19 @@ public abstract class SDO
    {
       return valid;
    }
-   
+
    /**
     * Send SDO request
     * 
     * @return working counter
     */
    protected abstract int send();
-   
-   
+
    boolean isTransferPending()
    {
       return statemachineState == StatemachineState.DO_TRANSFER;
    }
-   
-   
+
    /**
     * Internal function. Execute from Master EtherCAT state machine.
     * 
@@ -112,9 +106,9 @@ public abstract class SDO
     */
    boolean updateFromStatemachineThread()
    {
-      if(statemachineState == StatemachineState.DO_TRANSFER)
+      if (statemachineState == StatemachineState.DO_TRANSFER)
       {
-         if(send() > 0)
+         if (send() > 0)
          {
             statemachineState = StatemachineState.TRANSFER_DONE;
          }
@@ -129,12 +123,12 @@ public abstract class SDO
          return false;
       }
    }
-   
+
    Slave getSlave()
    {
       return slave;
    }
-   
+
    @Override
    public String toString()
    {
@@ -146,7 +140,7 @@ public abstract class SDO
     */
    public void syncDataWithStatemachineThread()
    {
-      switch(cyclicState)
+      switch (cyclicState)
       {
          case WAITING_FOR_USER_DATA:
             break;
@@ -158,13 +152,12 @@ public abstract class SDO
             checkStatemachineState();
             break;
       }
-            
 
    }
 
    private void checkStatemachineState()
    {
-      switch(statemachineState)
+      switch (statemachineState)
       {
          case IDLE:
          case DO_TRANSFER:

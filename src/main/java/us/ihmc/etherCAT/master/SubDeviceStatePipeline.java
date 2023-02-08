@@ -12,38 +12,33 @@ public class SubDeviceStatePipeline
    private final Master mainDevice;
    private final Slave subDevice;
    private final List<SDO> sdos;
-   
-   
+
    private final List<LightWeightPipelineTask> tasks = new ArrayList<>();
-   
-   
+
    public SubDeviceStatePipeline(Master mainDevice, Slave subDevice)
    {
       this.mainDevice = mainDevice;
       this.subDevice = subDevice;
       this.sdos = subDevice.getSDOs();
-      
-      
+
       ReadDeviceState readDeviceState = new ReadDeviceState();
       ClearRXErrors clearRXErrors = new ClearRXErrors();
       ReadRXErrors readRXErrors = new ReadRXErrors();
       DoEtherCATStateControl doEtherCATStateControl = new DoEtherCATStateControl();
       DoSDOTransfers doSDOTransfers = new DoSDOTransfers();
-      
-      
-      
+
       tasks.add(readDeviceState);
       tasks.add(clearRXErrors);
       tasks.add(readRXErrors);
       tasks.add(doEtherCATStateControl);
       tasks.add(doSDOTransfers);
    }
-   
+
    public void addToExecutor(LightWeightPipelineExecutor executor)
    {
       executor.addTasks(tasks);
    }
-   
+
    /**
     * Check if the master working counter is the expected working counter and the device is in OP state
     * @return true if wkc is expected and slave is in OP
@@ -52,7 +47,6 @@ public class SubDeviceStatePipeline
    {
       return subDevice.getState() == State.OP && mainDevice.getActualWorkingCounter() == mainDevice.getExpectedWorkingCounter();
    }
-
 
    private class ReadDeviceState implements LightWeightPipelineTask
    {
@@ -73,15 +67,15 @@ public class SubDeviceStatePipeline
 
       }
    }
-   
+
    private class ClearRXErrors implements LightWeightPipelineTask
    {
       public boolean cleared = false;
-      
+
       @Override
       public boolean execute(long runtime)
       {
-         if(subDevice.clearRXErrors())
+         if (subDevice.clearRXErrors())
          {
             cleared = true;
             return true;
@@ -101,7 +95,7 @@ public class SubDeviceStatePipeline
          return cleared;
       }
    }
-   
+
    private class ReadRXErrors implements LightWeightPipelineTask
    {
 
@@ -118,7 +112,7 @@ public class SubDeviceStatePipeline
       @Override
       public boolean skipTask()
       {
-         if(!mainDevice.isReadRXErrorStatistics())
+         if (!mainDevice.isReadRXErrorStatistics())
          {
             // Reading RX Errors statistics is disabled
             return true;
@@ -133,9 +127,9 @@ public class SubDeviceStatePipeline
             return false;
          }
       }
-      
+
    }
-   
+
    private class DoEtherCATStateControl implements LightWeightPipelineTask
    {
       private boolean hasReachedOp = false;
@@ -153,7 +147,7 @@ public class SubDeviceStatePipeline
       @Override
       public boolean skipTask()
       {
-         if(subDevice.getHouseholderState() == State.OP)
+         if (subDevice.getHouseholderState() == State.OP)
          {
             // No need to state control if the state is OP
             hasReachedOp = true;
@@ -170,19 +164,19 @@ public class SubDeviceStatePipeline
          }
 
       }
-      
+
    }
-   
+
    private class DoSDOTransfers implements LightWeightPipelineTask
    {
-      
+
       /**
        * Skip SDO transfer if the wkc is wrong
        */
       public boolean skipTask()
       {
-         if( !inNormalOperation() )
-         {           
+         if (!inNormalOperation())
+         {
             // Slave is not in OP, or there is something wrong with the ethercat chain. Skip SDO transmission
             return true;
          }
@@ -193,45 +187,43 @@ public class SubDeviceStatePipeline
          }
          else
          {
-            for(int i = 0; i < sdos.size(); i++)
+            for (int i = 0; i < sdos.size(); i++)
             {
-               if(sdos.get(i).isTransferPending())
+               if (sdos.get(i).isTransferPending())
                {
                   // An SDO needs data transfer
                   return false;
                }
             }
-            
+
             return true;
          }
       }
-      
-      
-      
+
       int currentSDO = 0;
 
       @Override
       public boolean execute(long runtime)
       {
          ArrayList<SDO> sdos = subDevice.getSDOs();
-         
-         if(sdos.size() > 0)
+
+         if (sdos.size() > 0)
          {
-            
+
             // Loop trough all SDO's till a transaction is made
-            
-            while(currentSDO < sdos.size())
+
+            while (currentSDO < sdos.size())
             {
                int sdoToUpdate = currentSDO;
                currentSDO++;
-               
-               if(sdos.get(sdoToUpdate).updateFromStatemachineThread())
+
+               if (sdos.get(sdoToUpdate).updateFromStatemachineThread())
                {
                   break;
                }
             }
-            
-            if(currentSDO >= sdos.size())
+
+            if (currentSDO >= sdos.size())
             {
                currentSDO = 0;
                return true;
@@ -247,6 +239,5 @@ public class SubDeviceStatePipeline
          }
       }
    }
-   
-   
+
 }

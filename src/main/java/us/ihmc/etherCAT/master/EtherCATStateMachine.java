@@ -18,7 +18,7 @@ import us.ihmc.soem.generated.soem;
 class EtherCATStateMachine
 {
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
-   
+
    public static boolean DEBUG = false;
 
    private final Master master;
@@ -34,7 +34,7 @@ class EtherCATStateMachine
       this.master = master;
       executor.addTask(waitForMasterState);
    }
-   
+
    void setSubdevices(Slave[] subdevices)
    {
       this.subdevices = subdevices;
@@ -45,24 +45,23 @@ class EtherCATStateMachine
          subPipeline.addToExecutor(executor);
       }
    }
-   
-   
+
    void runOnce()
    {
       if (startTime < 0)
       {
          startTime = System.nanoTime();
       }
-      
+
       long runTime = System.nanoTime() - startTime;
       executor.execute(runTime);
    }
-   
+
    LightWeightPipelineExecutor getExecutor()
    {
       return executor;
    }
-   
+
    /**
     * State to wait for the master to attain a stable, minimal jitter rate.
     *
@@ -77,14 +76,14 @@ class EtherCATStateMachine
       public boolean skipTask()
       {
          long jitterEstimate = master.getJitterEstimate();
-         
-         if(!master.getDCEnabled())
+
+         if (!master.getDCEnabled())
          {
             return true;
          }
          else
          {
-            if(master.getJitterSamples() < MINIMUM_JITTER_SAMPLES)
+            if (master.getJitterSamples() < MINIMUM_JITTER_SAMPLES)
             {
                return false;
             }
@@ -108,7 +107,6 @@ class EtherCATStateMachine
          return false;
       }
    }
-
 
    void shutDown()
    {
