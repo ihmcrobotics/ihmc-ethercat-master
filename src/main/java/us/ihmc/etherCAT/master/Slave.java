@@ -82,6 +82,8 @@ public class Slave
    private int[] rxFrameErrorCounter = new int[4];
    private int[] rxPhysicalLayerErrorCounter = new int[4];
    private int[] lostLinkCounter = new int[4];
+   private int ethercatProcessingUnitErrorCounter = -1;
+   private int pdiErrorCounter = -1;
    
    /**
     * Create a new slave and set the address 
@@ -1215,6 +1217,10 @@ public class Slave
          lostLinkCounter[i] = rxErrorBuffer.get(0x10 + i) & 0xFF;
       }
       
+      ethercatProcessingUnitErrorCounter = rxErrorBuffer.get(0xC) & 0xFF;
+      pdiErrorCounter = rxErrorBuffer.get(0xD) & 0xFF;
+      
+      
       for(int i = 0; i < SDOs.size(); i++)
       {
          SDOs.get(i).syncDataWithStatemachineThread();
@@ -1260,6 +1266,16 @@ public class Slave
    public int getLostLinkCounter(int port)
    {
       return lostLinkCounter[port];
+   }
+   
+   public int getEthercatProccessingUnitErrorCounter()
+   {
+      return ethercatProcessingUnitErrorCounter;
+   }
+   
+   public int getPDIErrorCounter()
+   {
+      return pdiErrorCounter;
    }
 
 }
