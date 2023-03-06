@@ -632,5 +632,14 @@ public abstract class EtherCATRealtimeThread implements MasterInterface
    {
       this.shutdownTimeout = timeoutNS;
    }
+   
+   /**
+    * @see us.ihmc.etherCAT.master.Master#disableRecovery()
+    */
+   @Override
+   public void disableRecovery()
+   {
+      master.disableRecovery();
+   }
 
 }

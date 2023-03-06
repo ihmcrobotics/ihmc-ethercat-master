@@ -22,4 +22,6 @@ public interface MasterInterface
    public List<Slave> getSlaves();
 
    void setEtherCATReceiveTimeout(int timeout);
+   
+   void disableRecovery();
 }

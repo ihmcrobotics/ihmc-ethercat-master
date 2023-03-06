@@ -749,8 +749,9 @@ public class Master implements MasterInterface
    /**
     * Disable recovery for offline or faulted states. 
     * 
-    * Recommended for control systems where a loss of a state probably has catastrophic consequences (for example, walking robots)
+    * Recommended for control systems where a loss of a subdevice probably has catastrophic consequences (for example, walking robots)
     */
+   @Override
    public void disableRecovery()
    {
       disableRecovery = true;
