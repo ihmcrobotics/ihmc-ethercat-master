@@ -17,7 +17,6 @@ import javax.swing.JPanel;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
 import us.ihmc.etherCAT.slaves.EasyCATLoadCellSlave;
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 
