@@ -2,7 +2,7 @@ import org.gradle.internal.os.OperatingSystem;
 
 pluginManagement {
    plugins {
-      id("us.ihmc.ihmc-build") version "0.28.8"
+      id("us.ihmc.ihmc-build") version "0.28.9"
    }
 }
 
