@@ -1,7 +1,7 @@
 plugins {
    id("us.ihmc.ihmc-build")
    id("us.ihmc.log-tools-plugin") version "0.6.3"
-   id("us.ihmc.ihmc-ci") version "7.6"
+   id("us.ihmc.ihmc-ci") version "7.7"
    id("us.ihmc.ihmc-cd") version "1.23"
 }
 
@@ -21,7 +21,7 @@ app.entrypoint("SlaveInfo", "us.ihmc.etherCAT.master.SlaveInfo")
 mainDependencies {
    api("us.ihmc:soem:1.4.0-ihmc1")
    api("us.ihmc:soem-platform-linux:1.4.0-ihmc1")
-   api("us.ihmc:ihmc-native-library-loader:1.3.1")
-   api("us.ihmc:ihmc-realtime:1.5.0")
+   api("us.ihmc:ihmc-native-library-loader:2.0.2")
+   api("us.ihmc:ihmc-realtime:1.5.1")
 }
 
