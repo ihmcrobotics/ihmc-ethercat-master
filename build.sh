@@ -7,5 +7,7 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 
-gradle publishToMavenLocal -Ptarget=JAVA
-gradle publishToMavenLocal -Ptarget=PLATFORM
+pwd
+ls ..
+../gradlew publishToMavenLocal -Ptarget=JAVA
+../gradlew publishToMavenLocal -Ptarget=PLATFORM

@@ -26,6 +26,8 @@ if [ ! "$(sudo -u root docker ps -a | grep ethercat-master)" ]; then
         --volume "$(pwd)/settings.gradle.kts":/home/robotlab/dev/ihmc-ethercat-master/settings.gradle.kts \
         --volume "$(pwd)/CMakeLists.txt":/home/robotlab/dev/ihmc-ethercat-master/CMakeLists.txt \
         --volume "$(pwd)/build.sh":/home/robotlab/dev/ihmc-ethercat-master/build.sh \
+	--volume "$(pwd)/gradlew":/home/robotlab/dev/ihmc-ethercat-master/gradlew \
+	--volume "$(pwd)/gradle/wrapper":/home/robotlab/dev/ihmc-ethercat-master/gradle/wrapper \
         ihmcrobotics/ethercat-master:0.2
 else
     sudo -u root docker start --attach ethercat-master

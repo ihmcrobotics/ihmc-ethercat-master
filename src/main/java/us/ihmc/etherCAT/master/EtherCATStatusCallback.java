@@ -3,6 +3,8 @@ package us.ihmc.etherCAT.master;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
+import us.ihmc.soem.generated.soem;
+
 public class EtherCATStatusCallback
 {
    private final boolean TRACE;
@@ -35,9 +37,9 @@ public class EtherCATStatusCallback
       RECOVER_SLAVE("Slave lost. Recovering slave"),
       RECOVERED_SLAVE("Sucessfully recovered slave"),
       SLAVE_FOUND("Slave found"),
-      SLAVE_LOST("Slave lost"),
       READ_WATCHDOG_DIV("Reading watchdog division time"),
-      WRITE_WATCHDOG_TIMEOUT("Writing watchdog timeout"), IS_MASTER_DC("Is master DC");
+      WRITE_WATCHDOG_TIMEOUT("Writing watchdog timeout"),
+      IS_MASTER_DC("Is master DC");
 
       private final String msg;
 
@@ -81,7 +83,7 @@ public class EtherCATStatusCallback
       }
    }
 
-   public void notifyStateChange(Slave slave, Slave.State previousState, Slave.State currentState)
+   public void notifyStateChange(Slave slave, Slave.State previousState, Slave.State currentState, int alStatus)
    {
       if (TRACE)
       {
@@ -90,24 +92,25 @@ public class EtherCATStatusCallback
 
       switch (currentState)
       {
-      case BOOT:
-         break;
-      case INIT:
-         break;
-      case PRE_OP:
-         break;
-      case PRE_OPERR:
-         System.err.println(slave + " in PREOP+ERR. " + slave.getALStatusMessage());
-         break;
-      case SAFE_OP:
-         break;
-      case SAFE_OPERR:
-         System.err.println(slave + " in SAFEOP+ERR. " + slave.getALStatusMessage());
-         break;
-      case OP:
-         break;
-      case OFFLINE:
-         break;
+         case BOOT:
+            break;
+         case INIT:
+            break;
+         case PRE_OP:
+            break;
+         case PRE_OPERR:
+            System.err.println(slave + " in PREOP+ERR. " + soem.ec_ALstatuscode2string(alStatus));
+            break;
+         case SAFE_OP:
+            break;
+         case SAFE_OPERR:
+            System.err.println(slave + " in SAFEOP+ERR. " + soem.ec_ALstatuscode2string(alStatus));
+            break;
+         case OP:
+            break;
+         case OFFLINE:
+            System.err.println(slave + " is OFFLINE");
+            break;
 
       }
    }
@@ -126,7 +129,8 @@ public class EtherCATStatusCallback
 
       if (cycle != printed)
       {
-         System.err.println("[" + System.nanoTime() + "] " + slave.toString() + ": DC Clock not synchronized or slave refused OP mode for " + (runTime / 1000000) + "ms. Current offset is " + dcOffset + "ns. AL Status: " + slave.getALStatusMessage());
+         System.err.println("[" + System.nanoTime() + "] " + slave.toString() + ": DC Clock not synchronized or slave refused OP mode for "
+               + (runTime / 1000000) + "ms. Current offset is " + dcOffset + "ns. AL Status: " + slave.getALStatusMessage());
          printedSlaveSyncOffsetMessages.put(slave, cycle);
       }
    }
@@ -138,7 +142,8 @@ public class EtherCATStatusCallback
       long cycle = runTime / SYNC_MESSAGES_INTERVAL;
       if (cycle != printedMasterThreadStableRateMessages)
       {
-         System.err.println("[" + System.nanoTime() + "] Master thread not converged to stable rate for " + (runTime / 1000000) + "ms. Current jitter estimate is " + jitterEstimate
+         System.err.println("[" + System.nanoTime() + "] Master thread not converged to stable rate for " + (runTime / 1000000)
+               + "ms. Current jitter estimate is " + jitterEstimate
                + "ns. Make sure to run a real time kernel. To increase maximum allowed jitter, use EtherCATRealtimeThread.setMaximumExecutionJitter()");
          printedMasterThreadStableRateMessages = cycle;
       }
@@ -153,7 +158,8 @@ public class EtherCATStatusCallback
    {
       if (TRACE)
       {
-         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc + "; size: " + buffer.position());
+         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Write " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: "
+               + wc + "; size: " + buffer.position());
          System.out.print(" Data: ");
          for (int i = 0; i < buffer.position(); i++)
          {
@@ -167,7 +173,8 @@ public class EtherCATStatusCallback
    {
       if (TRACE)
       {
-         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Read " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: " + wc);
+         System.out.print("[" + System.nanoTime() + "] " + slave + " SDO Read " + Integer.toHexString(index) + ":" + Integer.toHexString(subindex) + "; wc: "
+               + wc);
          System.out.print(" Data: ");
          for (int i = 0; i < size; i++)
          {
@@ -179,13 +186,15 @@ public class EtherCATStatusCallback
 
    public void pdoConfigurationError(Slave slave, int index, int pdoConfigurationIndex)
    {
-      System.err.println("[" + System.nanoTime() + "] " + slave + " sm(" + index + "): Cannot configure PDO size on index " + Integer.toHexString(pdoConfigurationIndex) + ". Object is read-only");
+      System.err.println("[" + System.nanoTime() + "] " + slave + " sm(" + index + "): Cannot configure PDO size on index "
+            + Integer.toHexString(pdoConfigurationIndex) + ". Object is read-only");
    }
 
    public void pdoConfigurationError(Slave slave, int index, int pdoConfigurationIndex, int pdoConfigurationSubIndex, int pdoIndex)
    {
-      System.err.println("[" + System.nanoTime() + "] " + slave + " sm(" + index + "): Cannot Write PDO " + Integer.toHexString(pdoIndex) + " configuration to index " + Integer.toHexString(pdoConfigurationIndex) + ":"
-            + Integer.toHexString(pdoConfigurationSubIndex) + ". Object is read-only.");
+      System.err.println("[" + System.nanoTime() + "] " + slave + " sm(" + index + "): Cannot Write PDO " + Integer.toHexString(pdoIndex)
+            + " configuration to index " + Integer.toHexString(pdoConfigurationIndex) + ":" + Integer.toHexString(pdoConfigurationSubIndex)
+            + ". Object is read-only.");
    }
 
    public void notifyExpectedWorkingCounter(long expectedWorkingCounter)
@@ -211,25 +220,39 @@ public class EtherCATStatusCallback
       System.err.println("[" + System.nanoTime() + "] Cannot configure PDO watchdog timeout.");
    }
 
-   public void notifyWatchdogConfiguration(Slave slave, int pdoWatchdogTimeout, int watchdogDiv, int watchdogPDORaw)
+   public void notifyClearSlaveRXErrorFailure(Slave slave)
    {
-      if(TRACE)
+      System.err.println("[" + System.nanoTime() + "] Cannot clear RX error stats from slave " + slave.toString());
+   }
+
+   public void notifyClearSlaveRXErrorSuccess(Slave slave)
+   {
+      if (TRACE)
       {
-         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog for " + slave.getName() + " to " + pdoWatchdogTimeout + " ns. Divisor " + watchdogDiv + ", setting to raw " + watchdogPDORaw);
+         System.out.println("[" + System.nanoTime() + "] Cleared RX error statistics on slave " + slave.toString());
       }
    }
-   
+
+   public void notifyWatchdogConfiguration(Slave slave, int pdoWatchdogTimeout, int watchdogDiv, int watchdogPDORaw)
+   {
+      if (TRACE)
+      {
+         System.out.println("[" + System.nanoTime() + "] Configuring PDO watchdog for " + slave.toString() + " to " + pdoWatchdogTimeout + " ns. Divisor "
+               + watchdogDiv + ", setting to raw " + watchdogPDORaw);
+      }
+   }
+
    public void notifySlaveBuffer(Slave slave, int inputOffset, int inputSize, int inputBitoffset, int outputOffset, int outputSize, int outputBitOffset)
    {
-      if(TRACE)
+      if (TRACE)
       {
-         System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.getName() + ". Input size: " + inputSize + " bits");
-         if(inputSize > 0) 
-            System.out.print(" offset " + inputOffset + "byte : " + inputBitoffset + " bit");
+         System.out.print("[" + System.nanoTime() + "] Linking buffers for slave " + slave.toString() + ". Input size: " + inputSize + " bits");
+         if (inputSize > 0)
+            System.out.print("; offset " + inputOffset + "byte:" + inputBitoffset + "bit");
          System.out.print(". Output size: " + outputSize + " bits");
-         if(outputSize > 0)
-            System.out.print(" offset " + outputOffset + " byte : " + outputBitOffset + " bit");
-         
+         if (outputSize > 0)
+            System.out.print("; offset " + outputOffset + "byte:" + outputBitOffset + "bit");
+
          System.out.println(".");
       }
    }
@@ -241,7 +264,7 @@ public class EtherCATStatusCallback
 
    public void notifySlaveNotFound(Slave slave)
    {
-     System.err.println("[" + System.nanoTime() + "] Slave not found: " + slave + ".");
+      System.err.println("[" + System.nanoTime() + "] Slave not found: " + slave + ".");
    }
 
 }

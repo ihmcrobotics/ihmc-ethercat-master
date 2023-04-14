@@ -1,8 +1,8 @@
 package us.ihmc.etherCAT.master;
 
-import java.util.ArrayList;
-
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
+import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineExecutor;
+import us.ihmc.etherCAT.master.pipeline.LightWeightPipelineTask;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.soem;
@@ -19,237 +19,92 @@ class EtherCATStateMachine
 {
    public static final long MINIMUM_JITTER_SAMPLES = 1000;
 
-   private final Master master;
-   private Slave[] slaves;
+   public static boolean DEBUG = false;
 
-   private final ReadState readState = new ReadState();
+   private final Master master;
+   private Slave[] subdevices;
+
+   private final LightWeightPipelineExecutor executor = new LightWeightPipelineExecutor();
    private final WaitForMasterState waitForMasterState = new WaitForMasterState();
-   private final CheckForLostSlavesState checkForLostSlavesState = new CheckForLostSlavesState();
-   private final FinalState finalState = new FinalState();
-   private EtherCATState slaveState;
 
    private long startTime = -1;
-   private long runTime = 0;
-   
-   private int currentSDO = 0;
-   
-   private EtherCATState currentState;
-   
-   private boolean recoveryDisabled = false;
 
    EtherCATStateMachine(Master master)
    {
       this.master = master;
+      executor.addTask(waitForMasterState);
    }
-   
-   void setSlaves(Slave[] slaves)
+
+   void setSubdevices(Slave[] subdevices)
    {
-      this.slaves = slaves;
-      EtherCATState next = readState;
-      for (int i = slaves.length - 1; i >= 0; i--)
+      this.subdevices = subdevices;
+
+      for (int i = 0; i < subdevices.length; i++)
       {
-         SlaveState state = new SlaveState(slaves[i], next);
-         next = state;
+         SubDeviceStatePipeline subPipeline = new SubDeviceStatePipeline(master, subdevices[i]);
+         subPipeline.addToExecutor(executor);
       }
-
-      this.slaveState = next;
-      
-
-      currentState = readState;
-   }
-   
-   
-   void disableRecovery()
-   {
-      recoveryDisabled = true;
    }
 
-   void doStateControl()
+   void runOnce()
    {
       if (startTime < 0)
       {
          startTime = System.nanoTime();
       }
-      runTime = System.nanoTime() - startTime;
-      currentState = currentState.next();
-   }
-   
-   private int updateSlaveStates()
-   {
-      int state = soem.ecx_readstate(master.getContext());
-      for (int i = 0; i < slaves.length; i++)
-      {
-         slaves[i].updateEtherCATState();
-      }
-      return state;
+
+      long runTime = System.nanoTime() - startTime;
+      executor.execute(runTime);
    }
 
-   private void doSDOTransfer()
+   LightWeightPipelineExecutor getExecutor()
    {
-      ArrayList<SDO> sdos = master.getSDOs();
-      
-      if(sdos.size() > 0)
-      {
-         for(int c = 0; c < sdos.size(); c++)
-         {
-            if(++currentSDO >= sdos.size())
-            {
-               currentSDO = 0;
-            }
-            
-            if(sdos.get(currentSDO).update())
-            {
-               return;
-            }
-            
-         }
-         
-      }
-   }
-   
-   
-   private interface EtherCATState
-   {
-      EtherCATState next();
-   }
-
-   private class ReadState implements EtherCATState
-   {
-      @Override
-      public EtherCATState next()
-      {
-         int state = updateSlaveStates();
-         if (state == ec_state.EC_STATE_OPERATIONAL.swigValue())
-         {
-            if(recoveryDisabled)
-            {
-               return finalState;
-            }
-            else
-            {
-               return checkForLostSlavesState;
-            }
-         }
-         else
-         {
-            return waitForMasterState;
-         }
-      }
+      return executor;
    }
 
    /**
     * State to wait for the master to attain a stable, minimal jitter rate.
     *
     */
-   private class WaitForMasterState implements EtherCATState
+   private class WaitForMasterState implements LightWeightPipelineTask
    {
+
+      /**
+       * Check if we have to wait
+       */
       @Override
-      public EtherCATState next()
+      public boolean skipTask()
       {
          long jitterEstimate = master.getJitterEstimate();
 
          if (!master.getDCEnabled())
          {
-            return slaveState;
-         }
-         else if (master.getJitterSamples() < MINIMUM_JITTER_SAMPLES)
-         {
-            return this;
-         }
-         else if (jitterEstimate == 0 || jitterEstimate > master.getMaximumExecutionJitter())
-         {
-            master.getEtherCATStatusCallback().reportMasterThreadStableRateTime(runTime, jitterEstimate);
-            return this;
+            return true;
          }
          else
          {
-            return slaveState;
-         }
-
-      }
-   }
-
-   /**
-    * Run all individual state slave machines
-    *
-    */
-   private class SlaveState implements EtherCATState
-   {
-      private final Slave slave;
-      private final EtherCATState next;
-
-      private SlaveState(Slave slave, EtherCATState next)
-      {
-         this.slave = slave;
-         this.next = next;
-      }
-
-      @Override
-      public EtherCATState next()
-      {
-         slave.doEtherCATStateControl(runTime);
-         return next;
-      }
-
-   }
-
-   /**
-    * State to check for lost slaves. If slaves are lost, read the state and reconfigure
-    * slaves to Operational mode
-    * 
-    */
-   private class CheckForLostSlavesState implements EtherCATState
-   {
-
-      @Override
-      public EtherCATState next()
-      {
-         if (master.getExpectedWorkingCounter() != master.getActualWorkingCounter())
-         {
-            return readState;
-         }
-         else
-         {
-            doSDOTransfer();
-            return this;
-         }
-      }
-
-   }
-   
-   /**
-    * State that checks for lost slaves, but will not take action to reconfigure them.
-    * 
-    * Used when recoveryDisabled = true
-    *
-    */
-   private class FinalState implements EtherCATState
-   {
-      long previousActualWorkingCounter = 0;
-      
-      @Override
-      public EtherCATState next()
-      {   
-         int wkc = master.getActualWorkingCounter(); 
-         if (wkc != master.getExpectedWorkingCounter())
-         {
-            if(previousActualWorkingCounter != wkc)
+            if (master.getJitterSamples() < MINIMUM_JITTER_SAMPLES)
             {
-               updateSlaveStates();
+               return false;
+            }
+            else if (jitterEstimate == 0 || jitterEstimate > master.getMaximumExecutionJitter())
+            {
+               return false;
             }
             else
             {
-               doSDOTransfer();
+               return true;
             }
          }
-         else
-         {
-            doSDOTransfer();            
-         }
-         
-         previousActualWorkingCounter = wkc;
-         
-         return this;
+      }
+
+      /**
+       * Nothing to do, return false to keep waiting
+       */
+      @Override
+      public boolean execute(long runtime)
+      {
+         return false;
       }
    }
 
@@ -262,9 +117,9 @@ class EtherCATStateMachine
 
       master.getEtherCATStatusCallback().trace(TRACE_EVENT.CLEANUP_SLAVES);
 
-      for (int i = 0; i < slaves.length; i++)
+      for (int i = 0; i < subdevices.length; i++)
       {
-         slaves[i].cleanup();
+         subdevices[i].cleanup();
       }
 
    }

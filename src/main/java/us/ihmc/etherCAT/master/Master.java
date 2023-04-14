@@ -12,6 +12,7 @@ import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_context;
+import us.ihmc.soem.generated.ecx_portt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
@@ -47,6 +48,7 @@ public class Master implements MasterInterface
    private final String iface;
    
    private ecx_context context = null;
+   private ecx_portt port = null;
    private Slave[] slaveMap;
    
    private ByteBuffer ioMap;
@@ -67,10 +69,11 @@ public class Master implements MasterInterface
    
    private int ethercatReceiveTimeout = soemConstants.EC_TIMEOUTRET;
    
-   private final ArrayList<SDO> sdos = new ArrayList<>();
    
    
    private boolean requireAllSlaves = true;
+   private boolean readRXErrorStatistics = false;
+   private boolean disableRecovery = false;
    
    /**
     * Create new EtherCAT master.
@@ -157,18 +160,15 @@ public class Master implements MasterInterface
    /**
     * Register a SDO object before cyclic operation. The SDO object can request data without blocking from the control thread.
     * 
+    * This just calls sdo.getSlave().registerSDO() and is here for backwards compatibility
+    * 
     * @param sdo
     */
+   @Deprecated
    public void registerSDO(SDO sdo)
    {
-      for(int i = 0; i < sdos.size(); i++)
-      {
-         if(sdos.get(i).equals(sdo))
-         {
-            throw new RuntimeException("Cannot register " + sdo + " twice.");
-         }
-      }
-      sdos.add(sdo);
+      sdo.getSlave().registerSDO(sdo);
+      
    }
    
    /**
@@ -267,6 +267,14 @@ public class Master implements MasterInterface
          throw new IOException("Cannot initialize registeredSlaves");
       }
       
+      port = context.getPort();
+      
+      int currentState = soem.ecx_statecheck(context, 0, ec_state.EC_STATE_PRE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE);
+      if (currentState != ec_state.EC_STATE_PRE_OP.swigValue())
+      {
+         throw new IOException("Did not transfer to PREOP. Current State: " + ec_state.swigToEnum(currentState));
+      }
+
       if(enableDC)
       {
          boolean dcCapable = soem.ecx_configdc(context) == (short)1;
@@ -337,7 +345,7 @@ public class Master implements MasterInterface
                throw new IOException("Invalid slave configuration for slave " + slave.getAliasAddress() + ":" + slave.getPosition() + ". Invalid vendor and/or product code");
             }
             
-            slave.configure(this, context, ec_slave, i + 1, enableDC, cycleTimeInNs);
+            slave.configure(this, context, port, ec_slave, i + 1, enableDC, cycleTimeInNs);
             slaveMap[i] = slave;
          }
          else
@@ -349,7 +357,7 @@ public class Master implements MasterInterface
             else
             {
                slave = new UnconfiguredSlave(ec_slave.getName(), (int)ec_slave.getEep_man(), (int)ec_slave.getEep_id(), alias, position);
-               slave.configure(this, getContext(), ec_slave, i + 1, false, cycleTimeInNs);
+               slave.configure(this, getContext(), port, ec_slave, i + 1, false, cycleTimeInNs);
                slaveMap[i] = slave;
                etherCATStatusCallback.notifyUnconfiguredSlave(slaveMap[i]);
             }
@@ -394,10 +402,11 @@ public class Master implements MasterInterface
          throw new IOException("Allocated insufficient memory for etherCAT I/O. Allocated " + processDataSize + ", required " + ioBufferSize + ". Set Master.IOMAP_SIZE to a large enough value.");
       }      
 
-
-      if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
+      
+      currentState = soem.ecx_statecheck(context, 0, ec_state.EC_STATE_SAFE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE);
+      if (currentState != ec_state.EC_STATE_SAFE_OP.swigValue())
       {
-         throw new IOException("Cannot transfer to SAFE_OP state");
+         throw new IOException("Did not transfer to SAFEOP. Current State: " + ec_state.swigToEnum(currentState));
       }      
        
       getEtherCATStatusCallback().trace(TRACE_EVENT.LINK_BUFFERS);
@@ -421,7 +430,7 @@ public class Master implements MasterInterface
       {
          startTime = getDCTime();
       }
-      etherCATStateMachine.setSlaves(slaveMap);
+      etherCATStateMachine.setSubdevices(slaveMap);
       
       
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURE_COMPLETE);
@@ -513,7 +522,7 @@ public class Master implements MasterInterface
    /**
     * Stop the EtherCAT master
     * 
-    * This function will stop the house holder thread and bring all registeredSlaves to the INIT state.
+    * This function will bring all registeredSlaves to the INIT state. Call from the householder thread
     * 
     * Note: Calling the slave shutdown sequence is the responsibility of the caller. This function will only shutdown the master.
     * 
@@ -580,6 +589,13 @@ public class Master implements MasterInterface
          }
          
          this.actualWorkingCounter = wkc;
+         
+
+         for(int i = 0; i < slaveMap.length; i++)
+         {
+            slaveMap[i].updateStateVariables();
+         }
+         
          return wkc;
       }
    }
@@ -608,7 +624,7 @@ public class Master implements MasterInterface
    /**
     * Internal function. Get the actual working counter
     */
-   int getActualWorkingCounter()
+   public int getActualWorkingCounter()
    {
       return actualWorkingCounter;
    }
@@ -704,11 +720,11 @@ public class Master implements MasterInterface
    /**
     * Call this function cyclically, either in a separate thread or after receive().
     * 
-    * Make sure not to call this function concurrently with receive()
+    * Make sure not to call this function concurrently with send()/receive()
     */
    public void doEtherCATStateControl()
    {
-      etherCATStateMachine.doStateControl();
+      etherCATStateMachine.runOnce();
    }
    
    
@@ -733,16 +749,12 @@ public class Master implements MasterInterface
    /**
     * Disable recovery for offline or faulted states. 
     * 
-    * Recommended for control systems where a loss of a state probaly has catastrophic consequences (for example, walking robots)
+    * Recommended for control systems where a loss of a subdevice probably has catastrophic consequences (for example, walking robots)
     */
+   @Override
    public void disableRecovery()
    {
-      etherCATStateMachine.disableRecovery();
-   }
-
-   ArrayList<SDO> getSDOs()
-   {
-      return sdos;
+      disableRecovery = true;
    }
 
    /**
@@ -755,5 +767,19 @@ public class Master implements MasterInterface
       return Collections.unmodifiableList(registeredSlaves);
    }
 
-   
+   public boolean isReadRXErrorStatistics()
+   {
+      return readRXErrorStatistics;
+   }
+
+   public void setReadRXErrorStatistics(boolean readRXErrorStatistics)
+   {
+      this.readRXErrorStatistics = readRXErrorStatistics;
+   }
+
+   public boolean isRecoveryDisabled()
+   {
+      return disableRecovery;
+   }
+
 }
