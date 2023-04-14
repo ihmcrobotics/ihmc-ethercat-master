@@ -313,6 +313,14 @@ public class Master implements MasterInterface
          }
       }
       
+      
+      getEtherCATStatusCallback().trace(TRACE_EVENT.WAIT_FOR_PREOP);
+      
+      if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_PRE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
+      {
+         throw new IOException("Cannot transfer to PREOP state");
+      }
+      
       slaveMap = new Slave[slavecount];
       int processDataSize = 0;
       
