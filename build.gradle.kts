@@ -22,6 +22,6 @@ mainDependencies {
    api("us.ihmc:soem:1.4.0-ihmc1")
    api("us.ihmc:soem-platform-linux:1.4.0-ihmc1")
    api("us.ihmc:ihmc-native-library-loader:2.0.2")
-   api("us.ihmc:ihmc-realtime:1.5.1")
+   api("us.ihmc:ihmc-realtime:1.6.0")
 }
 
