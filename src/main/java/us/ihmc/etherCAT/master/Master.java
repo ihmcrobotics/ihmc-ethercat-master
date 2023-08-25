@@ -329,6 +329,7 @@ public class Master implements MasterInterface
       for(int i = 0; i < slavecount; i++)
       {
          ec_slavet ec_slave = soem.ecx_slave(context, i + 1);
+         ec_slave.setBlockLRW((short) 1);
          
          int alias, position;
          if(ec_slave.getAliasadr() == 0 || ec_slave.getAliasadr() == previousAlias)
