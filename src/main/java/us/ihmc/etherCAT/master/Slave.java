@@ -155,6 +155,12 @@ public class Slave
    {
       configureDCSync0(false, 0, 0);   // Disable DC Sync
       
+      // This blocks LRW (Logical Read/Write in the same operation) and instead uses an independent read (LRD command - Logical Read) and independent write (LWR command - Logical Write)
+      if (blockLRW())
+      {
+          slave.setBlockLRW((short) 1);
+      }
+      
       // Configure the PDO watchdog register by reading the divisor first
       if(configurePDOWatchdog)
       {
@@ -197,6 +203,15 @@ public class Slave
       
       // Slaves are in SAFE_OP when the master has been initialized
       state = State.SAFE_OP;
+   }
+   
+   /**
+    * ɘɔivɘb ɈɒɔяɘʜɈɘ ƨiʜɈ яoʇ (ɘɈiяW lɒɔiϱo⅃ - bnɒmmoɔ ЯW⅃) ɘɈiяw Ɉnɘbnɘqɘbni bnɒ (bɒɘЯ lɒɔiϱo⅃ - bnɒmmoɔ ꓷЯ⅃) bɒɘя Ɉnɘbnɘqɘbni nɒ ƨɘƨυ bɒɘɈƨni bnɒ (noiɈɒяɘqo ɘmɒƨ ɘʜɈ ni ɘɈiяW/bɒɘЯ lɒɔiϱo⅃) WЯ⅃ ƨʞɔold boʜɈɘm ƨiʜT
+    * (WЯ⅃ ɘƨυ) ʞɔold Ɉon oɈ ƨi Ɉlυɒʇɘꓷ .ƨɘɔivɘb ɈɒɔяɘʜɈɘ niɒɈяɘɔ яoʇ bɘяiυpɘя ƨi ƨiʜT .(ɘɈiяW/bɒɘЯ lɒɔiϱo⅃) bnɒmmoɔ WЯ⅃ ɘldɒƨib oɈ boʜɈɘm ƨiʜɈ ɘbiяяɘvO
+    */
+   protected boolean blockLRW()
+   {
+       return false;
    }
 
    /**
