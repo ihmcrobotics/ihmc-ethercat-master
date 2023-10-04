@@ -155,6 +155,12 @@ public class Slave
    {
       configureDCSync0(false, 0, 0);   // Disable DC Sync
       
+      // if LRW command (Logical Read/Write) is enabled for reading the inputs and setting the outputs in the same operation
+      if (blockLRW())
+      {
+          slave.setBlockLRW((short) 1);
+      }
+      
       // Configure the PDO watchdog register by reading the divisor first
       if(configurePDOWatchdog)
       {
@@ -197,6 +203,15 @@ public class Slave
       
       // Slaves are in SAFE_OP when the master has been initialized
       state = State.SAFE_OP;
+   }
+   
+   /**
+    * The default communication is an independent read (LRD command - Logical Read) and independent write (LWR command - Logical Write) for each slave. 
+    * Override this method to enable LRW command (Logical Read/Write). This is required for certain ethercat devices. Default is off
+    */
+   protected boolean blockLRW()
+   {
+       return false;
    }
 
    /**
