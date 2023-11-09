@@ -1,10 +1,10 @@
 package us.ihmc.etherCAT.slaves;
 
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
+import us.ihmc.etherCAT.slaves.easyCAT.EasyCATSlave32;
 
 import java.io.IOException;
 
-public class EasyCATLoadCellSlave extends EasyCATSlave {
+public class EasyCATLoadCellSlave extends EasyCATSlave32 {
 
 	private int[] loadCellRawValues = new int[4];
 	private int[] loadCellProcessedValues = new int[4];
