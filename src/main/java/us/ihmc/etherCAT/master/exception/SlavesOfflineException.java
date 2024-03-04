@@ -19,6 +19,6 @@ public class SlavesOfflineException extends SlaveCountException
       String slavesListString = StringUtils.join(getSlaves(), ",");
 
       return "Not all registeredSlaves are online" + (master.isRequireAllSlaves() ? " and requireAllSlaves is true" : "") + ".\n[" + getCurrentSlaveCount()
-             + " / " + getRegisteredSlaveCount() + " slaves online.\nOffline slaves: [" + slavesListString + "]";
+             + " / " + getRegisteredSlaveCount() + "] slaves online.\nOffline slaves: [" + slavesListString + "]";
    }
 }

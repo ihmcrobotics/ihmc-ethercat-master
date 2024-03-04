@@ -19,6 +19,6 @@ public class SlavesNotConfiguredException extends SlaveCountException
       String slavesListString = StringUtils.join(getSlaves(), ",");
 
       return "Not all slaves are configured" + (master.isRequireAllSlaves() ? " and requireAllSlaves is true" : "") + ".\n[" + getCurrentSlaveCount()
-             + " / " + getRegisteredSlaveCount() + " slaves online.\nInvalid slaves: [" + slavesListString + "]";
+             + " / " + getRegisteredSlaveCount() + "] slaves online.\nInvalid slaves: [" + slavesListString + "]";
    }
 }
