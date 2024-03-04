@@ -4,16 +4,16 @@ import us.ihmc.etherCAT.master.Master;
 import us.ihmc.etherCAT.master.Slave;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.List;
 
 public abstract class SlaveCountException extends IOException
 {
    private final int currentSlaveCount;
    private final int registeredSlaveCount;
-   private final Collection<Slave> slaves;
+   private final List<Slave> slaves;
    protected final Master master;
 
-   public SlaveCountException(int currentSlaveCount, int registeredSlaveCount, Collection<Slave> slaves, Master master)
+   public SlaveCountException(int currentSlaveCount, int registeredSlaveCount, List<Slave> slaves, Master master)
    {
       this.currentSlaveCount = currentSlaveCount;
       this.registeredSlaveCount = registeredSlaveCount;
@@ -33,7 +33,7 @@ public abstract class SlaveCountException extends IOException
       return registeredSlaveCount;
    }
 
-   public Collection<Slave> getSlaves()
+   public List<Slave> getSlaves()
    {
       return slaves;
    }
