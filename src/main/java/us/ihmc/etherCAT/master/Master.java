@@ -387,7 +387,7 @@ public class Master implements MasterInterface
             throw new SlavesOfflineException(slavecount, registeredSlaves.size(), offlineSlaves, this);
          }
 
-         if(unconfiguredSlaves.isEmpty())
+         if(!unconfiguredSlaves.isEmpty())
          {
             throw new SlavesNotConfiguredException(slavecount, registeredSlaves.size(), unconfiguredSlaves, this);
          }
