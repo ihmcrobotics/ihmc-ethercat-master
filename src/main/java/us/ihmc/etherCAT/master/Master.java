@@ -1,13 +1,8 @@
 package us.ihmc.etherCAT.master;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import us.ihmc.etherCAT.master.EtherCATStatusCallback.TRACE_EVENT;
+import us.ihmc.etherCAT.master.exception.SlavesNotConfiguredException;
+import us.ihmc.etherCAT.master.exception.SlavesOfflineException;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ec_state;
@@ -16,6 +11,13 @@ import us.ihmc.soem.generated.ecx_portt;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
 import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 
@@ -197,8 +199,12 @@ public class Master implements MasterInterface
    {
       this.requireAllSlaves = requireAllSlaves;
    }
-   
-   
+
+   public boolean isRequireAllSlaves()
+   {
+      return requireAllSlaves;
+   }
+
    /**
     * Calculate the process data size for a slave.
     * 
@@ -298,29 +304,16 @@ public class Master implements MasterInterface
       getEtherCATStatusCallback().trace(TRACE_EVENT.CONFIGURING_SLAVES);
       int slavecount = soem.ecx_slavecount(context);
       
-      if(requireAllSlaves)
-      {
-         if(registeredSlaves.size() != slavecount)
-         {
-            if(registeredSlaves.size() < slavecount)
-            {
-               throw new IOException("Not all registeredSlaves are configured and requireAllSlaves is true, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
-            }
-            else
-            {
-               throw new IOException("Not all registeredSlaves are online and requireAllSlaves is true, got " + slavecount + " registeredSlaves, expected " + registeredSlaves.size());
-            }
-         }
-      }
-      
-      
       getEtherCATStatusCallback().trace(TRACE_EVENT.WAIT_FOR_PREOP);
       
       if(soem.ecx_statecheck(context, 0, ec_state.EC_STATE_PRE_OP.swigValue(), soemConstants.EC_TIMEOUTSTATE) == 0)
       {
          throw new IOException("Cannot transfer to PREOP state");
       }
-      
+
+      List<Slave> offlineSlaves = new ArrayList<>();
+      List<Slave> unconfiguredSlaves = new ArrayList<>();
+
       slaveMap = new Slave[slavecount];
       int processDataSize = 0;
       
@@ -345,7 +338,6 @@ public class Master implements MasterInterface
          
          Slave slave = getSlave(alias, position);
          
-         
          if(slave != null)
          {
             if(slave.getVendor() != ec_slave.getEep_man() || slave.getProductCode() != ec_slave.getEep_id())
@@ -358,17 +350,11 @@ public class Master implements MasterInterface
          }
          else
          {
-            if(requireAllSlaves)
-            {
-               throw new IOException("Unconfigured slave on alias " + alias + ":" + position + ". Make sure to power cycle after changing alias addresses.");
-            }
-            else
-            {
-               slave = new UnconfiguredSlave(ec_slave.getName(), (int)ec_slave.getEep_man(), (int)ec_slave.getEep_id(), alias, position);
-               slave.configure(this, getContext(), port, ec_slave, i + 1, false, cycleTimeInNs);
-               slaveMap[i] = slave;
-               etherCATStatusCallback.notifyUnconfiguredSlave(slaveMap[i]);
-            }
+            slave = new UnconfiguredSlave(ec_slave.getName(), (int)ec_slave.getEep_man(), (int)ec_slave.getEep_id(), alias, position);
+            slave.configure(this, getContext(), port, ec_slave, i + 1, false, cycleTimeInNs);
+            slaveMap[i] = slave;
+            etherCATStatusCallback.notifyUnconfiguredSlave(slaveMap[i]);
+            unconfiguredSlaves.add(slave);
          }
          
          // Disable Complete Access reading of SDO configuration.
@@ -384,11 +370,32 @@ public class Master implements MasterInterface
          previousPosition = position;
          
       }
+
       for(int i = 0; i < registeredSlaves.size(); i++)
       {
          if(!registeredSlaves.get(i).isConfigured())
          {
             etherCATStatusCallback.notifySlaveNotFound(registeredSlaves.get(i));
+            offlineSlaves.add(registeredSlaves.get(i));
+         }
+      }
+
+      if(requireAllSlaves)
+      {
+         if(!offlineSlaves.isEmpty())
+         {
+            throw new SlavesOfflineException(slavecount, registeredSlaves.size(), offlineSlaves, this);
+         }
+
+         if(!unconfiguredSlaves.isEmpty())
+         {
+            throw new SlavesNotConfiguredException(slavecount, registeredSlaves.size(), unconfiguredSlaves, this);
+         }
+
+         if(slavecount != registeredSlaves.size())
+         {
+            throw new IOException(
+                  "Unexpected slave count mismatch (requireAllSlaves is true). [" + slavecount + " / " + registeredSlaves.size() + "] slaves online.");
          }
       }
 
