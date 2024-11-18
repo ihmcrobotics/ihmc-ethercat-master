@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5.1)
 
 find_package(JNI REQUIRED)
 include_directories(${JNI_INCLUDE_DIRS}) 
