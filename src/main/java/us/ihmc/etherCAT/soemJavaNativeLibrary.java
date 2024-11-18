@@ -15,9 +15,13 @@ public class soemJavaNativeLibrary implements NativeLibraryDescription
    @Override
    public NativeLibraryWithDependencies getLibraryWithDependencies(OperatingSystem os, Architecture arch)
    {
-      if (os == OperatingSystem.LINUX64)
+      if (os == OperatingSystem.LINUX64 && arch == Architecture.x64)
       {
-         return NativeLibraryWithDependencies.fromFilename("libsoemJava.so");
+         return NativeLibraryWithDependencies.fromFilename("libsoemJava-x86_64.so");
+      }
+      else if (os == OperatingSystem.LINUX64 && arch == Architecture.arm64)
+      {
+         return NativeLibraryWithDependencies.fromFilename("libsoemJava-arm64.so");
       }
       throw new RuntimeException("Unsupported platform: " + os.name() + "-" + arch.name());
    }

@@ -33,29 +33,23 @@ if((target != "JAVA" && target != "PLATFORM"))
 
 else
 {
- if(target == "JAVA")
- {
-    rootProject.name="soem"
- }
- else
- {
-
-    if(OperatingSystem.current().isWindows())
-    {
-            rootProject.name="soem-platform-windows"
-    }
-    else if (OperatingSystem.current().isLinux())
-    {
-            rootProject.name="soem-platform-linux"
-    }
-    else if (OperatingSystem.current().isMacOsX())
-    {
-            rootProject.name="soem-platform-mac"
-    }
-    else
-    {
-            throw GradleException("Current platform is not supported")
-    }
-
- }
+   if (target == "JAVA")
+   {
+      rootProject.name="soem"
+   }
+   else
+   {
+      if (OperatingSystem.current().isLinux() && System.getProperty("os.arch") == "aarch64")
+      {
+         rootProject.name="soem-platform-linux-arm64"
+      }
+      else if (OperatingSystem.current().isLinux() && System.getProperty("os.arch") == "amd64")
+      {
+         rootProject.name="soem-platform-linux-x86_64"
+      }
+      else
+      {
+         throw GradleException("Current platform is not supported")
+      }
+   }
 }

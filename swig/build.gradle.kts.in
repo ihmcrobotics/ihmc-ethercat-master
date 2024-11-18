@@ -5,7 +5,7 @@ plugins {
 
 ihmc {
    group = "us.ihmc"
-   version = "1.4.0-ihmc1"
+   version = "1.5.0"
    vcsUrl = "https://github.com/ihmcrobotics/ihmc-ethercat-master"
    openSource = true
 
@@ -43,7 +43,8 @@ sourceSets {
                 main {
                         resources{
                             srcDir("swig/")
-                            include("**/libsoemJava.so")
+                            include("**/libsoemJava-x86_64.so")
+                            include("**/libsoemJava-arm64.so")
                             exclude("**/CMakeFiles")
                         }
                 }
