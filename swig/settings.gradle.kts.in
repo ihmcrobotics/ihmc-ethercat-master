@@ -39,7 +39,7 @@ else
    }
    else
    {
-      if (OperatingSystem.current().isLinux() && System.getProperty("os.arch") == "aarch64")
+      if (OperatingSystem.current().isLinux() && (System.getProperty("os.arch") == "aarch64" || System.getenv("AARCH64_CROSS") != null))
       {
          rootProject.name="soem-platform-linux-arm64"
       }

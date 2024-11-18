@@ -131,14 +131,17 @@ The gradle build files for the SOEM wrapper and native libraries are created by 
 
 To build and publish run the following commands. Note that the gradle commands are ran from within the build directory.
 
-
-- cd ihmc-ethercat-master
-- mkdir build
-- cd build
-- cmake -DCMAKE_BUILD_TYPE=Release ..
-- make
-- ../gradlew publishToMavenLocal -Ptarget=JAVA
-- ../gradlew publishToMavenLocal -Ptarget=PLATFORM
+```
+cd ihmc-ethercat-master
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+# Cross compile for arm64 using the toolchain
+# cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../linux-aarch64-toolchain.cmake ..
+make
+../gradlew publishToMavenLocal -Ptarget=JAVA
+../gradlew publishToMavenLocal -Ptarget=PLATFORM
+```
 
 Note that if you want to publish multiple platform libraries you only have to run target=JAVA on a single platform
 
