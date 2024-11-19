@@ -152,16 +152,6 @@ Note that if you want to publish multiple platform libraries you only have to ru
 
 ### Compiling with Docker
 
-Run `./buildWithDocker.sh`
+Build the docker images first with: `./buildDockerImages.sh`
 
-The Docker image is hosted at [https://hub.docker.com/r/ihmcrobotics/ethercat-master]().
-
-If changes to the Dockerfile are needed, build it with the following command, incrementing the version.
-Then, increment the version in the buildWithDocker.sh file before running.
-
-```
-# docker build --tag ihmcrobotics/ethercat-master:0.X .
-# docker rm ethercat-master
-```
-
-For more about IHMC Robotics's usage of Docker, see [https://github.com/ihmcrobotics/ihmc-open-robotics-software/tree/develop/docker]().
+Then run: `./buildWithDocker.sh` to build the artifacts, they will be copied to the host's local maven repository.
