@@ -1,15 +1,15 @@
 package us.ihmc.etherCAT.master;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
+import us.ihmc.etherCAT.soemJavaNativeLibrary;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_smt;
 import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
-import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * Simple application to print basic information about the detected slave configuration
@@ -24,7 +24,7 @@ public class SlaveInfo
 
    static
    {
-      NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
+      soemJavaNativeLibrary.load();
    }
 
    public static String hex(long n)

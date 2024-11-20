@@ -1,13 +1,9 @@
-#!/bin/bash
-# Uncomment for debugging this script
-set -o xtrace
-
+#!/bin/sh
+# Build for native platform (probably x86_64)
+mkdir -p build
 cd build
-
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
-
-pwd
-ls ..
 ../gradlew publishToMavenLocal -Ptarget=JAVA
 ../gradlew publishToMavenLocal -Ptarget=PLATFORM
+cd ..

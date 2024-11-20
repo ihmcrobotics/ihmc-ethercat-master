@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.5.1)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE true)
 

@@ -1,14 +1,29 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5.1)
 
 find_package(JNI REQUIRED)
 include_directories(${JNI_INCLUDE_DIRS}) 
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
+find_package(SWIG REQUIRED)
+include(${SWIG_USE_FILE})
 
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/swig/")
-INCLUDE_DIRECTORIES("/usr/include/soem")
+include_directories("${PROJECT_SOURCE_DIR}/swig/")
+include_directories("/usr/include/soem")
 
-SET_PROPERTY(SOURCE soem.i PROPERTY SWIG_FLAGS "-package" "us.ihmc.soem.generated")
+set_property(SOURCE soem.i PROPERTY SWIG_FLAGS "-package" "us.ihmc.soem.generated")
 
-SWIG_ADD_MODULE(soemJava java soem.i)
-swig_link_libraries(soemJava ihmcsoemwrapper)
+if(UNIX AND NOT APPLE)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" AND NOT DEFINED ENV{AARCH64_CROSS})
+        message(STATUS "Using target platform x86_64")
+        set(LIBRARY_NAME "soemJava-x86_64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR DEFINED ENV{AARCH64_CROSS})
+        message(STATUS "Using target platform arm64")
+        set(LIBRARY_NAME "soemJava-arm64")
+    else()
+        message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+else()
+    message(FATAL_ERROR "This CMake configuration is only for Linux.")
+endif()
+
+# Add SWIG module with the architecture-specific library name
+swig_add_module(${LIBRARY_NAME} java soem.i)
+swig_link_libraries(${LIBRARY_NAME} ihmcsoemwrapper)

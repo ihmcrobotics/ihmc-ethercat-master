@@ -1,0 +1,62 @@
+# Do not publish to dockerhub
+FROM ubuntu:20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get --yes update  \
+ && apt-get --yes install \
+    nano \
+    git \
+    wget \
+    curl \
+    unzip \
+    locales \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common \
+    sudo \
+    build-essential \
+    swig \
+    cmake \
+    openjdk-17-jdk \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=$PATH:$JAVA_HOME/bin
+
+# Installing SOEM
+WORKDIR /opt
+RUN git clone https://github.com/OpenEtherCATsociety/SOEM.git
+WORKDIR /opt/SOEM
+RUN mkdir build && cd build
+WORKDIR /opt/SOEM/build
+RUN cmake -DHOST_INSTALL="" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POSITION_INDEPENDENT_CODE=true -DCMAKE_BUILD_TYPE=Release ..
+RUN make
+RUN make install
+
+# Setup a robotlab user as the development user, to avoid using root.
+# Allows using sudo with robotlab user without a password.
+RUN addgroup robotlab \
+ && adduser --uid 1000 --gid 1000 --home /home/robotlab --disabled-password robotlab \
+ && chown -R robotlab /home/robotlab \
+ && adduser robotlab sudo \
+ && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER robotlab
+WORKDIR /home/robotlab
+
+RUN mkdir -p /home/robotlab/dev/ihmc-ethercat-master/build
+RUN mkdir -p /home/robotlab/dev/ihmc-ethercat-master/src
+RUN mkdir -p /home/robotlab/dev/ihmc-ethercat-master/swig
+VOLUME /home/robotlab/dev/ihmc-ethercat-master/build
+VOLUME /home/robotlab/dev/ihmc-ethercat-master/src
+VOLUME /home/robotlab/dev/ihmc-ethercat-master/swig
+WORKDIR /home/robotlab/dev/ihmc-ethercat-master
+
+ENTRYPOINT ["/bin/bash"]
+CMD ["build-x86_64.sh"]

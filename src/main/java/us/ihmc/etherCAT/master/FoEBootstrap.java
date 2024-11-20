@@ -1,18 +1,18 @@
 package us.ihmc.etherCAT.master;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.HashMap;
-
 import us.ihmc.etherCAT.master.Mailbox.MailboxConfiguration;
+import us.ihmc.etherCAT.soemJavaNativeLibrary;
 import us.ihmc.soem.generated.ec_err_type;
 import us.ihmc.soem.generated.ec_slavet;
 import us.ihmc.soem.generated.ec_state;
 import us.ihmc.soem.generated.ecx_context;
 import us.ihmc.soem.generated.soem;
 import us.ihmc.soem.generated.soemConstants;
-import us.ihmc.tools.nativelibraries.NativeLibraryLoader;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.HashMap;
 
 /**
  * Standalone implementation for File over EtherCAT in BOOT mode
@@ -24,7 +24,7 @@ public class FoEBootstrap
 {
    static
    {
-      NativeLibraryLoader.loadLibrary("us.ihmc.soem.generated", "soemJava");
+      soemJavaNativeLibrary.load();
    }
 
    private class SlaveConfig
