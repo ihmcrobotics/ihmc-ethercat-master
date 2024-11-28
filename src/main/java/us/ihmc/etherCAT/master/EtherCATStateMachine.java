@@ -9,11 +9,10 @@ import us.ihmc.soem.generated.soem;
 
 /**
  * Statemachine to do the state control for EtherCAT slaves.
- * 
- * This will configure the slaves to go in OP when the master reached stable execution as well as deal with slaves that got into an error mode
- * 
- * @author Jesper Smith
  *
+ * This will configure the slaves to go in OP when the master reached stable execution as well as deal with slaves that got into an error mode
+ *
+ * @author Jesper Smith
  */
 class EtherCATStateMachine
 {
@@ -64,7 +63,6 @@ class EtherCATStateMachine
 
    /**
     * State to wait for the master to attain a stable, minimal jitter rate.
-    *
     */
    private class WaitForMasterState implements LightWeightPipelineTask
    {
@@ -121,7 +119,5 @@ class EtherCATStateMachine
       {
          subdevices[i].cleanup();
       }
-
    }
-
 }
