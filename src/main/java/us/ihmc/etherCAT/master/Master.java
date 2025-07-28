@@ -469,17 +469,18 @@ public class Master implements MasterInterface
    /**
     * Internal function to speed up the EtherCAT send/receive time.  
     * 
-    * For most network cars, it calls the equivalent of 
+    * For most network cards, it calls the equivalent of:
+    *    ethtool -C iface rx-usecs 0 rx-frames 1 tx-usecs 0 tx-frames 1
     * 
-    * ethtool -C iface rx-usecs 0 rx-frames 1 tx-usecs 0 tx-frames 1
+    * For network cards using the igb or igc (igc used for 2.5Gbe/newer chips) driver, it calls the equivalent of:
+    *    ethtool -C iface rx-usecs 0 tx-usecs 0
+    * Note (Linux > 6.8):
+    *    If you see this error: "Queue Pair mode enabled, both Rx and Tx coalescing controlled by rx-usecs,"
+    *    add a systemd service to call ethtool -C iface rx-usecs 0 after network is initialized. After this is
+    *    run once, it will allow setting both in the same command (what is done programatically).
     * 
-    * For network cards using the igb driver, it calls the equivalent of
-    * 
-    * ethtool -C iface rx-usecs 0 tx-usecs 0
-    * 
-    * and for network cards using the tg3 driver, it calls the equivalent of
-    * 
-    * ethtool -C iface rx-usecs 1 rx-frames 1 tx-usecs 1 tx-frames 1
+    * and for network cards using the tg3 driver, it calls the equivalent of:
+    *    ethtool -C iface rx-usecs 1 rx-frames 1 tx-usecs 1 tx-frames 1
     * 
     * This drastically reduces the time to complete a send/receive cycle. Tests show a decrease from 200us to 50us.
     * 
