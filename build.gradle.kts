@@ -20,7 +20,7 @@ mainDependencies {
    api("us.ihmc:soem:1.5.2")
    api("us.ihmc:soem-platform-linux-x86_64:1.5.2")
    api("us.ihmc:soem-platform-linux-arm64:1.5.2")
-   api("us.ihmc:ihmc-native-library-loader:2.0.4")
+   api("us.ihmc:ihmc-native-library-loader:2.0.6")
    api("us.ihmc:ihmc-realtime:1.6.0")
 }
 
