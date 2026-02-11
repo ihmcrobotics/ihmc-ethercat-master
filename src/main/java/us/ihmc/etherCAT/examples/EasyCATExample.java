@@ -16,7 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import us.ihmc.etherCAT.master.EtherCATRealtimeThread;
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
+import us.ihmc.etherCAT.slaves.easyCAT.EasyCATSlave32;
 import us.ihmc.realtime.MonotonicTime;
 import us.ihmc.realtime.PriorityParameters;
 
@@ -38,8 +38,8 @@ import us.ihmc.realtime.PriorityParameters;
  */
 public class EasyCATExample extends EtherCATRealtimeThread {
 
-	private final EasyCATSlave wirelessButtonsSlave = new EasyCATSlave(0, 0);
-	private final EasyCATSlave encoderSlave = new EasyCATSlave(0, 1);
+	private final EasyCATSlave32 wirelessButtonsSlave = new EasyCATSlave32(0, 0);
+	private final EasyCATSlave32 encoderSlave = new EasyCATSlave32(0, 1);
 
 	private JLabel button1Label;
 	private JLabel button2Label;

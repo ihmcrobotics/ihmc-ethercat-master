@@ -1,12 +1,11 @@
 package us.ihmc.etherCAT.slaves;
 
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
+import us.ihmc.etherCAT.slaves.easyCAT.EasyCATSlave32;
 
 import java.io.IOException;
 
-public class EasyCATWirelessButtonsSlave extends EasyCATSlave
+public class EasyCATWirelessButtonsSlave extends EasyCATSlave32
 {
-
    private int[] frameData = new int[32];
    private boolean[] buttonStates = new boolean[4];
    private int dataFlipBit = 0;

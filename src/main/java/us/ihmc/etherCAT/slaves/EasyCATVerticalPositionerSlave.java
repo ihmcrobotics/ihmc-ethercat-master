@@ -1,10 +1,10 @@
 package us.ihmc.etherCAT.slaves;
 
-import us.ihmc.etherCAT.slaves.EasyCATSlave;
+import us.ihmc.etherCAT.slaves.easyCAT.EasyCATSlave32;
 
 import java.io.IOException;
 
-public class EasyCATVerticalPositionerSlave extends EasyCATSlave
+public class EasyCATVerticalPositionerSlave extends EasyCATSlave32
 {
 
    protected int[] frameData = new int[32];
